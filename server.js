@@ -1005,6 +1005,112 @@ app.post('/api/student/notes/get', (req, res) => {
 });
 
 // ==========================================
+// ANOTAÇÕES E DESTAQUES POR PARÁGRAFO
+// ==========================================
+app.post('/api/student/annotation', (req, res) => {
+    const { email, key, paragraphId, highlightedText, note } = req.body;
+    if (!email || !key || !paragraphId) {
+        return res.status(400).json({ error: 'Dados insuficientes' });
+    }
+    
+    const lowerEmail = email.toLowerCase();
+    if (!db.memory.annotations[lowerEmail]) {
+        db.memory.annotations[lowerEmail] = {};
+    }
+    if (!db.memory.annotations[lowerEmail][key]) {
+        db.memory.annotations[lowerEmail][key] = {};
+    }
+    
+    if (note === null && highlightedText === null) {
+        delete db.memory.annotations[lowerEmail][key][paragraphId];
+        if (Object.keys(db.memory.annotations[lowerEmail][key]).length === 0) {
+            delete db.memory.annotations[lowerEmail][key];
+        }
+    } else {
+        db.memory.annotations[lowerEmail][key][paragraphId] = {
+            highlightedText,
+            note,
+            timestamp: new Date().toISOString()
+        };
+    }
+    
+    db.save();
+    res.json({ success: true });
+});
+
+app.get('/api/student/annotations', (req, res) => {
+    const { email, key } = req.query;
+    if (!email || !key) {
+        return res.status(400).json({ error: 'Dados insuficientes' });
+    }
+    
+    const lowerEmail = email.toLowerCase();
+    const studentAnns = db.memory.annotations[lowerEmail] || {};
+    res.json({ success: true, annotations: studentAnns[key] || {} });
+});
+
+// ==========================================
+// FÓRUM / DÚVIDAS INTEGRADO
+// ==========================================
+app.get('/api/forum', (req, res) => {
+    const { key } = req.query;
+    if (!key) return res.status(400).json({ error: 'Falta a chave do material' });
+    
+    const comments = db.memory.forum.filter(c => c.key === key);
+    res.json({ success: true, comments });
+});
+
+app.post('/api/forum/comment', (req, res) => {
+    const { key, studentName, studentEmail, text } = req.body;
+    if (!key || !studentName || !studentEmail || !text || text.trim() === '') {
+        return res.status(400).json({ error: 'Campos obrigatórios não preenchidos' });
+    }
+    
+    const newComment = {
+        id: 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        key,
+        studentName,
+        studentEmail: studentEmail.toLowerCase(),
+        text: text.trim(),
+        timestamp: new Date().toISOString(),
+        replies: []
+    };
+    
+    db.memory.forum.push(newComment);
+    db.save();
+    res.json({ success: true, comment: newComment });
+});
+
+app.post('/api/forum/reply', (req, res) => {
+    const { commentId, authorName, authorRole, text } = req.body;
+    if (!commentId || !authorName || !authorRole || !text || text.trim() === '') {
+        return res.status(400).json({ error: 'Campos obrigatórios não preenchidos' });
+    }
+    
+    const comment = db.memory.forum.find(c => c.id === commentId);
+    if (!comment) {
+        return res.status(404).json({ error: 'Comentário original não encontrado' });
+    }
+    
+    const newReply = {
+        authorName,
+        authorRole,
+        text: text.trim(),
+        timestamp: new Date().toISOString()
+    };
+    
+    comment.replies.push(newReply);
+    db.save();
+    res.json({ success: true, reply: newReply });
+});
+
+app.post('/api/admin/forum/all', (req, res) => {
+    validateAdmin(req, res, () => {
+        res.json({ success: true, comments: db.memory.forum || [] });
+    });
+});
+
+// ==========================================
 // SESSIONS E PING APRIMORADO
 // ==========================================
 app.get('/api/ping', (req, res) => {

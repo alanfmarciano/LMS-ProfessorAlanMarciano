@@ -126,6 +126,53 @@
                     <img src="banner.png" alt="SENAI 4.0 Banner Futurista" class="welcome-banner">
                     <h2>Bem-vindo ao Treinamento <span class="highlight">SENAI 4.0</span></h2>
                     <p>Selecione uma Unidade ou Avaliação no menu lateral para iniciar seu aprendizado.</p>
+                    
+                    <!-- Painel de Progresso Visual Premium -->
+                    <div class="progress-dashboard">
+                        <div class="progress-dashboard-header">
+                            <div class="progress-dashboard-title">📊 Sua Trilha de Progresso</div>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);" id="progress-total-status">0 de 15 Concluídos</span>
+                        </div>
+                        <div class="progress-overview-container">
+                            <div class="radial-progress-wrapper">
+                                <svg class="radial-progress-svg">
+                                    <circle class="radial-progress-bg" cx="50" cy="50" r="40"></circle>
+                                    <circle class="radial-progress-bar" id="radial-progress-bar-el" cx="50" cy="50" r="40"></circle>
+                                </svg>
+                                <span class="radial-progress-text" id="radial-progress-percentage-text">0%</span>
+                            </div>
+                            <div class="module-progress-bars">
+                                <div class="module-progress-bar-item">
+                                    <div class="module-bar-header">
+                                        <span class="module-bar-name">FUTEC — Fundamentos de TI</span>
+                                        <span id="progress-val-futec">0%</span>
+                                    </div>
+                                    <div class="module-bar-outer">
+                                        <div class="module-bar-inner futec" id="progress-bar-futec" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="module-progress-bar-item">
+                                    <div class="module-bar-header">
+                                        <span class="module-bar-name">FECOP — Colaboração e Produtividade</span>
+                                        <span id="progress-val-fecop">0%</span>
+                                    </div>
+                                    <div class="module-bar-outer">
+                                        <div class="module-bar-inner fecop" id="progress-bar-fecop" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="module-progress-bar-item">
+                                    <div class="module-bar-header">
+                                        <span class="module-bar-name">IRCOM — Instalação de Recursos Computacionais</span>
+                                        <span id="progress-val-ircom">0%</span>
+                                    </div>
+                                    <div class="module-bar-outer">
+                                        <div class="module-bar-inner ircom" id="progress-bar-ircom" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="stats-grid">
                         <div class="stat-card">
                             <h4>320</h4>

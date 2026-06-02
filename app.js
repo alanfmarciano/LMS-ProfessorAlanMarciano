@@ -157,6 +157,49 @@ document.addEventListener("DOMContentLoaded", () => {
         if (statCompleted) {
             statCompleted.textContent = Object.keys(completedUnits).length;
         }
+
+        // --- ATUALIZAR DASHBOARD DE PROGRESSO VISUAL PREMIUM ---
+        const radBar = document.getElementById('radial-progress-bar-el');
+        const radText = document.getElementById('radial-progress-percentage-text');
+        const totalStatusText = document.getElementById('progress-total-status');
+        
+        const futecBar = document.getElementById('progress-bar-futec');
+        const futecVal = document.getElementById('progress-val-futec');
+        const fecopBar = document.getElementById('progress-bar-fecop');
+        const fecopVal = document.getElementById('progress-val-fecop');
+        const ircomBar = document.getElementById('progress-bar-ircom');
+        const ircomVal = document.getElementById('progress-val-ircom');
+
+        let futecDone = 0, fecopDone = 0, ircomDone = 0;
+        for (let i = 1; i <= 5; i++) {
+            if (completedUnits[`Apostila_FUTEC_${i}`]) futecDone++;
+            if (completedUnits[`Apostila_FECOP_${i}`]) fecopDone++;
+            if (completedUnits[`Apostila_IRCOM_${i}`]) ircomDone++;
+        }
+        
+        const futecPct = Math.round((futecDone / 5) * 100);
+        const fecopPct = Math.round((fecopDone / 5) * 100);
+        const ircomPct = Math.round((ircomDone / 5) * 100);
+        
+        const totalDone = futecDone + fecopDone + ircomDone;
+        const totalPct = Math.round((totalDone / 15) * 100);
+
+        if (totalStatusText) totalStatusText.textContent = `${totalDone} de 15 Concluídos`;
+        if (radText) radText.textContent = `${totalPct}%`;
+        if (radBar) {
+            // R = 40, Circunferência = 2 * PI * R = 251.2
+            const offset = 251.2 - (251.2 * totalPct / 100);
+            radBar.style.strokeDashoffset = offset;
+        }
+
+        if (futecBar) futecBar.style.width = `${futecPct}%`;
+        if (futecVal) futecVal.textContent = `${futecPct}%`;
+        
+        if (fecopBar) fecopBar.style.width = `${fecopPct}%`;
+        if (fecopVal) fecopVal.textContent = `${fecopPct}%`;
+        
+        if (ircomBar) ircomBar.style.width = `${ircomPct}%`;
+        if (ircomVal) ircomVal.textContent = `${ircomPct}%`;
         
         document.querySelectorAll(".nav-item").forEach(item => {
             const key = item.getAttribute("data-key");
@@ -1586,6 +1629,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Injetar Caixa de Confirmação de Leitura se for apostila
                 if (key.startsWith("Apostila_")) {
+                    // Atribuir IDs de parágrafo sequenciais para marcações
+                    const blocks = contentViewer.querySelectorAll("p, li, blockquote, pre, h2, h3, h4");
+                    blocks.forEach((block, index) => {
+                        block.setAttribute("data-para-id", `para-${index}`);
+                        block.classList.add("annotatable-block");
+                    });
+
+                    // Carregar anotações
+                    loadParagraphAnnotations(key);
+
                     const isCompleted = completedUnits[key] || false;
                     const confirmationBox = document.createElement("div");
                     confirmationBox.className = `read-confirmation-box ${isCompleted ? 'completed' : ''}`;
@@ -1620,6 +1673,9 @@ document.addEventListener("DOMContentLoaded", () => {
                             `;
                         });
                     }
+
+                    // Fórum integrado no fim
+                    renderForumSection(key);
 
                     // Aplicar Glossário Hover e Highlight de busca se houver termo
                     applyGlossary(contentViewer);
@@ -2323,5 +2379,379 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(err => console.error('Erro ao salvar anotação:', err));
     }
+
+    // ==========================================================
+    // LMS PREMIUM: ANOTAÇÕES E DESTAQUES POR PARÁGRAFO
+    // ==========================================================
+    function loadParagraphAnnotations(key) {
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        const info = JSON.parse(studentInfoStr);
+        const email = info.email;
+
+        fetch(`/api/student/annotations?email=${encodeURIComponent(email)}&key=${encodeURIComponent(key)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.annotations) {
+                    const annotations = data.annotations;
+                    for (const paraId in annotations) {
+                        const block = contentViewer.querySelector(`[data-para-id="${paraId}"]`);
+                        if (block) {
+                            applyParagraphAnnotationStyle(block, paraId, annotations[paraId]);
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error("Erro ao carregar anotações:", err));
+    }
+
+    function applyParagraphAnnotationStyle(block, paraId, annotationData) {
+        block.classList.add("annotated-paragraph");
+        
+        const existingInd = block.querySelector(".para-note-indicator");
+        if (existingInd) existingInd.remove();
+
+        const indicator = document.createElement("div");
+        indicator.className = "para-note-indicator";
+        indicator.innerHTML = "📝";
+        indicator.title = "Ver / Editar Anotação";
+        indicator.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleParagraphNoteEditor(block, paraId, annotationData.highlightedText, annotationData.note);
+        });
+        
+        block.appendChild(indicator);
+    }
+
+    let selectedBlock = null;
+    let selectedText = "";
+
+    contentViewer.addEventListener("mouseup", (e) => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) {
+            hideHighlightPopup();
+            return;
+        }
+
+        const text = selection.toString().trim();
+        if (text.length === 0) {
+            hideHighlightPopup();
+            return;
+        }
+
+        let anchor = selection.anchorNode;
+        selectedBlock = null;
+        while (anchor && anchor !== contentViewer) {
+            if (anchor.nodeType === Node.ELEMENT_NODE && anchor.classList.contains("annotatable-block")) {
+                selectedBlock = anchor;
+                break;
+            }
+            anchor = anchor.parentNode;
+        }
+
+        if (!selectedBlock) {
+            hideHighlightPopup();
+            return;
+        }
+
+        selectedText = text;
+        showHighlightPopup(e.clientX, e.clientY);
+    });
+
+    document.addEventListener("mousedown", (e) => {
+        const popup = document.getElementById("text-highlight-popup");
+        if (popup && !popup.contains(e.target) && e.target.id !== "btn-highlight-action") {
+            hideHighlightPopup();
+        }
+    });
+
+    function showHighlightPopup(x, y) {
+        let popup = document.getElementById("text-highlight-popup");
+        if (!popup) {
+            popup = document.createElement("div");
+            popup.id = "text-highlight-popup";
+            popup.innerHTML = `<button id="btn-highlight-action">💡 Destacar e Anotar</button>`;
+            document.body.appendChild(popup);
+
+            popup.querySelector("button").addEventListener("click", () => {
+                if (selectedBlock) {
+                    const paraId = selectedBlock.getAttribute("data-para-id");
+                    toggleParagraphNoteEditor(selectedBlock, paraId, selectedText, "");
+                }
+                hideHighlightPopup();
+            });
+        }
+
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y - 45}px`;
+        popup.style.display = "flex";
+    }
+
+    function hideHighlightPopup() {
+        const popup = document.getElementById("text-highlight-popup");
+        if (popup) popup.style.display = "none";
+    }
+
+    function toggleParagraphNoteEditor(block, paraId, highlightedText, existingNote) {
+        const existingEditor = block.querySelector(".paragraph-note-editor");
+        if (existingEditor) {
+            existingEditor.remove();
+            return;
+        }
+
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        const info = JSON.parse(studentInfoStr);
+        const email = info.email;
+
+        const renderEditor = (noteText) => {
+            const editor = document.createElement("div");
+            editor.className = "paragraph-note-editor";
+            editor.innerHTML = `
+                <div style="font-size: 0.8rem; color: #fef08a; font-weight: 700; margin-bottom: 2px; text-align: left;">
+                    Destaque: <span style="font-style: italic; color: white;">"${highlightedText || 'Todo o parágrafo'}"</span>
+                </div>
+                <textarea placeholder="Digite sua anotação ou dúvida...">${noteText || ""}</textarea>
+                <div class="editor-buttons">
+                    <button class="btn-cancel">Cancelar</button>
+                    ${noteText ? '<button class="btn-delete">Remover Destaque</button>' : ''}
+                    <button class="btn-save">Salvar Anotação</button>
+                </div>
+            `;
+
+            editor.addEventListener("mousedown", (e) => e.stopPropagation());
+
+            editor.querySelector(".btn-cancel").addEventListener("click", () => editor.remove());
+            
+            if (noteText) {
+                editor.querySelector(".btn-delete").addEventListener("click", () => {
+                    saveParagraphAnnotation(currentKey, paraId, null, null, () => {
+                        block.classList.remove("annotated-paragraph");
+                        const ind = block.querySelector(".para-note-indicator");
+                        if (ind) ind.remove();
+                        editor.remove();
+                    });
+                });
+            }
+
+            editor.querySelector(".btn-save").addEventListener("click", () => {
+                const note = editor.querySelector("textarea").value.trim();
+                if (note === "") {
+                    alert("A anotação não pode estar vazia! Para remover o destaque, clique em Remover Destaque.");
+                    return;
+                }
+                saveParagraphAnnotation(currentKey, paraId, highlightedText || block.innerText, note, () => {
+                    applyParagraphAnnotationStyle(block, paraId, { highlightedText: highlightedText || block.innerText, note });
+                    editor.remove();
+                });
+            });
+
+            block.appendChild(editor);
+            editor.querySelector("textarea").focus();
+        };
+
+        if (existingNote === "Carregando...") {
+            fetch(`/api/student/annotations?email=${encodeURIComponent(email)}&key=${encodeURIComponent(currentKey)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const ann = (data.success && data.annotations && data.annotations[paraId]) || {};
+                    renderEditor(ann.note || "");
+                })
+                .catch(() => renderEditor(""));
+        } else {
+            renderEditor(existingNote || "");
+        }
+    }
+
+    function saveParagraphAnnotation(key, paragraphId, highlightedText, note, callback) {
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        const info = JSON.parse(studentInfoStr);
+        const email = info.email;
+
+        fetch("/api/student/annotation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, key, paragraphId, highlightedText, note })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && callback) callback();
+        })
+        .catch(err => alert("Erro ao salvar anotação: " + err));
+    }
+
+    // ==========================================================
+    // LMS PREMIUM: FÓRUM / DÚVIDAS INTEGRADO
+    // ==========================================================
+    function renderForumSection(key) {
+        const existingForum = contentViewer.querySelector(".forum-section");
+        if (existingForum) existingForum.remove();
+
+        const forumDiv = document.createElement("div");
+        forumDiv.className = "forum-section";
+        forumDiv.innerHTML = `
+            <div class="forum-header">
+                <h3 class="forum-title">💬 Fórum e Dúvidas da Unidade</h3>
+            </div>
+            <div class="forum-comments-list" id="forum-comments-container">
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando dúvidas...</div>
+            </div>
+            <div class="new-comment-form">
+                <h4 style="color: white; font-weight: 700; font-size: 0.95rem;">💡 Deixe sua dúvida ou comentário sobre este conteúdo:</h4>
+                <textarea class="new-comment-textarea" id="forum-comment-text" placeholder="Escreva aqui sua pergunta ou comentário..."></textarea>
+                <button class="btn-forum-submit" id="btn-forum-submit-comment">Postar Dúvida</button>
+            </div>
+        `;
+
+        contentViewer.appendChild(forumDiv);
+
+        const commentsContainer = forumDiv.querySelector("#forum-comments-container");
+        const btnSubmit = forumDiv.querySelector("#btn-forum-submit-comment");
+        const commentTextarea = forumDiv.querySelector("#forum-comment-text");
+
+        const loadComments = () => {
+            fetch(`/api/forum?key=${encodeURIComponent(key)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        renderCommentsList(commentsContainer, data.comments, key);
+                    } else {
+                        commentsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Erro ao carregar dúvidas.</div>`;
+                    }
+                })
+                .catch(() => {
+                    commentsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Erro ao carregar dúvidas.</div>`;
+                });
+        };
+
+        loadComments();
+
+        btnSubmit.addEventListener("click", () => {
+            const text = commentTextarea.value.trim();
+            if (text === "") {
+                alert("Por favor, digite o seu comentário.");
+                return;
+            }
+
+            const studentInfoStr = sessionStorage.getItem("student_info");
+            if (!studentInfoStr) return;
+            const info = JSON.parse(studentInfoStr);
+
+            fetch("/api/forum/comment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    key,
+                    studentName: info.name,
+                    studentEmail: info.email,
+                    text
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    commentTextarea.value = "";
+                    loadComments();
+                } else {
+                    alert("Erro ao postar comentário: " + data.error);
+                }
+            })
+            .catch(err => alert("Erro ao conectar: " + err));
+        });
+    }
+
+    function renderCommentsList(container, comments, key) {
+        if (comments.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma dúvida postada sobre esta unidade. Seja o primeiro!</div>`;
+            return;
+        }
+
+        container.innerHTML = "";
+        comments.forEach(comment => {
+            const card = document.createElement("div");
+            card.className = "comment-card";
+
+            const initials = comment.studentName.trim().split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+            const dateStr = new Date(comment.timestamp).toLocaleDateString('pt-BR') + ' ' + new Date(comment.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            let repliesHTML = "";
+            if (comment.replies && comment.replies.length > 0) {
+                comment.replies.forEach(reply => {
+                    const isInstructor = reply.authorRole === "Instrutor";
+                    const replyInitials = reply.authorName.trim().split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+                    const replyDateStr = new Date(reply.timestamp).toLocaleDateString('pt-BR') + ' ' + new Date(reply.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+                    repliesHTML += `
+                        <div class="reply-card ${isInstructor ? 'instructor-reply' : ''}">
+                            <div class="reply-card-header" style="text-align: left;">
+                                <div class="reply-avatar ${isInstructor ? 'instructor' : ''}">${replyInitials}</div>
+                                <span class="reply-author-name">
+                                    ${reply.authorName}
+                                    ${isInstructor ? '<span class="reply-badge">Instrutor</span>' : ''}
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;">${replyDateStr}</span>
+                                </span>
+                            </div>
+                            <div class="reply-text" style="text-align: left;">${reply.text}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            card.innerHTML = `
+                <div class="comment-card-header" style="text-align: left;">
+                    <div class="comment-avatar">${initials}</div>
+                    <div class="comment-author-info">
+                        <span class="comment-author-name">${comment.studentName}</span>
+                        <span class="comment-date">${dateStr}</span>
+                    </div>
+                </div>
+                <div class="comment-text" style="text-align: left;">${comment.text}</div>
+                <div class="replies-container" id="replies-${comment.id}">
+                    ${repliesHTML}
+                </div>
+                <div class="reply-form">
+                    <input type="text" class="reply-input" placeholder="Responder a esta dúvida..." id="reply-input-${comment.id}">
+                    <button class="btn-reply-send" onclick="sendCommentReply('${comment.id}', '${key}')">Responder</button>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    window.sendCommentReply = function(commentId, key) {
+        const input = document.getElementById(`reply-input-${commentId}`);
+        const text = input.value.trim();
+        if (text === "") {
+            alert("Digite sua resposta.");
+            return;
+        }
+
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        const info = JSON.parse(studentInfoStr);
+
+        fetch("/api/forum/reply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                commentId,
+                authorName: info.name,
+                authorRole: "Aluno",
+                text
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                input.value = "";
+                renderForumSection(key);
+            } else {
+                alert("Erro ao responder: " + data.error);
+            }
+        })
+        .catch(err => alert("Erro ao conectar: " + err));
+    };
 
 });

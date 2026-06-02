@@ -514,6 +514,7 @@
             <button class="tab-btn" data-tab="tab-classes" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">🏫 Turmas</button>
             <button class="tab-btn" data-tab="tab-students" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">👥 Contas de Alunos</button>
             <button class="tab-btn" data-tab="tab-admins" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">🔑 Administradores</button>
+            <button class="tab-btn" data-tab="tab-forum" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">💬 Dúvidas / Fórum</button>
         </div>
 
         <div class="workspace" style="max-width: 1600px; width: 100%; margin: 0 auto; padding: 30px 40px; display: block;">
@@ -758,6 +759,66 @@
                                 <!-- Injetado dinamicamente -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 5: FÓRUM / DÚVIDAS -->
+            <div id="tab-forum" class="tab-content" style="display: none; grid-template-columns: 450px 1fr; gap: 30px; width: 100%;">
+                <!-- Left Column: Dúvidas Recebidas -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px; height: 80vh;">
+                    <div class="card-title">💬 Perguntas dos Alunos</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">
+                        Clique em uma dúvida para ver os detalhes da página onde ela foi enviada e escrever uma resposta.
+                    </p>
+                    <div id="forum-admin-list" style="display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-grow: 1; padding-right: 5px;">
+                        <div style="text-align: center; color: var(--text-muted); padding: 30px;">Carregando...</div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Responder Dúvida Selecionada -->
+                <div class="card" id="forum-admin-detail-panel" style="flex: 1; display: none; flex-direction: column; gap: 20px; height: 80vh;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                        <span class="card-title" id="forum-detail-title">🔍 Detalhes da Pergunta</span>
+                        <span class="badge-status ok" id="forum-detail-module-badge" style="font-size: 0.75rem; text-transform: uppercase;">Módulo</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+                        <!-- Detalhes do Comentário -->
+                        <div style="background: rgba(0,0,0,0.15); padding: 15px; border-radius: 8px; border: 1px solid var(--border); text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <div class="comment-avatar" id="forum-detail-avatar" style="width: 36px; height: 36px; font-size: 0.95rem; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">AL</div>
+                                <div>
+                                    <div style="font-weight: 700; color: white;" id="forum-detail-name">Aluno</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="forum-detail-email-date">email • data</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.6; word-break: break-word; white-space: pre-line;" id="forum-detail-text">Texto da dúvida.</div>
+                        </div>
+
+                        <!-- Respostas Existentes -->
+                        <h4 style="color: white; font-weight: 700; margin-top: 15px; font-size: 0.9rem; text-align: left;">💬 Respostas</h4>
+                        <div id="forum-detail-replies" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Injetado dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Enviar Nova Resposta -->
+                    <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
+                        <h4 style="color: white; font-weight: 700; font-size: 0.9rem; text-align: left;">Enviar Resposta (como Instrutor)</h4>
+                        <div style="display: flex; gap: 10px;">
+                            <textarea id="forum-reply-admin-text" placeholder="Digite a resposta que o aluno verá na página..." style="flex-grow: 1; background: rgba(0,0,0,0.25); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; outline: none; height: 80px; resize: none;"></textarea>
+                            <button id="btn-forum-admin-reply" style="background: var(--primary); color: white; border: none; padding: 10px 20px; font-weight: 700; border-radius: 8px; cursor: pointer; align-self: flex-end; height: 80px; width: 120px; transition: background-color 0.2s;">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Nenhuma Selecionada -->
+                <div class="card" id="forum-admin-empty-panel" style="flex: 1; display: flex; align-items: center; justify-content: center; height: 80vh; color: var(--text-muted);">
+                    <div style="text-align: center;">
+                        <span style="font-size: 3rem;">💬</span>
+                        <h3 style="color: white; margin-top: 15px; font-size: 1.1rem; font-weight: 700;">Nenhuma dúvida selecionada</h3>
+                        <p style="font-size: 0.85rem; margin-top: 5px; max-width: 300px; line-height: 1.5;">Selecione uma pergunta da lista à esquerda para visualizar e responder.</p>
                     </div>
                 </div>
             </div>
@@ -1364,8 +1425,14 @@
                     activeTab.style.display = 'grid';
                 } else if (activeTabId === 'tab-admins') {
                     activeTab.style.display = 'grid';
+                } else if (activeTabId === 'tab-forum') {
+                    activeTab.style.display = 'grid';
                 } else {
                     activeTab.style.display = 'flex';
+                }
+                
+                if (activeTabId === 'tab-forum') {
+                    loadAdminForum();
                 }
                 
                 refreshDashboard();
@@ -2860,12 +2927,204 @@
                     window.location.reload();
                 }, 5000);
             })
-            .catch(() => {
-                // Fallback em caso de erro imediato na requisição
-                setTimeout(() => {
-                    window.location.reload();
-                }, 5000);
             });
+        });
+
+        // ==========================================
+        // LMS PREMIUM: GESTÃO DO FÓRUM / DÚVIDAS
+        // ==========================================
+        let adminForumComments = [];
+        let selectedCommentId = null;
+
+        function loadAdminForum() {
+            const listContainer = document.getElementById('forum-admin-list');
+            if (!listContainer) return;
+            
+            listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px;">Carregando dúvidas...</div>';
+
+            fetch(`/api/admin/forum/all`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Erro ao buscar dúvidas do fórum.");
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    adminForumComments = data.comments || [];
+                    renderAdminForumList();
+                }
+            })
+            .catch(err => {
+                listContainer.innerHTML = `<div style="text-align: center; color: #f87171; padding: 30px;">${err.message}</div>`;
+            });
+        }
+
+        function renderAdminForumList() {
+            const listContainer = document.getElementById('forum-admin-list');
+            if (!listContainer) return;
+
+            if (adminForumComments.length === 0) {
+                listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px;">Nenhuma dúvida cadastrada no momento.</div>';
+                return;
+            }
+
+            adminForumComments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            listContainer.innerHTML = '';
+            adminForumComments.forEach(comment => {
+                const card = document.createElement('div');
+                card.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: left; display: flex; flex-direction: column; gap: 6px;';
+                
+                if (comment.id === selectedCommentId) {
+                    card.style.borderColor = 'var(--primary)';
+                    card.style.background = 'rgba(239, 68, 68, 0.05)';
+                }
+
+                card.onmouseenter = () => {
+                    if (comment.id !== selectedCommentId) card.style.borderColor = '#475569';
+                };
+                card.onmouseleave = () => {
+                    if (comment.id !== selectedCommentId) card.style.borderColor = 'var(--border)';
+                };
+
+                const dateStr = new Date(comment.timestamp).toLocaleDateString('pt-BR');
+                const moduleName = comment.key.replace('Apostila_', '').replace('_', ' Unidade ');
+                const hasInstructorReply = comment.replies.some(r => r.authorRole === 'Instrutor');
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #60a5fa;">${moduleName}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">${dateStr}</span>
+                    </div>
+                    <strong style="font-size: 0.85rem; color: white;">${comment.studentName}</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">${comment.text}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 4px;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">${comment.replies.length} respostas</span>
+                        ${hasInstructorReply 
+                            ? '<span class="badge-status ok" style="font-size: 0.65rem; padding: 1px 5px;">✅ Respondido</span>' 
+                            : '<span class="badge-status failed" style="font-size: 0.65rem; padding: 1px 5px;">⏳ Pendente</span>'}
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    selectAdminForumComment(comment.id);
+                });
+
+                listContainer.appendChild(card);
+            });
+        }
+
+        function selectAdminForumComment(commentId) {
+            selectedCommentId = commentId;
+            renderAdminForumList();
+
+            const comment = adminForumComments.find(c => c.id === commentId);
+            if (!comment) return;
+
+            document.getElementById('forum-admin-empty-panel').style.display = 'none';
+            const detailPanel = document.getElementById('forum-admin-detail-panel');
+            detailPanel.style.display = 'flex';
+
+            const moduleName = comment.key.replace('Apostila_', '').replace('_', ' Unidade ');
+            document.getElementById('forum-detail-module-badge').textContent = moduleName;
+            
+            const initials = comment.studentName.trim().split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+            document.getElementById('forum-detail-avatar').textContent = initials;
+            document.getElementById('forum-detail-name').textContent = comment.studentName;
+            
+            const dateStr = new Date(comment.timestamp).toLocaleDateString('pt-BR') + ' ' + new Date(comment.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('forum-detail-email-date').textContent = `${comment.studentEmail} • ${dateStr}`;
+            document.getElementById('forum-detail-text').textContent = comment.text;
+
+            const repliesContainer = document.getElementById('forum-detail-replies');
+            repliesContainer.innerHTML = '';
+            
+            if (comment.replies.length === 0) {
+                repliesContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 10px;">Nenhuma resposta enviada ainda.</div>';
+            } else {
+                comment.replies.forEach(reply => {
+                    const isInstructor = reply.authorRole === "Instrutor";
+                    const replyInitials = reply.authorName.trim().split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+                    const replyDateStr = new Date(reply.timestamp).toLocaleDateString('pt-BR') + ' ' + new Date(reply.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+                    const replyCard = document.createElement('div');
+                    replyCard.className = `reply-card ${isInstructor ? 'instructor-reply' : ''}`;
+                    replyCard.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; text-align: left;';
+                    if (isInstructor) {
+                        replyCard.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                        replyCard.style.background = 'rgba(239, 68, 68, 0.03)';
+                    }
+
+                    replyCard.innerHTML = `
+                        <div class="reply-card-header" style="display: flex; align-items: center; gap: 8px;">
+                            <div class="reply-avatar ${isInstructor ? 'instructor' : ''}" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; color: white; background: ${isInstructor ? 'linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%)' : '#475569'};">${replyInitials}</div>
+                            <span class="reply-author-name" style="font-size: 0.8rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 6px;">
+                                ${reply.authorName}
+                                ${isInstructor ? '<span class="reply-badge" style="background: var(--primary); color: white; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; text-transform: uppercase;">Instrutor</span>' : ''}
+                                <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;">${replyDateStr}</span>
+                            </span>
+                        </div>
+                        <div class="reply-text" style="font-size: 0.88rem; color: #cbd5e1;">${reply.text}</div>
+                    `;
+                    repliesContainer.appendChild(replyCard);
+                });
+            }
+        }
+
+        document.getElementById('btn-forum-admin-reply').addEventListener('click', () => {
+            if (!selectedCommentId) return;
+
+            const textarea = document.getElementById('forum-reply-admin-text');
+            const text = textarea.value.trim();
+            if (text === "") {
+                alert("Por favor, digite uma resposta para o aluno!");
+                return;
+            }
+
+            fetch('/api/forum/reply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({
+                    commentId: selectedCommentId,
+                    authorName: 'Alan Marciano',
+                    authorRole: 'Instrutor',
+                    text
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Erro ao enviar resposta.");
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    textarea.value = '';
+                    
+                    fetch(`/api/admin/forum/all`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': adminPassword
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            adminForumComments = data.comments || [];
+                            renderAdminForumList();
+                            selectAdminForumComment(selectedCommentId);
+                        }
+                    });
+                }
+            })
+            .catch(err => alert(err.message));
         });
     </script>
 </body>
