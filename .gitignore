@@ -9,6 +9,7 @@ db_students.json
 db_submissions.json
 db_admins.json
 db_classes.json
+db_notes.json
 config.json
 
 # Arquivos de log e temporários do editor/sistema

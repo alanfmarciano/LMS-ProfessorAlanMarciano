@@ -465,11 +465,11 @@
             
             <div class="input-group" style="margin-bottom: 15px;">
                 <label for="admin-email">E-mail do Administrador</label>
-                <input type="email" id="admin-email" placeholder="admin@senai.br..." value="admin@senai.br">
+                <input type="email" id="admin-email" placeholder="admin@senai.br...">
             </div>
             <div class="input-group">
                 <label for="admin-pass">Senha</label>
-                <input type="password" id="admin-pass" placeholder="Digite a senha..." value="admin">
+                <input type="password" id="admin-pass" placeholder="Digite a senha...">
                 <div id="login-error" style="color: #f87171; font-size: 0.8rem; margin-top: 8px; display: none;">E-mail ou senha incorretos.</div>
             </div>
             
@@ -486,9 +486,11 @@
             </div>
             
             <!-- Badge do Endereço de Rede dos Alunos -->
-            <div id="network-badge" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px 18px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #f87171;">
-                <span style="font-size: 1.1rem;">📢</span>
-                <span>Endereço para os alunos: <a id="network-url" style="color: white; font-family: monospace; font-size: 0.9rem; text-decoration: underline; font-weight: bold;" target="_blank">Carregando...</a></span>
+            <div style="background: var(--primary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+                <div id="network-ips-container" style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 0.85rem; opacity: 0.9;">Endereços de acesso para os alunos:</span>
+                    <span style="font-size: 0.9rem; font-family: monospace; font-weight: bold;">Carregando IPs...</span>
+                </div>
             </div>
 
             <div class="header-actions">
@@ -517,21 +519,8 @@
         <div class="workspace" style="max-width: 1600px; width: 100%; margin: 0 auto; padding: 30px 40px; display: block;">
             
             <!-- ABA 1: MONITOR GERAL -->
-            <div id="tab-dashboard" class="tab-content" style="display: grid; grid-template-columns: 350px 1fr; gap: 30px; width: 100%;">
-                <!-- Sidebar: Select Active Exam -->
-                <div class="control-sidebar">
-                    <div class="card" style="flex: 1; display: flex; flex-direction: column;">
-                        <div class="card-title">
-                            <span>🔓 Prova Ativa no Simulador</span>
-                        </div>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">
-                            Selecione a chave da prova que estará ativa para o Simulador dos alunos. Apenas uma prova pode estar ativa por vez para submissão de notas online.
-                        </p>
-                        <ul class="exam-release-list" id="exam-release-list">
-                            <!-- Injected dynamically by JS -->
-                        </ul>
-                    </div>
-                </div>
+            <div id="tab-dashboard" class="tab-content" style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
+
 
                 <!-- Dashboard Content: Stats & Table -->
                 <div class="dashboard-content" style="display: flex; flex-direction: column; gap: 25px;">
@@ -573,6 +562,7 @@
                                         <th>Acertos</th>
                                         <th>Data / Hora</th>
                                         <th>Status</th>
+                                        <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="submissions-body">
@@ -797,15 +787,27 @@
                     <div style="display: flex; flex-direction: column; gap: 6px;">
                         <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Questões na Prova</label>
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="range" id="modal-question-slider" min="5" max="20" value="20" style="flex: 1; accent-color: var(--primary);">
-                            <span id="modal-question-count-badge" style="font-weight: 700; background: var(--bg-dark); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem;">20</span>
+                            <input type="range" id="modal-question-slider" min="1" max="20" value="20" style="flex: 1; accent-color: var(--primary);">
+                            <span style="font-weight: 700; background: var(--bg-dark); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; white-space: nowrap;"><span id="modal-question-count-badge">20</span> / <span id="modal-question-total-badge">20</span></span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Embaralhamento</label>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: white;">
+                                <input type="checkbox" id="modal-shuffle-questions" checked style="accent-color: var(--primary); transform: scale(1.2);"> Embaralhar Questões
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: white;">
+                                <input type="checkbox" id="modal-shuffle-answers" checked style="accent-color: var(--primary); transform: scale(1.2);"> Embaralhar Respostas
+                            </label>
                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 6px;">
                         <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quantidade de Versões</label>
-                        <input type="number" id="modal-versions-count" min="1" max="5" value="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; font-weight: 700; outline: none;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">Embaralha as questões e alternativas para evitar colas.</span>
+                        <input type="number" id="modal-versions-count" min="1" max="10" value="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; font-weight: 700; outline: none;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Gera versões com códigos únicos (Ex: A4F2).</span>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -892,6 +894,24 @@
                 <div id="student-edit-error" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center; margin-top: 5px;"></div>
                 
                 <button class="btn-submit" id="btn-save-student-edit" style="margin-top: 15px;">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE RAIO-X (VISÃO DETALHADA DA PROVA) -->
+    <div class="modal" id="raiox-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-content" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid var(--border);">
+                <h2 style="font-weight: 800; font-size: 1.25rem;">🔍 Raio-X Detalhado da Prova</h2>
+                <button class="modal-close" id="btn-close-raiox" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div style="padding: 20px 25px; overflow-y: auto;">
+                <div id="raiox-header-info" style="margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px solid var(--border); font-size: 0.9rem;">
+                    <!-- Preenchido via JS -->
+                </div>
+                <div id="raiox-questions-container" style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- Preenchido via JS -->
+                </div>
             </div>
         </div>
     </div>
@@ -990,93 +1010,44 @@
         // Recupera sessão se recarregou
         const savedPass = sessionStorage.getItem('admin_pass');
         if (savedPass) {
-            document.getElementById('admin-pass').value = savedPass;
-            attemptLogin();
+            adminPassword = savedPass;
+            fetch('/api/admin/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': savedPass
+                }
+            })
+            .then(res => {
+                if (res.ok) {
+                    showDashboard();
+                } else {
+                    sessionStorage.removeItem('admin_pass');
+                    adminPassword = '';
+                }
+            })
+            .catch(() => {
+                sessionStorage.removeItem('admin_pass');
+                adminPassword = '';
+            });
         }
 
         function showDashboard() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('admin-app').style.display = 'flex';
             
-            renderExamList();
             renderMaterialsList();
             
             refreshDashboard();
             pollInterval = setInterval(refreshDashboard, 3000);
-        }
 
-        // Renderiza lista de chaves na barra lateral (Aba Monitor Geral)
-        function renderExamList() {
-            const listEl = document.getElementById('exam-release-list');
-            listEl.innerHTML = '';
-
-            allExams.forEach(exam => {
-                const li = document.createElement('li');
-                li.className = 'exam-release-item';
-                li.id = `exam-item-${exam.key}`;
-                li.innerHTML = `
-                    <div class="exam-release-info">
-                        <span class="exam-release-name">${exam.name}</span>
-                        <span class="exam-release-module">${exam.module}</span>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" class="exam-toggle" data-key="${exam.key}" id="toggle-${exam.key}">
-                        <span class="slider"></span>
-                    </label>
-                `;
-                listEl.appendChild(li);
-            });
-
-            document.querySelectorAll('.exam-toggle').forEach(chk => {
-                chk.addEventListener('change', (e) => {
-                    const key = e.target.getAttribute('data-key');
-                    const isChecked = e.target.checked;
-                    
-                    if (isChecked) {
-                        document.querySelectorAll('.exam-toggle').forEach(c => {
-                            if (c.getAttribute('data-key') !== key) {
-                                c.checked = false;
-                                document.getElementById(`exam-item-${c.getAttribute('data-key')}`).classList.remove('active');
-                            }
-                        });
-                        activeExamKey = key;
-                        document.getElementById(`exam-item-${key}`).classList.add('active');
-                    } else {
-                        activeExamKey = null;
-                        document.getElementById(`exam-item-${key}`).classList.remove('active');
-                    }
-                    
-                    sendExamStatus(activeExamKey);
-                });
+            // Recarrega dados ao trocar a turma ativa no dropdown
+            document.getElementById('admin-active-class').addEventListener('change', () => {
+                refreshDashboard();
             });
         }
 
-        // Salva status da prova ativa no servidor por turma
-        function sendExamStatus(key) {
-            const activeClassSel = document.getElementById('admin-active-class');
-            const currentActiveClass = activeClassSel ? activeClassSel.value : '';
-            if (!currentActiveClass) {
-                alert('Selecione uma turma ativa primeiro!');
-                return;
-            }
 
-            fetch('/api/admin/lock-exam', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': adminPassword
-                },
-                body: JSON.stringify({ 
-                    studentClass: currentActiveClass, 
-                    activeExamKey: key 
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                console.log('Status da prova atualizado:', data.activeExamKey);
-            })
-            .catch(err => console.error('Erro ao salvar liberação de prova:', err));
-        }
 
         // Renderiza switches de controle de liberação (Aba Controle de Liberação)
         function renderMaterialsList() {
@@ -1645,25 +1616,10 @@
             .then(config => {
                 activeExamKey = config.activeExamKey;
                 
-                // Exibe o IP do servidor para os alunos
-                const netUrlEl = document.getElementById('network-url');
-                if (netUrlEl && config.serverUrl) {
-                    netUrlEl.textContent = config.serverUrl;
-                    netUrlEl.href = config.serverUrl;
-                }
+                // Sincroniza os switches de liberação de apostilas/provas
 
-                // Sincroniza os switches da barra lateral
-                document.querySelectorAll('.exam-toggle').forEach(chk => {
-                    const key = chk.getAttribute('data-key');
-                    const isActive = (key === activeExamKey);
-                    chk.checked = isActive;
-                    const li = document.getElementById(`exam-item-${key}`);
-                    if (li) {
-                        if (isActive) li.classList.add('active');
-                        else li.classList.remove('active');
-                    }
-                });
                 
+
                 // Sincroniza os switches de liberação de apostilas/provas
                 const releasedItems = config.releasedItems || {};
                 document.querySelectorAll('.material-toggle').forEach(chk => {
@@ -1672,6 +1628,28 @@
                 });
             })
             .catch(e => console.error('Erro ao buscar status do servidor:', e));
+
+            // Busca IPs da rede local
+            fetch('/api/admin/network-info')
+            .then(res => res.json())
+            .then(ips => {
+                const container = document.getElementById('network-ips-container');
+                if (!container || !ips) return;
+                
+                let html = '<span style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 4px; display: block;">Endereços de acesso para os alunos (Celular/Computador):</span>';
+                
+                ips.forEach(ip => {
+                    const isVBox = ip.name.toLowerCase().includes('virtualbox') || ip.address.startsWith('192.168.56.');
+                    if (isVBox) {
+                        html += `<div style="font-family: monospace; font-size: 0.85rem; color: #fca5a5;"><del>http://${ip.address}:3000</del> <span style="font-size: 0.75rem;">(⚠️ Ignorar: Rede VirtualBox)</span></div>`;
+                    } else {
+                        html += `<div style="font-family: monospace; font-size: 1.05rem; font-weight: 800; margin-bottom: 2px;"><a href="http://${ip.address}:3000" target="_blank" style="color: white; text-decoration: underline;">http://${ip.address}:3000</a> <span style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">✅ Recomendado</span></div>`;
+                    }
+                });
+                
+                container.innerHTML = html;
+            })
+            .catch(e => console.error('Erro ao buscar IPs da rede:', e));
 
             // Busca alunos online e cadastrados
             fetch(`/api/admin/students?password=${adminPassword}`)
@@ -1682,7 +1660,8 @@
                     ? students.filter(s => s.studentClass === selectedFilterClass)
                     : students;
                 
-                document.getElementById('stat-students').textContent = filteredStudents.length;
+                const onlineCount = filteredStudents.filter(s => s.isOnline).length;
+                document.getElementById('stat-students').textContent = onlineCount;
                 updateStudentsTable(students);
             })
             .catch(e => console.error('Erro ao buscar alunos:', e));
@@ -1707,8 +1686,10 @@
             }
         }
 
+        let allSubmissionsCache = [];
         // Atualiza a tabela live e as estatísticas
         function updateSubmissionsTable(submissions) {
+            allSubmissionsCache = submissions;
             const tbody = document.getElementById('submissions-body');
             const emptyDiv = document.getElementById('empty-submissions');
             
@@ -1750,6 +1731,12 @@
                                 ${isApproved ? 'Aprovado' : 'Reprovado'}
                             </span>
                         </td>
+                        <td>
+                            <div style="display:flex;gap:8px">
+                                <button onclick="openRaioX('${sub.student.email}', '${sub.examKey}')" style="padding: 4px 8px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #60a5fa; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;" title="Ver Raio-X Detalhado">🔍 Raio-X</button>
+                                <button onclick="deleteSubmission('${sub.student.email}', '${sub.examKey}')" style="padding: 4px 8px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;" title="Permite que o aluno refaça a prova">🗑️ Excluir</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
@@ -1764,6 +1751,128 @@
                 avgEl.className = 'stat-value';
             }
         }
+        
+        window.deleteSubmission = function(studentEmail, examKey) {
+            if (!confirm(`Tem certeza que deseja EXCLUIR esta nota? O aluno poderá refazer a prova.`)) return;
+
+            fetch('/api/admin/submissions/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ studentEmail, examKey })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || 'Submissão excluída.');
+                refreshDashboard();
+            })
+            .catch(err => alert('Erro ao excluir submissão.'));
+        };
+
+        window.openRaioX = function(studentEmail, examKey) {
+            const sub = allSubmissionsCache.find(s => s.student.email === studentEmail && s.examKey === examKey);
+            if (!sub) {
+                alert('Submissão não encontrada.');
+                return;
+            }
+
+            const headerInfo = document.getElementById('raiox-header-info');
+            const questionsContainer = document.getElementById('raiox-questions-container');
+            
+            const isApproved = sub.score >= 60;
+            const evalLabel = sub.examKey.replace('Avaliacao_', '').replace(/_/g, ' ');
+            const date = new Date(sub.timestamp).toLocaleString('pt-BR');
+
+            headerInfo.innerHTML = `
+                <div>
+                    <strong>Aluno:</strong> ${sub.student.name}<br>
+                    <strong>Turma:</strong> ${sub.student.studentClass} • ${sub.student.period}<br>
+                    <strong>Email:</strong> ${sub.student.email}
+                </div>
+                <div style="text-align: right;">
+                    <strong>Avaliação:</strong> ${evalLabel}<br>
+                    <strong>Data/Hora:</strong> ${date}<br>
+                    <strong>Nota:</strong> <span style="color: ${isApproved ? '#4ade80' : '#f87171'}; font-weight: 800; font-size: 1.1rem;">${sub.score}%</span> (${sub.correctCount}/${sub.totalCount})
+                </div>
+            `;
+
+            let html = '';
+            const rawMarkdown = typeof courseData !== 'undefined' ? courseData[examKey] : null;
+            const parsed = rawMarkdown ? parseEvaluation(rawMarkdown) : null;
+
+            if (sub.gradedAnswers && parsed && parsed.questions) {
+                html += '<div style="display: flex; flex-direction: column; gap: 20px;">';
+                sub.gradedAnswers.forEach((ans, idx) => {
+                    const originalQ = parsed.questions.find(q => q.originalNumber === ans.questionNumber);
+                    if (!originalQ) return;
+                    
+                    html += `
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 20px; border-radius: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 10px; color: var(--text-main);">
+                                <span style="display: inline-block; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; text-align: center; line-height: 28px; margin-right: 10px;">${idx + 1}</span>
+                                ${originalQ.text}
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-left: 38px;">
+                    `;
+
+                    originalQ.alternatives.forEach(alt => {
+                        let altStyle = 'padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); display: flex; align-items: flex-start; gap: 10px; color: var(--text-muted);';
+                        const isStudentChoice = ans.studentChoice === alt.displayLetter || ans.studentChoice === alt.letter;
+                        const isCorrectChoice = ans.correctAnswer === alt.displayLetter || ans.correctAnswer === alt.letter;
+
+                        if (isCorrectChoice) {
+                            altStyle = 'padding: 10px; border-radius: 6px; border: 1px solid rgba(74, 222, 128, 0.5); background: rgba(74, 222, 128, 0.1); display: flex; align-items: flex-start; gap: 10px; color: #4ade80; font-weight: 600;';
+                        } else if (isStudentChoice) {
+                            altStyle = 'padding: 10px; border-radius: 6px; border: 1px solid rgba(248, 113, 113, 0.5); background: rgba(248, 113, 113, 0.1); display: flex; align-items: flex-start; gap: 10px; color: #f87171; font-weight: 600;';
+                        }
+
+                        html += `
+                            <div style="${altStyle}">
+                                <span style="font-weight: bold;">${alt.displayLetter || alt.letter})</span>
+                                <span>${alt.text}</span>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            } else {
+                for (let i = 1; i <= sub.totalCount; i++) {
+                    const qNum = String(i);
+                    const studAns = sub.answers ? sub.answers[qNum] : '?';
+                    const correctAns = sub.answerKey ? sub.answerKey[qNum] : '?';
+                    
+                    const isCorrect = studAns === correctAns;
+                    const cardColor = isCorrect ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)';
+                    const borderColor = isCorrect ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.3)';
+
+                    html += `
+                        <div style="background: ${cardColor}; border: 1px solid ${borderColor}; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div>
+                                <strong style="font-size: 1.1rem;">Questão ${qNum}</strong>
+                            </div>
+                            <div style="text-align: right;">
+                                <div>Resposta do Aluno: <strong style="color: ${isCorrect ? '#4ade80' : '#f87171'};">${studAns || 'Nenhuma'}</strong></div>
+                                <div>Gabarito Correto: <strong style="color: #4ade80;">${correctAns || '?'}</strong></div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            questionsContainer.innerHTML = html;
+            document.getElementById('raiox-modal').style.display = 'flex';
+        };
+
+        document.getElementById('btn-close-raiox').addEventListener('click', () => {
+            document.getElementById('raiox-modal').style.display = 'none';
+        });
 
         // Exportador CSV
         document.getElementById('btn-export-csv').addEventListener('click', () => {
@@ -1909,19 +2018,31 @@
             return shuffled;
         }
 
-        function shuffleAlternatives(question) {
-            const shuffledAlts = shuffleArray(question.alternatives);
+        function shuffleAlternatives(question, doShuffle) {
+            let mappedAlts;
             const newLetters = ['A', 'B', 'C', 'D'];
             let correctLetter = '';
 
-            const mappedAlts = shuffledAlts.map((alt, idx) => {
-                const newLetter = newLetters[idx];
-                if (alt.isCorrect) correctLetter = newLetter;
-                return {
-                    ...alt,
-                    displayLetter: newLetter
-                };
-            });
+            if (doShuffle) {
+                const shuffledAlts = shuffleArray(question.alternatives);
+                mappedAlts = shuffledAlts.map((alt, idx) => {
+                    const newLetter = newLetters[idx];
+                    if (alt.isCorrect) correctLetter = newLetter;
+                    return {
+                        ...alt,
+                        displayLetter: newLetter
+                    };
+                });
+            } else {
+                mappedAlts = question.alternatives.map((alt, idx) => {
+                    const newLetter = newLetters[idx];
+                    if (alt.isCorrect) correctLetter = newLetter;
+                    return {
+                        ...alt,
+                        displayLetter: newLetter
+                    };
+                });
+            }
 
             return {
                 ...question,
@@ -1930,20 +2051,24 @@
             };
         }
 
-        function generateExam(allQuestions, count) {
+        function generateExam(allQuestions, count, shuffleQ = true, shuffleA = true) {
             let selected = [...allQuestions];
-            if (count < selected.length) {
-                selected = shuffleArray(selected).slice(0, count);
+            if (shuffleQ) {
+                if (count < selected.length) {
+                    selected = shuffleArray(selected).slice(0, count);
+                }
+                selected = shuffleArray(selected);
+            } else {
+                selected = selected.slice(0, count);
             }
-            selected = shuffleArray(selected);
             
             const answerKey = {};
             const examQuestions = selected.map((q, idx) => {
-                const shuffled = shuffleAlternatives(q);
+                const processed = shuffleAlternatives(q, shuffleA);
                 const newNumber = idx + 1;
-                answerKey[newNumber] = shuffled.correctAnswer;
+                answerKey[newNumber] = processed.correctAnswer;
                 return {
-                    ...shuffled,
+                    ...processed,
                     examNumber: newNumber
                 };
             });
@@ -1982,49 +2107,75 @@
             .then(res => res.json())
             .then(config => {
                 const count = config.activeExamQuestionCount || parsed.totalQuestions;
-                initialCount = Math.min(count, parsed.totalQuestions);
-                setupModal(parsed, initialCount);
+                setupModal(parsed, count);
             })
-            .catch(err => {
-                console.error(err);
+            .catch(() => {
                 setupModal(parsed, initialCount);
             });
         }
-        
+
         function setupModal(parsed, initialCount) {
             const slider = document.getElementById('modal-question-slider');
             slider.max = parsed.totalQuestions;
             slider.value = initialCount;
             document.getElementById('modal-question-count-badge').textContent = initialCount;
+            
+            const totalBadge = document.getElementById('modal-question-total-badge');
+            if (totalBadge) totalBadge.textContent = parsed.totalQuestions;
 
-            const exam = generateExam(parsed.questions, initialCount);
+            const shuffleQEl = document.getElementById('modal-shuffle-questions');
+            const shuffleAEl = document.getElementById('modal-shuffle-answers');
+            if (shuffleQEl) shuffleQEl.checked = true;
+            if (shuffleAEl) shuffleAEl.checked = true;
+
             currentModalExamState = {
                 ...parsed,
-                shuffledQuestions: exam.questions,
-                answerKey: exam.answerKey,
-                questionCount: initialCount
+                questionCount: initialCount,
+                excludedQuestions: new Set()
             };
 
             document.getElementById('modal-exam-title').textContent = parsed.title;
             document.getElementById('modal-exam-theme').textContent = parsed.theme;
 
-            updateModalPreview(false);
+            updateModalPreview(true);
 
             document.getElementById('exam-preview-modal').style.display = 'flex';
         }
         
         function updateModalPreview(regenerate = true) {
+            const shuffleQEl = document.getElementById('modal-shuffle-questions');
+            const shuffleAEl = document.getElementById('modal-shuffle-answers');
+            const doShuffleQ = shuffleQEl ? shuffleQEl.checked : true;
+            const doShuffleA = shuffleAEl ? shuffleAEl.checked : true;
+
+            if (!currentModalExamState.excludedQuestions) {
+                currentModalExamState.excludedQuestions = new Set();
+            }
+
+            const availableQuestions = currentModalExamState.questions.filter(q => !currentModalExamState.excludedQuestions.has(q.originalNumber));
+
             if (regenerate) {
-                const exam = generateExam(currentModalExamState.questions, currentModalExamState.questionCount);
+                const exam = generateExam(availableQuestions, currentModalExamState.questionCount, doShuffleQ, doShuffleA);
                 currentModalExamState.shuffledQuestions = exam.questions;
                 currentModalExamState.answerKey = exam.answerKey;
             }
 
+            const slider = document.getElementById('modal-question-slider');
+            if (slider) {
+                slider.max = availableQuestions.length;
+                if (parseInt(slider.value) > availableQuestions.length) {
+                    slider.value = availableQuestions.length;
+                    currentModalExamState.questionCount = availableQuestions.length;
+                }
+            }
+
             const listEl = document.getElementById('modal-questions-list');
             const badgeEl = document.getElementById('modal-question-count-badge');
-            const count = Math.min(currentModalExamState.questionCount, currentModalExamState.shuffledQuestions.length);
+            const totalBadgeEl = document.getElementById('modal-question-total-badge');
             
+            const count = Math.min(currentModalExamState.questionCount, currentModalExamState.shuffledQuestions.length);
             if (badgeEl) badgeEl.textContent = count;
+            if (totalBadgeEl) totalBadgeEl.textContent = currentModalExamState.questions.length;
 
             if (listEl) {
                 let html = '';
@@ -2032,27 +2183,63 @@
                     if (idx >= count) return;
                     html += `
                         <div class="exam-question-card" style="background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 8px; padding: 15px; position: relative;">
+                            <label style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; color: #f87171;">
+                                <input type="checkbox" checked onchange="toggleExamQuestion(${q.originalNumber}, false)" style="accent-color: #f87171; transform: scale(1.2);"> Remover
+                            </label>
                             <div class="exam-question-number" style="position: absolute; top: 12px; left: 12px; background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">${idx + 1}</div>
-                            <div class="exam-question-body" style="padding-left: 30px;">
-                                <p class="exam-question-text" style="font-weight: 600; margin-bottom: 10px;">${q.text}</p>
+                            <div class="exam-question-body" style="padding-left: 30px; margin-top: 5px;">
+                                <p class="exam-question-text" style="font-weight: 600; margin-bottom: 10px; padding-right: 80px;">${q.text}</p>
                                 <div class="exam-alternatives" style="display: flex; flex-direction: column; gap: 8px;">
                                     ${q.alternatives.map(alt => {
                                         const isCorrect = alt.isCorrect;
-                                        return `
-                                            <div class="exam-alt" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: ${isCorrect ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${isCorrect ? '#22c55e' : 'var(--border)'};">
-                                                <span style="font-weight: 700; color: ${isCorrect ? '#22c55e' : 'var(--text-muted)'}">${alt.displayLetter}</span>
-                                                <span>${alt.text}</span>
-                                                ${isCorrect ? '<span style="margin-left: auto; color: #22c55e; font-weight: bold; font-size: 0.75rem;">CORRETA</span>' : ''}
-                                            </div>
-                                        `;
+                                        return '<div class="exam-alt" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: ' + (isCorrect ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.02)') + '; border: 1px solid ' + (isCorrect ? '#22c55e' : 'var(--border)') + ';">'
+                                            + '<span style="font-weight: 700; color: ' + (isCorrect ? '#22c55e' : 'var(--text-muted)') + '">' + alt.displayLetter + '</span>'
+                                            + '<span>' + alt.text + '</span>'
+                                            + (isCorrect ? '<span style="margin-left: auto; color: #22c55e; font-weight: bold; font-size: 0.75rem;">CORRETA</span>' : '')
+                                            + '</div>';
                                     }).join('')}
                                 </div>
                             </div>
                         </div>
                     `;
                 });
+
+                const excludedQuestions = currentModalExamState.questions.filter(q => currentModalExamState.excludedQuestions.has(q.originalNumber));
+                if (excludedQuestions.length > 0) {
+                    html += `<div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.85rem; font-weight: bold;">Questões Removidas Manualmente (${excludedQuestions.length})</div>`;
+                    excludedQuestions.forEach((q) => {
+                        html += `
+                            <div class="exam-question-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; position: relative; opacity: 0.6;">
+                                <label style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; color: #22c55e;">
+                                    <input type="checkbox" onchange="toggleExamQuestion(${q.originalNumber}, true)" style="accent-color: #22c55e; transform: scale(1.2);"> Adicionar
+                                </label>
+                                <div class="exam-question-body" style="padding-left: 10px; margin-top: 5px;">
+                                    <p class="exam-question-text" style="font-weight: 600; margin-bottom: 10px; padding-right: 80px;">${q.text}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
                 listEl.innerHTML = html;
             }
+        }
+
+        window.toggleExamQuestion = function(originalNumber, include) {
+            if (include) {
+                currentModalExamState.excludedQuestions.delete(originalNumber);
+                currentModalExamState.questionCount++;
+            } else {
+                currentModalExamState.excludedQuestions.add(originalNumber);
+                currentModalExamState.questionCount--;
+            }
+            const slider = document.getElementById('modal-question-slider');
+            if (slider) slider.value = currentModalExamState.questionCount;
+            updateModalPreview(true);
+        };
+
+        function generateUniqueExamCode() {
+            return Math.random().toString(36).substring(2, 6).toUpperCase();
         }
 
         function generateModalExamPDF(isAnswerKey) {
@@ -2060,28 +2247,33 @@
 
             const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
             const versionsInput = document.getElementById('modal-versions-count');
-            const versionsCount = versionsInput ? Math.max(1, Math.min(5, parseInt(versionsInput.value))) : 1;
+            const versionsCount = versionsInput ? Math.max(1, Math.min(10, parseInt(versionsInput.value))) : 1;
             const titleText = isAnswerKey 
                 ? `GABARITO — ${currentModalExamState.title}` 
                 : currentModalExamState.title;
 
             let documentsHTML = '';
-            const versionLabels = ['A', 'B', 'C', 'D', 'E'];
+            const shuffleQEl = document.getElementById('modal-shuffle-questions');
+            const shuffleAEl = document.getElementById('modal-shuffle-answers');
+            const doShuffleQ = shuffleQEl ? shuffleQEl.checked : true;
+            const doShuffleA = shuffleAEl ? shuffleAEl.checked : true;
+
+            const availableQuestions = currentModalExamState.questions.filter(q => !currentModalExamState.excludedQuestions.has(q.originalNumber));
 
             for (let v = 0; v < versionsCount; v++) {
                 let examData;
+                const examCode = generateUniqueExamCode();
                 if (versionsCount === 1) {
                     examData = {
                         questions: currentModalExamState.shuffledQuestions,
                         answerKey: currentModalExamState.answerKey
                     };
                 } else {
-                    examData = generateExam(currentModalExamState.questions, currentModalExamState.questionCount);
+                    examData = generateExam(availableQuestions, currentModalExamState.questionCount, doShuffleQ, doShuffleA);
                 }
 
                 const count = Math.min(currentModalExamState.questionCount, examData.questions.length);
-                const versionLabel = versionLabels[v];
-                const versionTitleText = versionsCount > 1 ? ` (VERSÃO ${versionLabel})` : '';
+                const versionTitleText = ` (CÓDIGO: ${examCode})`;
 
                 let headerHTML = '';
                 if (!isAnswerKey) {
@@ -2117,7 +2309,7 @@
                 if (isAnswerKey) {
                     bubbleSheetHTML = `
                     <div class="print-bubble-sheet">
-                        <div class="print-bubble-sheet-title">🔑 GABARITO DE RESPOSTAS RÁPIDAS - VERSÃO ${versionLabel}</div>
+                        <div class="print-bubble-sheet-title">🔑 GABARITO DE RESPOSTAS RÁPIDAS - CÓDIGO ${examCode}</div>
                         <div class="print-bubble-sheet-grid">
                             ${examData.questions.slice(0, count).map((q, idx) => {
                                 const correctLetter = examData.answerKey[idx + 1];
@@ -2137,7 +2329,7 @@
                 } else {
                     bubbleSheetHTML = `
                     <div class="print-bubble-sheet">
-                        <div class="print-bubble-sheet-title">✏️ CARTÃO RESPOSTA (VERSÃO ${versionLabel}) - PREENCHA COM CANETA AZUL OU PRETA</div>
+                        <div class="print-bubble-sheet-title">✏️ CARTÃO RESPOSTA - CÓDIGO ${examCode} (PREENCHA COM CANETA AZUL OU PRETA)</div>
                         <div class="print-bubble-sheet-grid">
                             ${Array.from({ length: count }).map((_, idx) => `
                                 <div class="print-bubble-row">
@@ -2207,7 +2399,7 @@
                         
                         <div class="pdf-body" style="padding: 25px 40px 10px;">
                             ${bubbleSheetHTML}
-                            ${isAnswerKey ? `<h1>🔑 Gabarito Detalhado — Versão ${versionLabel}</h1>` : ''}
+                            ${isAnswerKey ? `<h1>🔑 Gabarito Detalhado — Versão ${examCode}</h1>` : ''}
                             ${questionsHTML}
                         </div>
                     </div>
@@ -2408,6 +2600,16 @@
             updateModalPreview(true);
         });
 
+        const shuffleQToggle = document.getElementById('modal-shuffle-questions');
+        if (shuffleQToggle) {
+            shuffleQToggle.addEventListener('change', () => updateModalPreview(true));
+        }
+
+        const shuffleAToggle = document.getElementById('modal-shuffle-answers');
+        if (shuffleAToggle) {
+            shuffleAToggle.addEventListener('change', () => updateModalPreview(true));
+        }
+
         document.getElementById('modal-btn-shuffle').addEventListener('click', () => {
             updateModalPreview(true);
         });
@@ -2428,7 +2630,7 @@
                 return;
             }
 
-            fetch('/api/admin/lock-exam', {
+            fetch('/api/admin/exam-config', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2436,13 +2638,14 @@
                 },
                 body: JSON.stringify({
                     studentClass: currentActiveClass,
-                    activeExamKey: currentModalExamKey,
-                    activeExamQuestionCount: currentModalExamState.questionCount
+                    examKey: currentModalExamKey,
+                    questionCount: currentModalExamState.questionCount,
+                    excludedQuestions: Array.from(currentModalExamState.excludedQuestions || [])
                 })
             })
             .then(res => res.json())
             .then(data => {
-                alert(`Prova ${currentModalExamKey} ativada para a turma ${currentActiveClass} com ${currentModalExamState.questionCount} questões!`);
+                alert(`Configurações da prova ${currentModalExamKey} salvas para a turma ${currentActiveClass} com ${currentModalExamState.questionCount} questões!`);
                 document.getElementById('exam-preview-modal').style.display = 'none';
                 refreshDashboard();
             })

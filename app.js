@@ -153,6 +153,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
         
+        const statCompleted = document.getElementById('stat-completed');
+        if (statCompleted) {
+            statCompleted.textContent = Object.keys(completedUnits).length;
+        }
+        
         document.querySelectorAll(".nav-item").forEach(item => {
             const key = item.getAttribute("data-key");
             if (key) {
@@ -595,15 +600,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /** Renderiza a interface de configuração da prova */
-    function renderEvaluationUI(parsedEval, questionCount) {
-        const qCount = Math.max(5, Math.min(questionCount || parsedEval.totalQuestions, parsedEval.totalQuestions));
-        const exam = generateExam(parsedEval.questions, qCount);
+    function renderEvaluationUI(parsedEval, questionCount, excludedQuestions = new Set()) {
+        const availableQuestions = parsedEval.questions.filter(q => !excludedQuestions.has(q.originalNumber));
+        const qCount = Math.max(1, Math.min(questionCount || availableQuestions.length, availableQuestions.length));
+        const exam = generateExam(availableQuestions, qCount);
         
         currentExamState = {
             ...parsedEval,
             shuffledQuestions: exam.questions,
             answerKey: exam.answerKey,
-            questionCount: qCount
+            questionCount: qCount,
+            excludedQuestions: excludedQuestions,
+            availableQuestions: availableQuestions
         };
 
         const html = buildEvaluationHTML(currentExamState);
@@ -612,6 +620,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Attach event listeners
         attachEvaluationListeners();
+        
+        // Renderiza a lista de questões inicial
+        updatePreview(false);
     }
 
     function buildEvaluationHTML(state) {
@@ -687,7 +698,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     });
 
-                    const studentInfo = JSON.parse(localStorage.getItem("student_info") || "{}");
+                    const studentInfo = JSON.parse(sessionStorage.getItem("student_info") || "{}");
 
                     // Tentar submissão online ao servidor local
                     fetch('/api/student/submit', {
@@ -702,7 +713,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         })
                     })
                     .then(res => {
-                        if (!res.ok) throw new Error("Erro na submissão ao servidor.");
+                        if (!res.ok) {
+                            return res.json().then(errData => {
+                                throw new Error(errData.error || "Erro na submissão ao servidor.");
+                            }).catch(() => {
+                                throw new Error("Erro de comunicação com o servidor.");
+                            });
+                        }
                         return res.json();
                     })
                     .then(data => {
@@ -721,6 +738,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         updatePreview(false);
                     })
                     .catch(err => {
+                        const errMsg = err.message || "";
+                        if (errMsg.includes("não está ativa")) {
+                            alert("⚠️ " + errMsg);
+                            return; // Cancela a submissão, não faz correção offline
+                        }
+                        
                         console.warn("Sem conexão com o servidor local. Corrigindo prova localmente offline.", err);
                         isSimulatorSubmitted = true;
                         studentActions.innerHTML = `
@@ -793,7 +816,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updatePreview(regenerate = true) {
         if (regenerate) {
-            const exam = generateExam(currentExamState.questions, currentExamState.questionCount);
+            const exam = generateExam(currentExamState.availableQuestions, currentExamState.questionCount);
             currentExamState.shuffledQuestions = exam.questions;
             currentExamState.answerKey = exam.answerKey;
         }
@@ -1252,7 +1275,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function getStudentClass() {
         try {
-            const info = JSON.parse(localStorage.getItem("student_info") || "{}");
+            const info = JSON.parse(sessionStorage.getItem("student_info") || "{}");
             return info.studentClass || "";
         } catch (e) {
             return "";
@@ -1269,47 +1292,80 @@ document.addEventListener("DOMContentLoaded", () => {
             examLockPoll = null;
         }
 
-        const studentClass = getStudentClass();
+        let studentInfo = {};
+        try {
+            studentInfo = JSON.parse(sessionStorage.getItem("student_info") || "{}");
+        } catch(e) {}
+        
+        const studentClass = studentInfo.studentClass || "";
+        const email = studentInfo.email || "";
 
         // Tenta buscar o status da prova ativada no servidor
-        fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}`)
+        fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}&t=${Date.now()}`)
         .then(res => {
             if (!res.ok) throw new Error("Erro de resposta do servidor");
             return res.json();
         })
         .then(data => {
-            const parsed = parseEvaluation(rawMarkdown);
-            const title = parsed ? parsed.title : "Avaliação";
             const releasedItems = data.releasedItems || {};
-            const activeCount = data.activeExamQuestionCount || 20;
+            const examConfigs = data.examConfigs || {};
+            
+            const configForThisExam = examConfigs[key] || { questionCount: 20, excludedQuestions: [] };
+            const activeCount = configForThisExam.questionCount;
+            const excludedQuestions = new Set(configForThisExam.excludedQuestions);
 
             if (releasedItems[key] === true) {
-                // Liberada! Renderiza a prova
-                if (parsed && parsed.questions.length > 0) {
-                    renderEvaluationUI(parsed, activeCount);
-                } else {
-                    fallbackToMarkdown(rawMarkdown);
-                }
+                // Liberada! Antes de renderizar, checa se o aluno já fez.
+                fetch('/api/student/my-submissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                })
+                .then(r => r.json())
+                .then(subData => {
+                    if (subData.success && subData.submissions) {
+                        const mySub = subData.submissions.find(s => s.examKey === key);
+                        if (mySub) {
+                            renderExamHistoryView(mySub, rawMarkdown);
+                            return;
+                        }
+                    }
+                    
+                    const parsed = parseEvaluation(rawMarkdown);
+                    if (parsed && parsed.questions.length > 0) {
+                        renderEvaluationUI(parsed, activeCount, excludedQuestions);
+                    } else {
+                        fallbackToMarkdown(rawMarkdown);
+                    }
+                })
+                .catch(err => {
+                    console.log("Erro ao verificar histórico:", err);
+                    // Falha no histórico, tenta renderizar normal (pode ser offline local sem notas)
+                    const parsed = parseEvaluation(rawMarkdown);
+                    if (parsed && parsed.questions.length > 0) {
+                        renderEvaluationUI(parsed, activeCount, excludedQuestions);
+                    } else {
+                        fallbackToMarkdown(rawMarkdown);
+                    }
+                });
             } else {
                 // Trancada! Renderiza tela de bloqueio e inicia o polling
+                const parsed = parseEvaluation(rawMarkdown);
+                const title = parsed ? parsed.title : "Avaliação";
                 renderLockedScreen(title, key, rawMarkdown);
 
                 examLockPoll = setInterval(() => {
-                    fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}`)
+                    fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}&t=${Date.now()}`)
                     .then(res => {
                         if (!res.ok) throw new Error("Offline");
                         return res.json();
                     })
                     .then(newData => {
                         const newReleasedItems = newData.releasedItems || {};
-                        const newActiveCount = newData.activeExamQuestionCount || 20;
                         if (newReleasedItems[key] === true) {
                             clearInterval(examLockPoll);
                             examLockPoll = null;
-                            const newParsed = parseEvaluation(rawMarkdown);
-                            if (newParsed && newParsed.questions.length > 0) {
-                                renderEvaluationUI(newParsed, newActiveCount);
-                            }
+                            checkExamAccess(key, rawMarkdown); // Recarrega verificando tudo novamente
                         }
                     })
                     .catch(err => console.log("Erro no polling de status:", err));
@@ -1328,6 +1384,80 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function renderExamHistoryView(submission, rawMarkdown) {
+        const parsed = parseEvaluation(rawMarkdown);
+        const title = parsed ? parsed.title : "Avaliação";
+        const date = new Date(submission.timestamp).toLocaleTimeString('pt-BR') + ' ' + new Date(submission.timestamp).toLocaleDateString('pt-BR');
+        
+        let html = `
+            <div class="exam-header" style="text-align: center; margin-bottom: 30px;">
+                <h1 style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">${title}</h1>
+                <p style="font-size: 1.1rem; color: var(--text-muted);">Você já realizou esta avaliação.</p>
+            </div>
+            
+            <div class="score-card" style="margin-bottom: 40px;">
+                <div class="score-card-title">Resultado da Prova</div>
+                <div class="score-value" style="color: ${submission.score >= 60 ? 'var(--success)' : 'var(--danger)'}">
+                    ${submission.score}%
+                </div>
+                <div style="font-size: 1.2rem; color: var(--text-main); margin-top: 10px; font-weight: 600;">
+                    ${submission.correctCount} acertos de ${submission.totalCount} questões
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">
+                    Prova enviada em: ${date}
+                </div>
+            </div>
+            <hr style="border-top: 1px solid var(--border-color); margin: 30px 0;">
+            <h2 style="font-size: 1.8rem; text-align: center; margin-bottom: 30px; font-weight: 700;">Gabarito Detalhado</h2>
+            <div id="history-questions-list" style="display: flex; flex-direction: column; gap: 20px;">
+        `;
+
+        if (submission.gradedAnswers && parsed) {
+            submission.gradedAnswers.forEach((ans, idx) => {
+                const originalQ = parsed.questions.find(q => q.originalNumber === ans.questionNumber);
+                if (!originalQ) return;
+                
+                html += `
+                    <div class="simulator-question-card" style="opacity: 0.9;">
+                        <div class="exam-question-number">${idx + 1}</div>
+                        <div class="exam-question-body">
+                            <p class="exam-question-text">${originalQ.text}</p>
+                            <div class="exam-alternatives">
+                `;
+
+                originalQ.alternatives.forEach(alt => {
+                    let altClass = 'simulator-alt submitted';
+                    const isStudentChoice = ans.studentChoice === alt.displayLetter;
+                    const isCorrectChoice = ans.correctAnswer === alt.displayLetter;
+
+                    if (isCorrectChoice) {
+                        altClass += ' show-correct';
+                    } else if (isStudentChoice) {
+                        altClass += ' show-wrong';
+                    }
+
+                    html += `
+                        <div class="${altClass}">
+                            <span class="simulator-alt-letter">${alt.displayLetter || alt.letter}</span>
+                            <span class="simulator-alt-text">${alt.text}</span>
+                        </div>
+                    `;
+                });
+
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        html += '</div>';
+        
+        contentViewer.innerHTML = html;
+        contentViewer.scrollTo(0, 0);
+    }
+
     function checkMaterialAccess(key, rawMarkdown, onSuccess) {
         // Limpar polling se houver
         if (examLockPoll) {
@@ -1337,7 +1467,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const studentClass = getStudentClass();
 
-        fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}`)
+        fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}&t=${Date.now()}`)
         .then(res => {
             if (!res.ok) throw new Error("Offline");
             return res.json();
@@ -1352,7 +1482,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 // Inicia polling para liberar automaticamente
                 examLockPoll = setInterval(() => {
-                    fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}`)
+                    fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}&t=${Date.now()}`)
                     .then(res => {
                         if (!res.ok) throw new Error("Offline");
                         return res.json();
@@ -1433,6 +1563,12 @@ document.addEventListener("DOMContentLoaded", () => {
             breadcrumbHistory.push({ key: currentKey, breadcrumb: currentBreadcrumb });
         }
         
+        currentKey = key;
+        
+        const np = document.getElementById('notebook-panel');
+        if (np && np.style.right === '0px') {
+            if (typeof loadCurrentNote === 'function') loadCurrentNote();
+        }
         currentKey = key;
         exportPdfBtn.disabled = false;
 
@@ -1792,7 +1928,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (linkGoLoginFromRecovery) linkGoLoginFromRecovery.addEventListener('click', showLoginPanel);
 
     function checkStudentSession() {
-        const studentInfoStr = localStorage.getItem("student_info");
+        const studentInfoStr = sessionStorage.getItem("student_info");
         if (!studentInfoStr) {
             if (studentOverlay) studentOverlay.style.display = 'flex';
             if (studentProfileCard) studentProfileCard.style.display = 'none';
@@ -1824,7 +1960,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     sidebarLocksPoll = setInterval(syncSidebarLocks, 5000);
                 }
             } catch (e) {
-                localStorage.removeItem("student_info");
+                sessionStorage.removeItem("student_info");
                 if (studentOverlay) studentOverlay.style.display = 'flex';
                 if (studentProfileCard) studentProfileCard.style.display = 'none';
             }
@@ -1854,7 +1990,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return res.json();
             })
             .then(data => {
-                localStorage.setItem("student_info", JSON.stringify({
+                sessionStorage.setItem("student_info", JSON.stringify({
                     name: data.student.name,
                     email: data.student.email,
                     studentClass: data.student.studentClass,
@@ -1913,7 +2049,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 })
                 .then(res => res.json())
                 .then(data => {
-                    localStorage.setItem("student_info", JSON.stringify({
+                    sessionStorage.setItem("student_info", JSON.stringify({
                         name: data.student.name,
                         email: data.student.email,
                         studentClass: data.student.studentClass,
@@ -1979,15 +2115,51 @@ document.addEventListener("DOMContentLoaded", () => {
         btnStudentLogout.addEventListener('click', () => {
             const confirmLogout = confirm("Deseja realmente sair da sua conta de estudante?");
             if (!confirmLogout) return;
-            localStorage.removeItem("student_info");
+            
+            const infoStr = sessionStorage.getItem("student_info");
+            if (infoStr) {
+                try {
+                    const info = JSON.parse(infoStr);
+                    fetch('/api/student/leave', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ email: info.email })
+                    }).catch(()=>{});
+                } catch(e){}
+            }
+            
+            sessionStorage.removeItem("student_info");
             checkStudentSession();
         });
     }
 
+    // Beacon na saída da aba
+    window.addEventListener('beforeunload', () => {
+        const infoStr = sessionStorage.getItem("student_info");
+        if (infoStr) {
+            try {
+                const info = JSON.parse(infoStr);
+                const blob = new Blob([JSON.stringify({ email: info.email })], {type: 'application/json'});
+                navigator.sendBeacon('/api/student/leave', blob);
+            } catch(e){}
+        }
+    });
+
     // Sincronizar Cadeados da Barra Lateral
     function syncSidebarLocks() {
         const studentClass = getStudentClass();
-        fetch(`/api/status?studentClass=${encodeURIComponent(studentClass)}`)
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        let pingUrl = `/api/status?studentClass=${encodeURIComponent(studentClass)}`;
+        if (studentInfoStr) {
+            try {
+                const info = JSON.parse(studentInfoStr);
+                if (info.email) {
+                    fetch(`/api/ping?email=${encodeURIComponent(info.email)}`).catch(()=>{});
+                }
+            } catch(e){}
+        }
+
+        fetch(pingUrl)
         .then(res => {
             if (!res.ok) throw new Error("Offline");
             return res.json();
@@ -2010,6 +2182,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             lockSpan.style.marginLeft = "8px";
                             lockSpan.textContent = "🔒";
                             item.appendChild(lockSpan);
+                        }
+                        
+                        // KICK OUT IMMEDIATELY IF VIEWING LOCKED ITEM
+                        if (typeof currentKey !== 'undefined' && currentKey === key) {
+                            if (typeof renderLockedMaterialScreen === 'function') {
+                                renderLockedMaterialScreen(key);
+                            } else {
+                                window.goHome();
+                            }
+                            // Reset so we don't trigger repeatedly
+                            currentKey = null; 
                         }
                     } else {
                         item.classList.remove("locked");
@@ -2045,5 +2228,100 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inicializa a sessão ao carregar a página
     checkStudentSession();
     loadAvailableClasses();
+
+    // === Student Notebook Logic ===
+    const btnNotebookToggle = document.getElementById('btn-notebook-toggle');
+    const notebookPanel = document.getElementById('notebook-panel');
+    const btnCloseNotebook = document.getElementById('btn-close-notebook');
+    const notebookTextarea = document.getElementById('notebook-textarea');
+    const btnSaveNotebook = document.getElementById('btn-save-notebook');
+    const notebookSaveStatus = document.getElementById('notebook-save-status');
+    const notebookModuleBadge = document.getElementById('notebook-module-badge');
+    
+    let noteSaveTimeout = null;
+
+    if (btnNotebookToggle && notebookPanel) {
+        btnNotebookToggle.addEventListener('click', () => {
+            notebookPanel.style.display = 'flex';
+            setTimeout(() => {
+                notebookPanel.style.right = '0px';
+            }, 10);
+            loadCurrentNote();
+        });
+
+        btnCloseNotebook.addEventListener('click', () => {
+            notebookPanel.style.right = '-400px';
+            setTimeout(() => {
+                notebookPanel.style.display = 'none';
+            }, 300);
+        });
+
+        // Auto-save typing
+        if (notebookTextarea) {
+            notebookTextarea.addEventListener('input', () => {
+                clearTimeout(noteSaveTimeout);
+                if (notebookSaveStatus) notebookSaveStatus.style.opacity = '0';
+                noteSaveTimeout = setTimeout(() => saveCurrentNote(), 1500);
+            });
+        }
+
+        if (btnSaveNotebook) {
+            btnSaveNotebook.addEventListener('click', () => {
+                clearTimeout(noteSaveTimeout);
+                saveCurrentNote();
+            });
+        }
+    }
+
+    window.loadCurrentNote = function() {
+        if (!currentKey) return;
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        
+        const info = JSON.parse(studentInfoStr);
+        if (notebookModuleBadge) notebookModuleBadge.textContent = currentBreadcrumb.split('›').pop().trim();
+        if (notebookTextarea) notebookTextarea.value = 'Carregando...';
+
+        fetch(`/api/student/notes/get?email=${encodeURIComponent(info.email)}&moduleKey=${encodeURIComponent(currentKey)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (notebookTextarea) notebookTextarea.value = data.content || '';
+        })
+        .catch(err => {
+            if (notebookTextarea) notebookTextarea.value = '';
+            console.error('Erro ao carregar anotação:', err);
+        });
+    }
+
+    window.saveCurrentNote = function() {
+        if (!currentKey) return;
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        
+        const info = JSON.parse(studentInfoStr);
+        const content = notebookTextarea ? notebookTextarea.value : '';
+        
+        fetch('/api/student/notes/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: info.email,
+                moduleKey: currentKey,
+                content: content
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                if (notebookSaveStatus) {
+                    notebookSaveStatus.textContent = 'Salvo ✓';
+                    notebookSaveStatus.style.opacity = '1';
+                    setTimeout(() => {
+                        notebookSaveStatus.style.opacity = '0';
+                    }, 2000);
+                }
+            }
+        })
+        .catch(err => console.error('Erro ao salvar anotação:', err));
+    }
 
 });
