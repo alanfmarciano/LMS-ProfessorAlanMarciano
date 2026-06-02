@@ -442,6 +442,114 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #475569;
         }
+
+        /* Network Info Card */
+        .network-info-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 4px solid var(--primary);
+            border-radius: 12px;
+            padding: 10px 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 340px;
+        }
+
+        .network-info-card:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .network-info-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .network-info-pulse {
+            width: 6px;
+            height: 6px;
+            background-color: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse-dot 1.8s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .ip-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .ip-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .ip-link {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        .ip-link:hover {
+            color: var(--primary);
+            border-bottom-style: solid;
+            border-bottom-color: var(--primary);
+        }
+
+        .badge-recommend {
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-ignore {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0.65;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
     </style>
 </head>
 <body>
@@ -486,10 +594,13 @@
             </div>
             
             <!-- Badge do Endereço de Rede dos Alunos -->
-            <div style="background: var(--primary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+            <div class="network-info-card">
+                <div class="network-info-title">
+                    <span class="network-info-pulse"></span>
+                    <span>Acesso dos Alunos (Rede Local)</span>
+                </div>
                 <div id="network-ips-container" style="display: flex; flex-direction: column; gap: 4px;">
-                    <span style="font-size: 0.85rem; opacity: 0.9;">Endereços de acesso para os alunos:</span>
-                    <span style="font-size: 0.9rem; font-family: monospace; font-weight: bold;">Carregando IPs...</span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Carregando IPs...</span>
                 </div>
             </div>
 
@@ -527,9 +638,12 @@
                 <div class="dashboard-content" style="display: flex; flex-direction: column; gap: 25px;">
                     <!-- Stats Summaries -->
                     <div class="stats-summary">
-                        <div class="stat-box">
+                        <div class="stat-box" onclick="showOnlineStudentsModal()" style="cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'" onmouseleave="this.style.transform='none'; this.style.borderColor='var(--border)'">
                             <div class="stat-value" id="stat-students">0</div>
-                            <div class="stat-label">Alunos Online</div>
+                            <div class="stat-label" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <span>Alunos Online</span>
+                                <span style="font-size: 0.7rem; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); padding: 1px 5px; border-radius: 4px; font-weight: 700;">Ver Lista</span>
+                            </div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-value ok" id="stat-submissions">0</div>
@@ -778,9 +892,12 @@
 
                 <!-- Right Column: Responder Dúvida Selecionada -->
                 <div class="card" id="forum-admin-detail-panel" style="flex: 1; display: none; flex-direction: column; gap: 20px; height: 80vh;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                        <span class="card-title" id="forum-detail-title">🔍 Detalhes da Pergunta</span>
-                        <span class="badge-status ok" id="forum-detail-module-badge" style="font-size: 0.75rem; text-transform: uppercase;">Módulo</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="card-title" id="forum-detail-title">🔍 Detalhes da Pergunta</span>
+                            <span class="badge-status ok" id="forum-detail-module-badge" style="font-size: 0.75rem; text-transform: uppercase;">Módulo</span>
+                        </div>
+                        <button id="btn-forum-admin-delete-comment" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">🗑️ Excluir Pergunta</button>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px;">
@@ -823,6 +940,28 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- MODAL DE ALUNOS ONLINE -->
+    <div id="online-students-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-card" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); animation: scaleUp 0.25s ease;">
+            <!-- Cabeçalho do Modal -->
+            <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.3rem;">🟢</span>
+                    <div>
+                        <h3 style="font-weight: 800; color: white; font-size: 1.15rem; margin: 0;">Alunos Online Agora</h3>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Lista de estudantes ativos na plataforma</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('online-students-modal').style.display='none'" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s; outline: none;" onmouseenter="this.style.color='white'" onmouseleave="this.style.color='var(--text-muted)'">✕</button>
+            </div>
+            
+            <!-- Conteúdo / Lista -->
+            <div id="online-students-list" style="padding: 20px 24px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+                <!-- Injetado dinamicamente -->
+            </div>
         </div>
     </div>
 
@@ -869,6 +1008,23 @@
                         <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quantidade de Versões</label>
                         <input type="number" id="modal-versions-count" min="1" max="10" value="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; font-weight: 700; outline: none;">
                         <span style="font-size: 0.75rem; color: var(--text-muted);">Gera versões com códigos únicos (Ex: A4F2).</span>
+                    </div>
+
+                    <!-- Filtro de Questões Inéditas -->
+                    <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: #fbbf24; font-weight: 700;">
+                            <input type="checkbox" id="modal-filter-unused" style="accent-color: #fbbf24; transform: scale(1.3);"> ⚡ Apenas Inéditas
+                        </label>
+                        <span id="modal-unused-count" style="font-size: 0.7rem; color: var(--text-muted);">— de —</span>
+                        <span style="font-size: 0.68rem; color: var(--text-muted);">Exclui automaticamente questões já usadas em provas anteriores.</span>
+                    </div>
+
+                    <!-- Histórico de Provas Geradas -->
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📜 Histórico de Provas</label>
+                        <div id="exam-history-sidebar" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Nenhuma prova registrada.</span>
+                        </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -1025,6 +1181,8 @@
         let selectedFilterClass = '';
         let currentModalExamKey = null;
         let currentModalExamState = null;
+        let examHistoryCache = []; // Histórico de provas geradas para a avaliação atual
+        let filterUnusedOnly = false; // Toggle para filtrar apenas questões inéditas
 
         // Login Handler
         document.getElementById('btn-login').addEventListener('click', attemptLogin);
@@ -1703,14 +1861,26 @@
                 const container = document.getElementById('network-ips-container');
                 if (!container || !ips) return;
                 
-                let html = '<span style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 4px; display: block;">Endereços de acesso para os alunos (Celular/Computador):</span>';
+                if (!ips || ips.length === 0) {
+                    container.innerHTML = '<span style="font-size: 0.85rem; color: var(--text-muted);">Nenhum IP detectado</span>';
+                    return;
+                }
                 
+                let html = '';
                 ips.forEach(ip => {
                     const isVBox = ip.name.toLowerCase().includes('virtualbox') || ip.address.startsWith('192.168.56.');
                     if (isVBox) {
-                        html += `<div style="font-family: monospace; font-size: 0.85rem; color: #fca5a5;"><del>http://${ip.address}:3000</del> <span style="font-size: 0.75rem;">(⚠️ Ignorar: Rede VirtualBox)</span></div>`;
+                        html += `
+                        <div class="ip-item">
+                            <span style="color: var(--text-muted); font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; text-decoration: line-through; opacity: 0.7;">http://${ip.address}:3000</span>
+                            <span class="badge-ignore">⚠️ Ignorar (VirtualBox)</span>
+                        </div>`;
                     } else {
-                        html += `<div style="font-family: monospace; font-size: 1.05rem; font-weight: 800; margin-bottom: 2px;"><a href="http://${ip.address}:3000" target="_blank" style="color: white; text-decoration: underline;">http://${ip.address}:3000</a> <span style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">✅ Recomendado</span></div>`;
+                        html += `
+                        <div class="ip-item">
+                            <a href="http://${ip.address}:3000" target="_blank" class="ip-link">http://${ip.address}:3000</a>
+                            <span class="badge-recommend">✨ Recomendado</span>
+                        </div>`;
                     }
                 });
                 
@@ -2145,6 +2315,7 @@
 
         function openExamPreviewModal(examKey) {
             currentModalExamKey = examKey;
+            filterUnusedOnly = false;
             
             const rawMarkdown = courseData[examKey];
             if (!rawMarkdown) {
@@ -2163,20 +2334,26 @@
             
             let initialCount = parsed.totalQuestions;
             
-            fetch('/api/admin/config', {
+            // Carrega config + histórico de provas em paralelo
+            const configPromise = fetch('/api/admin/config', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': adminPassword
                 },
                 body: JSON.stringify({ studentClass: currentActiveClass })
-            })
-            .then(res => res.json())
-            .then(config => {
+            }).then(r => r.json()).catch(() => ({}));
+
+            const historyPromise = currentActiveClass ? fetch(`/api/admin/exam-history?studentClass=${encodeURIComponent(currentActiveClass)}&examKey=${encodeURIComponent(examKey)}&password=${encodeURIComponent(adminPassword)}`, {
+                headers: { 'Authorization': adminPassword }
+            }).then(r => r.json()).catch(() => ({ history: [] })) : Promise.resolve({ history: [] });
+
+            Promise.all([configPromise, historyPromise]).then(([config, histData]) => {
+                examHistoryCache = (histData && histData.history) || [];
                 const count = config.activeExamQuestionCount || parsed.totalQuestions;
                 setupModal(parsed, count);
-            })
-            .catch(() => {
+            }).catch(() => {
+                examHistoryCache = [];
                 setupModal(parsed, initialCount);
             });
         }
@@ -2195,6 +2372,11 @@
             if (shuffleQEl) shuffleQEl.checked = true;
             if (shuffleAEl) shuffleAEl.checked = true;
 
+            // Reset do filtro "Apenas Inéditas"
+            const filterUnusedEl = document.getElementById('modal-filter-unused');
+            if (filterUnusedEl) filterUnusedEl.checked = false;
+            filterUnusedOnly = false;
+
             currentModalExamState = {
                 ...parsed,
                 questionCount: initialCount,
@@ -2209,6 +2391,20 @@
             document.getElementById('exam-preview-modal').style.display = 'flex';
         }
         
+        // Calcula um mapa de uso: { questionNumber: [{ label, type, date }] }
+        function getQuestionUsageMap() {
+            const usageMap = {};
+            if (!examHistoryCache || examHistoryCache.length === 0) return usageMap;
+            examHistoryCache.forEach((entry, idx) => {
+                const label = entry.label || (entry.type === 'impressa' ? `Impressa #${idx + 1}` : `Online #${idx + 1}`);
+                (entry.questionNumbers || []).forEach(qn => {
+                    if (!usageMap[qn]) usageMap[qn] = [];
+                    usageMap[qn].push({ label, type: entry.type, date: entry.createdAt });
+                });
+            });
+            return usageMap;
+        }
+
         function updateModalPreview(regenerate = true) {
             const shuffleQEl = document.getElementById('modal-shuffle-questions');
             const shuffleAEl = document.getElementById('modal-shuffle-answers');
@@ -2217,6 +2413,16 @@
 
             if (!currentModalExamState.excludedQuestions) {
                 currentModalExamState.excludedQuestions = new Set();
+            }
+
+            // Se o filtro "Apenas Inéditas" está ativo, exclui automaticamente questões já usadas
+            const usageMap = getQuestionUsageMap();
+            if (filterUnusedOnly) {
+                currentModalExamState.questions.forEach(q => {
+                    if (usageMap[q.originalNumber]) {
+                        currentModalExamState.excludedQuestions.add(q.originalNumber);
+                    }
+                });
             }
 
             const availableQuestions = currentModalExamState.questions.filter(q => !currentModalExamState.excludedQuestions.has(q.originalNumber));
@@ -2244,19 +2450,34 @@
             if (badgeEl) badgeEl.textContent = count;
             if (totalBadgeEl) totalBadgeEl.textContent = currentModalExamState.questions.length;
 
+            // Atualiza o contador de inéditas
+            const unusedCount = currentModalExamState.questions.filter(q => !usageMap[q.originalNumber]).length;
+            const unusedBadge = document.getElementById('modal-unused-count');
+            if (unusedBadge) unusedBadge.textContent = `${unusedCount} inéditas de ${currentModalExamState.questions.length}`;
+
+            // Renderiza o histórico na sidebar
+            renderExamHistorySidebar();
+
             if (listEl) {
                 let html = '';
                 currentModalExamState.shuffledQuestions.forEach((q, idx) => {
                     if (idx >= count) return;
+                    const usages = usageMap[q.originalNumber] || [];
+                    const usageBadgeHTML = usages.length > 0 
+                        ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
+                            ${usages.map(u => `<span style="font-size: 0.65rem; font-weight: 700; background: rgba(234, 179, 8, 0.15); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.25); padding: 1px 6px; border-radius: 4px;">⚡ ${u.label}</span>`).join('')}
+                           </div>`
+                        : '';
                     html += `
-                        <div class="exam-question-card" style="background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 8px; padding: 15px; position: relative;">
+                        <div class="exam-question-card" style="background: rgba(0,0,0,0.15); border: 1px solid ${usages.length > 0 ? 'rgba(234, 179, 8, 0.25)' : 'var(--border)'}; border-radius: 8px; padding: 15px; position: relative;">
                             <label style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; color: #f87171;">
                                 <input type="checkbox" checked onchange="toggleExamQuestion(${q.originalNumber}, false)" style="accent-color: #f87171; transform: scale(1.2);"> Remover
                             </label>
                             <div class="exam-question-number" style="position: absolute; top: 12px; left: 12px; background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">${idx + 1}</div>
                             <div class="exam-question-body" style="padding-left: 30px; margin-top: 5px;">
                                 <p class="exam-question-text" style="font-weight: 600; margin-bottom: 10px; padding-right: 80px;">${q.text}</p>
-                                <div class="exam-alternatives" style="display: flex; flex-direction: column; gap: 8px;">
+                                ${usageBadgeHTML}
+                                <div class="exam-alternatives" style="display: flex; flex-direction: column; gap: 8px; margin-top: ${usages.length > 0 ? '8px' : '0'};">
                                     ${q.alternatives.map(alt => {
                                         const isCorrect = alt.isCorrect;
                                         return '<div class="exam-alt" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: ' + (isCorrect ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.02)') + '; border: 1px solid ' + (isCorrect ? '#22c55e' : 'var(--border)') + ';">'
@@ -2275,6 +2496,10 @@
                 if (excludedQuestions.length > 0) {
                     html += `<div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.85rem; font-weight: bold;">Questões Removidas Manualmente (${excludedQuestions.length})</div>`;
                     excludedQuestions.forEach((q) => {
+                        const usages = usageMap[q.originalNumber] || [];
+                        const usageBadgeHTML = usages.length > 0 
+                            ? `<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">${usages.map(u => `<span style="font-size: 0.65rem; font-weight: 700; background: rgba(234, 179, 8, 0.15); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.25); padding: 1px 6px; border-radius: 4px;">⚡ ${u.label}</span>`).join('')}</div>`
+                            : '';
                         html += `
                             <div class="exam-question-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; position: relative; opacity: 0.6;">
                                 <label style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; color: #22c55e;">
@@ -2282,6 +2507,7 @@
                                 </label>
                                 <div class="exam-question-body" style="padding-left: 10px; margin-top: 5px;">
                                     <p class="exam-question-text" style="font-weight: 600; margin-bottom: 10px; padding-right: 80px;">${q.text}</p>
+                                    ${usageBadgeHTML}
                                 </div>
                             </div>
                         `;
@@ -2303,6 +2529,112 @@
             const slider = document.getElementById('modal-question-slider');
             if (slider) slider.value = currentModalExamState.questionCount;
             updateModalPreview(true);
+        };
+
+        // Renderiza a seção de histórico de provas na sidebar do modal
+        function renderExamHistorySidebar() {
+            const container = document.getElementById('exam-history-sidebar');
+            if (!container) return;
+
+            if (!examHistoryCache || examHistoryCache.length === 0) {
+                container.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Nenhuma prova registrada para esta avaliação.</span>';
+                return;
+            }
+
+            let html = '';
+            examHistoryCache.forEach((entry, idx) => {
+                const label = entry.label || (entry.type === 'impressa' ? `Impressa #${idx + 1}` : `Online #${idx + 1}`);
+                const dateStr = entry.createdAt ? new Date(entry.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
+                const typeIcon = entry.type === 'impressa' ? '🖨️' : '💻';
+                const qCount = (entry.questionNumbers || []).length;
+                const qList = (entry.questionNumbers || []).sort((a, b) => a - b).join(', ');
+
+                html += `
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; position: relative;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: white;">${typeIcon} ${label}</span>
+                            <button onclick="deleteExamHistoryEntry('${entry.id}')" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.75rem; padding: 2px 4px; opacity: 0.6; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'" title="Excluir do histórico">🗑️</button>
+                        </div>
+                        <span style="font-size: 0.68rem; color: var(--text-muted);">${dateStr} • ${qCount} questões</span>
+                        <span style="font-size: 0.63rem; color: var(--text-muted); word-break: break-all;" title="Questões: ${qList}">Q: ${qList}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // Registra um snapshot de prova gerada (chamado ao salvar online ou gerar PDF)
+        function registerExamSnapshot(type, labelOverride) {
+            const activeClassSel = document.getElementById('admin-active-class');
+            const currentActiveClass = activeClassSel ? activeClassSel.value : '';
+            if (!currentActiveClass || !currentModalExamKey || !currentModalExamState) return Promise.resolve();
+
+            // Coleta os números das questões incluídas na prova atual
+            const count = Math.min(currentModalExamState.questionCount, currentModalExamState.shuffledQuestions.length);
+            const questionNumbers = currentModalExamState.shuffledQuestions
+                .slice(0, count)
+                .map(q => q.originalNumber);
+
+            if (questionNumbers.length === 0) return Promise.resolve();
+
+            // Gera label automático
+            const existingOfType = examHistoryCache.filter(e => e.type === type).length;
+            const autoLabel = labelOverride || (type === 'impressa' ? `Impressa #${existingOfType + 1}` : `Online #${existingOfType + 1}`);
+
+            return fetch('/api/admin/exam-history/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({
+                    studentClass: currentActiveClass,
+                    examKey: currentModalExamKey,
+                    type: type,
+                    label: autoLabel,
+                    questionNumbers: questionNumbers
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.entry) {
+                    examHistoryCache.push(data.entry);
+                    renderExamHistorySidebar();
+                    updateModalPreview(false); // Atualiza badges sem regenerar
+                }
+            })
+            .catch(err => console.error('Erro ao registrar histórico:', err));
+        }
+
+        // Exclui uma entrada do histórico
+        window.deleteExamHistoryEntry = function(entryId) {
+            const activeClassSel = document.getElementById('admin-active-class');
+            const currentActiveClass = activeClassSel ? activeClassSel.value : '';
+            if (!currentActiveClass || !currentModalExamKey) return;
+
+            if (!confirm('Excluir esta entrada do histórico? As questões voltarão ao status "inédita".')) return;
+
+            fetch('/api/admin/exam-history/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({
+                    studentClass: currentActiveClass,
+                    examKey: currentModalExamKey,
+                    entryId: entryId
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    examHistoryCache = examHistoryCache.filter(e => e.id !== entryId);
+                    renderExamHistorySidebar();
+                    updateModalPreview(false);
+                }
+            })
+            .catch(err => console.error('Erro ao excluir histórico:', err));
         };
 
         function generateUniqueExamCode() {
@@ -2683,10 +3015,41 @@
 
         document.getElementById('modal-btn-print-exam').addEventListener('click', () => {
             generateModalExamPDF(false);
+            // Registra snapshot ao gerar prova impressa
+            registerExamSnapshot('impressa');
         });
 
         document.getElementById('modal-btn-print-answer').addEventListener('click', () => {
             generateModalExamPDF(true);
+        });
+
+        // Toggle "Apenas Inéditas"
+        document.getElementById('modal-filter-unused').addEventListener('change', (e) => {
+            filterUnusedOnly = e.target.checked;
+            if (filterUnusedOnly) {
+                // Quando ativa, exclui todas as já usadas
+                const usageMap = getQuestionUsageMap();
+                currentModalExamState.questions.forEach(q => {
+                    if (usageMap[q.originalNumber]) {
+                        currentModalExamState.excludedQuestions.add(q.originalNumber);
+                    }
+                });
+                // Recalcula questionCount
+                const available = currentModalExamState.questions.filter(q => !currentModalExamState.excludedQuestions.has(q.originalNumber));
+                currentModalExamState.questionCount = available.length;
+            } else {
+                // Quando desativa, remove APENAS as exclusões automáticas (questões usadas)
+                const usageMap = getQuestionUsageMap();
+                currentModalExamState.questions.forEach(q => {
+                    if (usageMap[q.originalNumber]) {
+                        currentModalExamState.excludedQuestions.delete(q.originalNumber);
+                    }
+                });
+                currentModalExamState.questionCount = currentModalExamState.questions.filter(q => !currentModalExamState.excludedQuestions.has(q.originalNumber)).length;
+            }
+            const slider = document.getElementById('modal-question-slider');
+            if (slider) slider.value = currentModalExamState.questionCount;
+            updateModalPreview(true);
         });
 
         document.getElementById('modal-btn-save-config').addEventListener('click', () => {
@@ -2712,9 +3075,12 @@
             })
             .then(res => res.json())
             .then(data => {
-                alert(`Configurações da prova ${currentModalExamKey} salvas para a turma ${currentActiveClass} com ${currentModalExamState.questionCount} questões!`);
-                document.getElementById('exam-preview-modal').style.display = 'none';
-                refreshDashboard();
+                // Registra snapshot ao salvar prova online
+                registerExamSnapshot('online').then(() => {
+                    alert(`Configurações da prova ${currentModalExamKey} salvas para a turma ${currentActiveClass} com ${currentModalExamState.questionCount} questões!`);
+                    document.getElementById('exam-preview-modal').style.display = 'none';
+                    refreshDashboard();
+                });
             })
             .catch(err => {
                 console.error(err);
@@ -3056,7 +3422,16 @@
                     const replyInitials = reply.authorName.trim().split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
                     const replyDateStr = new Date(reply.timestamp).toLocaleDateString('pt-BR') + ' ' + new Date(reply.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
+                    const isOwnReply = isInstructor;
+                    let replyActionsHTML = `
+                        <div style="margin-left: auto; display: flex; gap: 8px;">
+                            ${isOwnReply ? `<button class="btn-reply-action edit" onclick="editAdminReply('${comment.id}', '${reply.id}')" style="background: none; border: none; color: #a7f3d0; font-size: 0.75rem; cursor: pointer; font-weight: bold; padding: 2px 4px;">✏️</button>` : ''}
+                            <button class="btn-reply-action delete" onclick="deleteAdminReply('${comment.id}', '${reply.id}')" style="background: none; border: none; color: #fecaca; font-size: 0.75rem; cursor: pointer; font-weight: bold; padding: 2px 4px;">🗑️</button>
+                        </div>
+                    `;
+
                     const replyCard = document.createElement('div');
+                    replyCard.id = `reply-card-${reply.id}`;
                     replyCard.className = `reply-card ${isInstructor ? 'instructor-reply' : ''}`;
                     replyCard.style.cssText = 'background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; text-align: left;';
                     if (isInstructor) {
@@ -3065,15 +3440,18 @@
                     }
 
                     replyCard.innerHTML = `
-                        <div class="reply-card-header" style="display: flex; align-items: center; gap: 8px;">
-                            <div class="reply-avatar ${isInstructor ? 'instructor' : ''}" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; color: white; background: ${isInstructor ? 'linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%)' : '#475569'};">${replyInitials}</div>
-                            <span class="reply-author-name" style="font-size: 0.8rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 6px;">
-                                ${reply.authorName}
-                                ${isInstructor ? '<span class="reply-badge" style="background: var(--primary); color: white; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; text-transform: uppercase;">Instrutor</span>' : ''}
-                                <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;">${replyDateStr}</span>
-                            </span>
+                        <div class="reply-card-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="reply-avatar ${isInstructor ? 'instructor' : ''}" style="width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; color: white; background: ${isInstructor ? 'linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%)' : '#475569'};">${replyInitials}</div>
+                                <span class="reply-author-name" style="font-size: 0.8rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 6px;">
+                                    ${reply.authorName}
+                                    ${isInstructor ? '<span class="reply-badge" style="background: var(--primary); color: white; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; text-transform: uppercase;">Instrutor</span>' : ''}
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;">${replyDateStr}</span>
+                                </span>
+                            </div>
+                            ${replyActionsHTML}
                         </div>
-                        <div class="reply-text" style="font-size: 0.88rem; color: #cbd5e1;">${reply.text}</div>
+                        <div class="reply-text" style="font-size: 0.88rem; color: #cbd5e1;" data-original-text="${reply.text.replace(/"/g, '&quot;')}">${reply.text}</div>
                     `;
                     repliesContainer.appendChild(replyCard);
                 });
@@ -3100,6 +3478,7 @@
                     commentId: selectedCommentId,
                     authorName: 'Alan Marciano',
                     authorRole: 'Instrutor',
+                    authorEmail: 'admin@senai.br',
                     text
                 })
             })
@@ -3110,6 +3489,32 @@
             .then(data => {
                 if (data.success) {
                     textarea.value = '';
+                    loadAdminForumDataAfterChange(selectedCommentId);
+                }
+            })
+            .catch(err => alert(err.message));
+        });
+
+        document.getElementById('btn-forum-admin-delete-comment').addEventListener('click', () => {
+            if (!selectedCommentId) return;
+            if (!confirm("Deseja realmente excluir esta dúvida e todas as suas respostas? Esta ação é irreversível.")) return;
+
+            fetch("/api/forum/comment/delete", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": adminPassword
+                },
+                body: JSON.stringify({
+                    commentId: selectedCommentId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    selectedCommentId = null;
+                    document.getElementById('forum-admin-detail-panel').style.display = 'none';
+                    document.getElementById('forum-admin-empty-panel').style.display = 'flex';
                     
                     fetch(`/api/admin/forum/all`, {
                         method: 'POST',
@@ -3123,13 +3528,185 @@
                         if (data.success) {
                             adminForumComments = data.comments || [];
                             renderAdminForumList();
-                            selectAdminForumComment(selectedCommentId);
                         }
                     });
+                } else {
+                    alert("Erro ao excluir: " + data.error);
                 }
             })
-            .catch(err => alert(err.message));
+            .catch(err => alert("Erro de conexão: " + err));
         });
+
+        window.editAdminReply = function(commentId, replyId) {
+            const replyCard = document.getElementById(`reply-card-${replyId}`);
+            if (!replyCard) return;
+            const textEl = replyCard.querySelector(".reply-text");
+            if (!textEl) return;
+            const originalText = textEl.getAttribute("data-original-text") || textEl.innerText;
+
+            textEl.style.display = "none";
+
+            let editor = replyCard.querySelector(".inline-editor");
+            if (editor) editor.remove();
+
+            editor = document.createElement("div");
+            editor.className = "inline-editor";
+            editor.innerHTML = `
+                <textarea class="inline-editor-textarea" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; font-family: inherit; margin-top: 5px; resize: none; outline: none; height: 60px;">${originalText}</textarea>
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px;">
+                    <button class="btn-inline-cancel" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">Cancelar</button>
+                    <button class="btn-inline-save" style="background: var(--primary); color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">Salvar</button>
+                </div>
+            `;
+
+            textEl.parentNode.insertBefore(editor, textEl.nextSibling);
+
+            editor.querySelector(".btn-inline-cancel").addEventListener("click", () => {
+                editor.remove();
+                textEl.style.display = "block";
+            });
+
+            editor.querySelector(".btn-inline-save").addEventListener("click", () => {
+                const newText = editor.querySelector(".inline-editor-textarea").value.trim();
+                if (newText === "") {
+                    alert("A resposta não pode ser vazia.");
+                    return;
+                }
+
+                fetch("/api/forum/reply/edit", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": adminPassword
+                    },
+                    body: JSON.stringify({
+                        commentId,
+                        replyId,
+                        text: newText
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        loadAdminForumDataAfterChange(commentId);
+                    } else {
+                        alert("Erro ao editar: " + data.error);
+                    }
+                })
+                .catch(err => alert("Erro de conexão: " + err));
+            });
+        };
+
+        window.deleteAdminReply = function(commentId, replyId) {
+            if (!confirm("Deseja realmente excluir esta resposta?")) {
+                return;
+            }
+
+            fetch("/api/forum/reply/delete", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": adminPassword
+                },
+                body: JSON.stringify({
+                    commentId,
+                    replyId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    loadAdminForumDataAfterChange(commentId);
+                } else {
+                    alert("Erro ao excluir: " + data.error);
+                }
+            })
+            .catch(err => alert("Erro de conexão: " + err));
+        };
+
+        function loadAdminForumDataAfterChange(commentId) {
+            fetch(`/api/admin/forum/all`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    adminForumComments = data.comments || [];
+                    renderAdminForumList();
+                    selectAdminForumComment(commentId);
+                }
+            });
+        }
+
+        window.showOnlineStudentsModal = function() {
+            const modal = document.getElementById('online-students-modal');
+            const listContainer = document.getElementById('online-students-list');
+            if (!modal || !listContainer) return;
+            
+            const onlineStudents = (typeof allStudentsCache !== 'undefined' && allStudentsCache)
+                ? allStudentsCache.filter(s => s.isOnline)
+                : [];
+            
+            if (onlineStudents.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 12px;">📭</span>
+                        <p style="font-weight: 600; color: white;">Nenhum aluno online no momento</p>
+                        <p style="font-size: 0.8rem; margin-top: 4px;">Os alunos aparecem aqui quando fazem login no portal.</p>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                onlineStudents.forEach(student => {
+                    const initials = (student.name || 'Al').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    const colors = [
+                        ['#3b82f6', '#1d4ed8'],
+                        ['#10b981', '#047857'],
+                        ['#8b5cf6', '#6d28d9'],
+                        ['#f59e0b', '#b45309'],
+                        ['#ec4899', '#be185d']
+                    ];
+                    const colorIndex = Math.abs(student.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % colors.length;
+                    const grad = colors[colorIndex];
+                    
+                    let lastAccessStr = 'Sem registro';
+                    if (student.lastAccess) {
+                        try {
+                            const date = new Date(student.lastAccess);
+                            lastAccessStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' - ' + date.toLocaleDateString('pt-BR');
+                        } catch (e) {
+                            lastAccessStr = student.lastAccess;
+                        }
+                    }
+
+                    html += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; transition: background 0.2s;">
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                                <div style="position: relative; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, ${grad[0]} 0%, ${grad[1]} 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; flex-shrink: 0;">
+                                    ${initials}
+                                    <span style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--success); border: 2px solid var(--bg-panel);"></span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; min-width: 0; text-align: left;">
+                                    <span style="font-weight: 700; color: white; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${student.name}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${student.email}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0;">
+                                <span style="font-size: 0.7rem; font-weight: bold; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); padding: 2px 6px; border-radius: 4px;">Turma ${student.studentClass}</span>
+                                <span style="font-size: 0.65rem; color: var(--text-muted);">Acesso: ${lastAccessStr}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                listContainer.innerHTML = html;
+            }
+            
+            modal.style.display = 'flex';
+        };
     </script>
 </body>
 </html>

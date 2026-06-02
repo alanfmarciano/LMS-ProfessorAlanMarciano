@@ -140,6 +140,33 @@ function initDB() {
 }
 initDB();
 
+// Garante IDs e e-mails de autor consistentes no fórum (migração automática)
+if (db.memory && db.memory.forum) {
+    let migrated = false;
+    db.memory.forum.forEach(comment => {
+        if (!comment.id) {
+            comment.id = 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            migrated = true;
+        }
+        if (comment.replies) {
+            comment.replies.forEach((reply, idx) => {
+                if (!reply.id) {
+                    reply.id = 'reply_' + (Date.now() + idx) + '_' + Math.random().toString(36).substr(2, 5);
+                    migrated = true;
+                }
+                if (!reply.authorEmail) {
+                    reply.authorEmail = reply.authorRole === 'Instrutor' ? 'admin@senai.br' : (comment.studentEmail || '');
+                    migrated = true;
+                }
+            });
+        }
+    });
+    if (migrated) {
+        db.save();
+    }
+}
+
+
 // Função para ler dados JSON de forma segura
 // Função para ler dados JSON de forma segura via Memory DB
 function readJSON(file) {
@@ -686,6 +713,87 @@ app.post('/api/admin/release-item', (req, res) => {
     });
 });
 
+// Registrar uma prova gerada no histórico (para rastreamento de questões usadas)
+app.post('/api/admin/exam-history/add', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { studentClass, examKey, type, label, questionNumbers } = req.body;
+        if (!studentClass || !examKey || !questionNumbers || !Array.isArray(questionNumbers) || questionNumbers.length === 0) {
+            return res.status(400).json({ error: 'Dados incompletos para registrar histórico.' });
+        }
+
+        const classes = readJSON(DB_CLASSES_FILE);
+        const cls = classes.find(c => c.name === studentClass);
+        if (!cls) {
+            return res.status(404).json({ error: 'Turma não encontrada.' });
+        }
+
+        if (!cls.examHistory) {
+            cls.examHistory = {};
+        }
+        if (!cls.examHistory[examKey]) {
+            cls.examHistory[examKey] = [];
+        }
+
+        const entry = {
+            id: 'eh_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            type: type || 'online', // 'online' or 'impressa'
+            label: label || null,
+            questionNumbers: questionNumbers.map(Number),
+            createdAt: new Date().toISOString()
+        };
+
+        cls.examHistory[examKey].push(entry);
+        writeJSON(DB_CLASSES_FILE, classes);
+
+        res.json({ success: true, entry });
+    });
+});
+
+// Obter histórico de provas geradas para uma turma e avaliação
+app.get('/api/admin/exam-history', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { studentClass, examKey } = req.query;
+        if (!studentClass || !examKey) {
+            return res.status(400).json({ error: 'Turma ou avaliação não informada.' });
+        }
+
+        const classes = readJSON(DB_CLASSES_FILE);
+        const cls = classes.find(c => c.name === studentClass);
+        if (!cls) {
+            return res.status(404).json({ error: 'Turma não encontrada.' });
+        }
+
+        const history = (cls.examHistory && cls.examHistory[examKey]) || [];
+        res.json({ success: true, history });
+    });
+});
+
+// Excluir uma entrada do histórico de provas geradas
+app.post('/api/admin/exam-history/delete', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { studentClass, examKey, entryId } = req.body;
+        if (!studentClass || !examKey || !entryId) {
+            return res.status(400).json({ error: 'Dados insuficientes para exclusão.' });
+        }
+
+        const classes = readJSON(DB_CLASSES_FILE);
+        const cls = classes.find(c => c.name === studentClass);
+        if (!cls || !cls.examHistory || !cls.examHistory[examKey]) {
+            return res.status(404).json({ error: 'Histórico não encontrado.' });
+        }
+
+        const before = cls.examHistory[examKey].length;
+        cls.examHistory[examKey] = cls.examHistory[examKey].filter(e => e.id !== entryId);
+
+        if (cls.examHistory[examKey].length === before) {
+            return res.status(404).json({ error: 'Entrada não encontrada no histórico.' });
+        }
+
+        writeJSON(DB_CLASSES_FILE, classes);
+        res.json({ success: true });
+    });
+});
+
 // Redefinir senha do aluno
 app.post('/api/admin/reset-password', (req, res) => {
     validateAdmin(req, res, () => {
@@ -1082,7 +1190,7 @@ app.post('/api/forum/comment', (req, res) => {
 });
 
 app.post('/api/forum/reply', (req, res) => {
-    const { commentId, authorName, authorRole, text } = req.body;
+    const { commentId, authorName, authorRole, authorEmail, text } = req.body;
     if (!commentId || !authorName || !authorRole || !text || text.trim() === '') {
         return res.status(400).json({ error: 'Campos obrigatórios não preenchidos' });
     }
@@ -1092,9 +1200,16 @@ app.post('/api/forum/reply', (req, res) => {
         return res.status(404).json({ error: 'Comentário original não encontrado' });
     }
     
+    let resolvedEmail = authorEmail ? authorEmail.trim().toLowerCase() : '';
+    if (!resolvedEmail && authorRole === 'Instrutor') {
+        resolvedEmail = 'admin@senai.br';
+    }
+    
     const newReply = {
+        id: 'reply_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
         authorName,
         authorRole,
+        authorEmail: resolvedEmail,
         text: text.trim(),
         timestamp: new Date().toISOString()
     };
@@ -1102,6 +1217,166 @@ app.post('/api/forum/reply', (req, res) => {
     comment.replies.push(newReply);
     db.save();
     res.json({ success: true, reply: newReply });
+});
+
+app.post('/api/forum/comment/edit', (req, res) => {
+    const { commentId, email, text } = req.body;
+    if (!commentId || !text || text.trim() === '') {
+        return res.status(400).json({ error: 'Dados incompletos.' });
+    }
+
+    let isAdmin = false;
+    const authHeader = req.headers.authorization || req.body.password || req.query.password;
+    if (authHeader) {
+        let adminEmail = 'admin@senai.br';
+        let adminPass = authHeader.trim();
+        if (authHeader.includes(':')) {
+            const parts = authHeader.split(':');
+            adminEmail = parts[0].trim().toLowerCase();
+            adminPass = parts.slice(1).join(':').trim();
+        }
+        const admins = readJSON(DB_ADMINS_FILE);
+        if (admins.find(a => a.email && a.email.toLowerCase() === adminEmail && a.password === adminPass)) {
+            isAdmin = true;
+        }
+    }
+
+    const comment = db.memory.forum.find(c => c.id === commentId);
+    if (!comment) {
+        return res.status(404).json({ error: 'Comentário não encontrado.' });
+    }
+
+    if (!isAdmin && (!email || comment.studentEmail.toLowerCase() !== email.trim().toLowerCase())) {
+        return res.status(403).json({ error: 'Não autorizado a editar este comentário.' });
+    }
+
+    comment.text = text.trim();
+    db.save();
+    res.json({ success: true, comment });
+});
+
+app.post('/api/forum/comment/delete', (req, res) => {
+    const { commentId, email } = req.body;
+    if (!commentId) {
+        return res.status(400).json({ error: 'Falta o ID do comentário.' });
+    }
+
+    let isAdmin = false;
+    const authHeader = req.headers.authorization || req.body.password || req.query.password;
+    if (authHeader) {
+        let adminEmail = 'admin@senai.br';
+        let adminPass = authHeader.trim();
+        if (authHeader.includes(':')) {
+            const parts = authHeader.split(':');
+            adminEmail = parts[0].trim().toLowerCase();
+            adminPass = parts.slice(1).join(':').trim();
+        }
+        const admins = readJSON(DB_ADMINS_FILE);
+        if (admins.find(a => a.email && a.email.toLowerCase() === adminEmail && a.password === adminPass)) {
+            isAdmin = true;
+        }
+    }
+
+    const commentIndex = db.memory.forum.findIndex(c => c.id === commentId);
+    if (commentIndex === -1) {
+        return res.status(404).json({ error: 'Comentário não encontrado.' });
+    }
+
+    const comment = db.memory.forum[commentIndex];
+
+    if (!isAdmin && (!email || comment.studentEmail.toLowerCase() !== email.trim().toLowerCase())) {
+        return res.status(403).json({ error: 'Não autorizado a excluir este comentário.' });
+    }
+
+    db.memory.forum.splice(commentIndex, 1);
+    db.save();
+    res.json({ success: true });
+});
+
+app.post('/api/forum/reply/edit', (req, res) => {
+    const { commentId, replyId, email, text } = req.body;
+    if (!commentId || !replyId || !text || text.trim() === '') {
+        return res.status(400).json({ error: 'Dados incompletos.' });
+    }
+
+    let isAdmin = false;
+    const authHeader = req.headers.authorization || req.body.password || req.query.password;
+    if (authHeader) {
+        let adminEmail = 'admin@senai.br';
+        let adminPass = authHeader.trim();
+        if (authHeader.includes(':')) {
+            const parts = authHeader.split(':');
+            adminEmail = parts[0].trim().toLowerCase();
+            adminPass = parts.slice(1).join(':').trim();
+        }
+        const admins = readJSON(DB_ADMINS_FILE);
+        if (admins.find(a => a.email && a.email.toLowerCase() === adminEmail && a.password === adminPass)) {
+            isAdmin = true;
+        }
+    }
+
+    const comment = db.memory.forum.find(c => c.id === commentId);
+    if (!comment) {
+        return res.status(404).json({ error: 'Comentário não encontrado.' });
+    }
+
+    const reply = comment.replies.find(r => r.id === replyId);
+    if (!reply) {
+        return res.status(404).json({ error: 'Resposta não encontrada.' });
+    }
+
+    const isCreator = email && reply.authorEmail && reply.authorEmail.toLowerCase() === email.trim().toLowerCase();
+    if (!isAdmin && !isCreator) {
+        return res.status(403).json({ error: 'Não autorizado a editar esta resposta.' });
+    }
+
+    reply.text = text.trim();
+    db.save();
+    res.json({ success: true, reply });
+});
+
+app.post('/api/forum/reply/delete', (req, res) => {
+    const { commentId, replyId, email } = req.body;
+    if (!commentId || !replyId) {
+        return res.status(400).json({ error: 'Dados incompletos.' });
+    }
+
+    let isAdmin = false;
+    const authHeader = req.headers.authorization || req.body.password || req.query.password;
+    if (authHeader) {
+        let adminEmail = 'admin@senai.br';
+        let adminPass = authHeader.trim();
+        if (authHeader.includes(':')) {
+            const parts = authHeader.split(':');
+            adminEmail = parts[0].trim().toLowerCase();
+            adminPass = parts.slice(1).join(':').trim();
+        }
+        const admins = readJSON(DB_ADMINS_FILE);
+        if (admins.find(a => a.email && a.email.toLowerCase() === adminEmail && a.password === adminPass)) {
+            isAdmin = true;
+        }
+    }
+
+    const comment = db.memory.forum.find(c => c.id === commentId);
+    if (!comment) {
+        return res.status(404).json({ error: 'Comentário não encontrado.' });
+    }
+
+    const replyIndex = comment.replies.findIndex(r => r.id === replyId);
+    if (replyIndex === -1) {
+        return res.status(404).json({ error: 'Resposta não encontrada.' });
+    }
+
+    const reply = comment.replies[replyIndex];
+    const isCreator = email && reply.authorEmail && reply.authorEmail.toLowerCase() === email.trim().toLowerCase();
+
+    if (!isAdmin && !isCreator) {
+        return res.status(403).json({ error: 'Não autorizado a excluir esta resposta.' });
+    }
+
+    comment.replies.splice(replyIndex, 1);
+    db.save();
+    res.json({ success: true });
 });
 
 app.post('/api/admin/forum/all', (req, res) => {

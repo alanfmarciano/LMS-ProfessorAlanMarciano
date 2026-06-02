@@ -41,6 +41,19 @@
                 <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões...">
             </div>
 
+            <!-- Card do Aluno (Mapeado do Footer para o Topo) -->
+            <div class="instructor-card" id="student-profile-card" style="display: none; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin: 10px 15px 15px 15px; align-items: center; gap: 10px;">
+                <div class="instructor-avatar" id="student-avatar" style="background: var(--primary); font-size: 13px; font-weight: 800; width: 34px; height: 34px;">
+                    AL
+                </div>
+                <div class="instructor-info" style="display: flex; flex-direction: column;">
+                    <span class="instructor-name" id="student-profile-name" style="font-size: 0.8rem; font-weight: 700;">Aluno</span>
+                    <span class="instructor-role" id="student-profile-class" style="font-size: 0.7rem; color: var(--text-muted);">Turma</span>
+                </div>
+                <button id="btn-student-logout" title="Sair da conta" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 1rem; margin-left: auto;">🚪</button>
+            </div>
+
+
             <div class="nav-section">
                 <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
                     <span>FUTEC — Fund. de TI (80h)</span>
@@ -74,30 +87,8 @@
                 </ul>
             </div>
 
-            <!-- Card do Aluno e Instrutor (Rodapé da Sidebar) -->
+            <!-- Rodapé da Sidebar -->
             <div class="sidebar-footer">
-                <div class="instructor-card" id="student-profile-card" style="display: none; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 12px; align-items: center; gap: 10px;">
-                    <div class="instructor-avatar" id="student-avatar" style="background: var(--primary); font-size: 13px; font-weight: 800; width: 34px; height: 34px;">
-                        AL
-                    </div>
-                    <div class="instructor-info" style="display: flex; flex-direction: column;">
-                        <span class="instructor-name" id="student-profile-name" style="font-size: 0.8rem; font-weight: 700;">Aluno</span>
-                        <span class="instructor-role" id="student-profile-class" style="font-size: 0.7rem; color: var(--text-muted);">Turma</span>
-                    </div>
-                    <button id="btn-student-logout" title="Sair da conta" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 1rem; margin-left: auto;">🚪</button>
-                </div>
-
-                <div class="instructor-card">
-                    <div class="instructor-avatar">
-                        AM
-                        <span class="online-dot"></span>
-                    </div>
-                    <div class="instructor-info">
-                        <span class="instructor-name">Alan Marciano</span>
-                        <span class="instructor-role">Gestor em T.I. • SENAI</span>
-                        <span class="instructor-badge">👨‍🏫 Instrutor</span>
-                    </div>
-                </div>
                 <div class="sidebar-version">SENAI 4.0 • Portal do Aluno • v2.0 · <span id="diagnostico-link" style="text-decoration: underline; cursor: pointer; color: var(--primary);">🩺 Validador</span></div>
             </div>
         </nav>
@@ -122,9 +113,8 @@
 
             <div id="content-viewer" class="markdown-body">
                 <!-- Welcome Screen -->
-                <div class="welcome-screen">
-                    <img src="banner.png" alt="SENAI 4.0 Banner Futurista" class="welcome-banner">
-                    <h2>Bem-vindo ao Treinamento <span class="highlight">SENAI 4.0</span></h2>
+                <div class="welcome-screen" style="padding-top: 10px;">
+                    <h2 id="welcome-greeting" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 8px;">Olá, Estudante! 👋</h2>
                     <p>Selecione uma Unidade ou Avaliação no menu lateral para iniciar seu aprendizado.</p>
                     
                     <!-- Painel de Progresso Visual Premium -->
@@ -187,6 +177,15 @@
                             <p>Itens Concluídos</p>
                         </div>
                     </div>
+
+                    <!-- Histórico de Provas Respondidas (LMS Premium) -->
+                    <div class="completed-exams-section" id="student-completed-exams-container" style="display: none; margin-top: 40px; text-align: left; width: 100%;">
+                        <h3 style="color: white; font-weight: 800; font-size: 1.35rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">🎯 Minhas Avaliações Realizadas</h3>
+                        <div id="completed-exams-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                            <!-- Injetado dinamicamente via JS -->
+                        </div>
+                    </div>
+
 
                     <!-- Índice do Curso -->
                     <div class="curriculum-index">

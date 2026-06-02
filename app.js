@@ -134,9 +134,19 @@ document.addEventListener("DOMContentLoaded", () => {
             
             keys.forEach(k => {
                 if (typeof courseData !== 'undefined' && courseData[k]) {
-                    totalAvailable++;
-                    if (completedUnits[k]) {
-                        completedCount++;
+                    // Estima o número de tópicos contando as tags <h2> (## em markdown)
+                    let numTopics = (courseData[k].match(/^## /gm) || []).length;
+                    if (numTopics === 0) numTopics = 1;
+
+                    totalAvailable += numTopics;
+
+                    const status = completedUnits[k];
+                    if (status === true) {
+                        // Legado: já havia concluído a apostila toda
+                        completedCount += numTopics;
+                    } else if (Array.isArray(status)) {
+                        // Novo modelo: conta quantos tópicos foram concluídos
+                        completedCount += Math.min(status.length, numTopics);
                     }
                 }
             });
@@ -170,19 +180,38 @@ document.addEventListener("DOMContentLoaded", () => {
         const ircomBar = document.getElementById('progress-bar-ircom');
         const ircomVal = document.getElementById('progress-val-ircom');
 
-        let futecDone = 0, fecopDone = 0, ircomDone = 0;
-        for (let i = 1; i <= 5; i++) {
-            if (completedUnits[`Apostila_FUTEC_${i}`]) futecDone++;
-            if (completedUnits[`Apostila_FECOP_${i}`]) fecopDone++;
-            if (completedUnits[`Apostila_IRCOM_${i}`]) ircomDone++;
+        let futecDone = 0, futecTotal = 0;
+        let fecopDone = 0, fecopTotal = 0;
+        let ircomDone = 0, ircomTotal = 0;
+
+        function getModuleStats(modPrefix) {
+            let done = 0, total = 0;
+            for (let i = 1; i <= 5; i++) {
+                const k = `Apostila_${modPrefix}_${i}`;
+                if (courseData && courseData[k]) {
+                    let numTopics = (courseData[k].match(/^## /gm) || []).length;
+                    if (numTopics === 0) numTopics = 1;
+                    total += numTopics;
+
+                    const status = completedUnits[k];
+                    if (status === true) done += numTopics;
+                    else if (Array.isArray(status)) done += Math.min(status.length, numTopics);
+                }
+            }
+            return { done, total };
         }
+
+        const statsFutec = getModuleStats('FUTEC');
+        const statsFecop = getModuleStats('FECOP');
+        const statsIrcom = getModuleStats('IRCOM');
+
+        const futecPct = statsFutec.total > 0 ? Math.round((statsFutec.done / statsFutec.total) * 100) : 0;
+        const fecopPct = statsFecop.total > 0 ? Math.round((statsFecop.done / statsFecop.total) * 100) : 0;
+        const ircomPct = statsIrcom.total > 0 ? Math.round((statsIrcom.done / statsIrcom.total) * 100) : 0;
         
-        const futecPct = Math.round((futecDone / 5) * 100);
-        const fecopPct = Math.round((fecopDone / 5) * 100);
-        const ircomPct = Math.round((ircomDone / 5) * 100);
-        
-        const totalDone = futecDone + fecopDone + ircomDone;
-        const totalPct = Math.round((totalDone / 15) * 100);
+        const totalDone = statsFutec.done + statsFecop.done + statsIrcom.done;
+        const totalAvail = statsFutec.total + statsFecop.total + statsIrcom.total;
+        const totalPct = totalAvail > 0 ? Math.round((totalDone / totalAvail) * 100) : 0;
 
         if (totalStatusText) totalStatusText.textContent = `${totalDone} de 15 Concluídos`;
         if (radText) radText.textContent = `${totalPct}%`;
@@ -212,6 +241,102 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    function loadStudentSubmissionsDashboard() {
+        const container = document.getElementById("student-completed-exams-container");
+        const listEl = document.getElementById("completed-exams-list");
+        if (!container || !listEl) return;
+
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) {
+            container.style.display = "none";
+            return;
+        }
+
+        const info = JSON.parse(studentInfoStr);
+        fetch('/api/student/my-submissions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: info.email })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.submissions && data.submissions.length > 0) {
+                container.style.display = "block";
+                listEl.innerHTML = "";
+                
+                // Ordenar do mais recente para o mais antigo
+                data.submissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                data.submissions.forEach(sub => {
+                    const card = document.createElement("div");
+                    card.className = "stat-card completed-exam-card";
+                    card.style.cssText = "padding: 24px; display: flex; flex-direction: column; gap: 12px; text-align: left; position: relative;";
+                    
+                    const date = new Date(sub.timestamp).toLocaleDateString('pt-BR') + ' às ' + new Date(sub.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    const moduleName = sub.examKey.replace('Avaliacao_', '').replace('_', ' Unidade ');
+                    
+                    const isApproved = sub.score >= 60;
+                    const badgeClass = isApproved ? 'approved-badge' : 'recovery-badge';
+                    const badgeText = isApproved ? 'Aprovado' : 'Recuperação';
+                    
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">${moduleName}</span>
+                            <span class="exam-status-badge ${badgeClass}" style="font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px;">${badgeText}</span>
+                        </div>
+                        <h4 style="font-size: 1.8rem; font-weight: 800; color: white; margin: 5px 0 0 0;">${sub.score}%</h4>
+                        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                            🎯 ${sub.correctCount} de ${sub.totalCount} acertos
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                            📅 ${date}
+                        </div>
+                        <button class="btn-view-exam-history" style="width: 100%; margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">🔍 Ver Gabarito Detalhado</button>
+                    `;
+                    
+                    card.querySelector(".btn-view-exam-history").addEventListener("click", () => {
+                        const rawMarkdown = courseData[sub.examKey];
+                        if (rawMarkdown) {
+                            const moduleNavName = sub.examKey.includes('FUTEC') ? 'FUTEC' : (sub.examKey.includes('FECOP') ? 'FECOP' : 'IRCOM');
+                            const unitNum = sub.examKey.charAt(sub.examKey.length - 1);
+                            const breadcrumbText = `${moduleNavName} > Unidade ${unitNum} > Avaliação`;
+                            
+                            breadcrumb.innerHTML = formatBreadcrumb(breadcrumbText);
+                            currentBreadcrumb = breadcrumbText;
+                            currentKey = sub.examKey;
+                            
+                            document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+                            const matchedNavItem = document.querySelector(`.nav-item[data-key="${sub.examKey}"]`);
+                            if (matchedNavItem) matchedNavItem.classList.add("active");
+                            
+                            renderExamHistoryView(sub, rawMarkdown);
+                        } else {
+                            alert("Não foi possível carregar o conteúdo original desta prova.");
+                        }
+                    });
+                    
+                    listEl.appendChild(card);
+                });
+            } else {
+                if (studentInfoStr) {
+                    container.style.display = "block";
+                    listEl.innerHTML = `
+                        <div style="grid-column: 1 / -1; background: var(--bg-card); border: 1px dashed var(--border); padding: 30px; border-radius: 16px; text-align: center; color: var(--text-muted);">
+                            <span style="font-size: 2rem; display: block; margin-bottom: 10px;">🎯</span>
+                            Nenhuma avaliação realizada ainda. Suas provas e notas aparecerão aqui quando você responder as avaliações liberadas.
+                        </div>
+                    `;
+                } else {
+                    container.style.display = "none";
+                }
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao carregar histórico de provas:", err);
+        });
+    }
+
 
     // Realce de Busca
     function highlightText(container, term) {
@@ -779,6 +904,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             online: true
                         };
                         updatePreview(false);
+                        loadStudentSubmissionsDashboard();
                     })
                     .catch(err => {
                         const errMsg = err.message || "";
@@ -1639,39 +1765,69 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Carregar anotações
                     loadParagraphAnnotations(key);
 
-                    const isCompleted = completedUnits[key] || false;
-                    const confirmationBox = document.createElement("div");
-                    confirmationBox.className = `read-confirmation-box ${isCompleted ? 'completed' : ''}`;
-                    confirmationBox.innerHTML = `
-                        <button id="btn-toggle-read" class="btn-toggle-read">
-                            <span class="read-icon">${isCompleted ? '✅' : '⬜'}</span>
-                            ${isCompleted ? 'Concluído! Desmarcar' : 'Marcar como Lido'}
-                        </button>
-                    `;
-                    contentViewer.appendChild(confirmationBox);
-                    
-                    const btnToggleRead = confirmationBox.querySelector("#btn-toggle-read");
-                    if (btnToggleRead) {
-                        btnToggleRead.addEventListener("click", () => {
-                            const currentStatus = completedUnits[key] || false;
-                            const newStatus = !currentStatus;
-                            
-                            if (newStatus) {
-                                completedUnits[key] = true;
-                            } else {
-                                delete completedUnits[key];
-                            }
-                            
-                            localStorage.setItem("completed_units", JSON.stringify(completedUnits));
-                            updateProgressBadges();
-                            
-                            // Atualizar visual da caixa
-                            confirmationBox.className = `read-confirmation-box ${newStatus ? 'completed' : ''}`;
-                            btnToggleRead.innerHTML = `
-                                <span class="read-icon">${newStatus ? '✅' : '⬜'}</span>
-                                ${newStatus ? 'Concluído! Desmarcar' : 'Marcar como Lido'}
-                            `;
-                        });
+                    // Migração de estado legado para array
+                    if (completedUnits[key] === true) {
+                        const numTopics = Math.max(1, (rawMarkdown.match(/^## /gm) || []).length);
+                        completedUnits[key] = Array.from({length: numTopics}, (_, i) => i + 1);
+                        localStorage.setItem("completed_units", JSON.stringify(completedUnits));
+                    }
+                    if (!completedUnits[key]) {
+                        completedUnits[key] = [];
+                    }
+
+                    const completedTopics = completedUnits[key];
+                    const h2Tags = Array.from(contentViewer.querySelectorAll("h2"));
+
+                    function createTopicBox(topicId, targetEl, position) {
+                        const isCompleted = completedTopics.includes(topicId);
+                        const confirmationBox = document.createElement("div");
+                        confirmationBox.className = `topic-confirmation-box ${isCompleted ? 'completed' : ''}`;
+                        confirmationBox.innerHTML = `
+                            <button class="btn-toggle-topic" data-topic="${topicId}">
+                                <span class="read-icon">${isCompleted ? '✅' : '⬜'}</span>
+                                ${isCompleted ? 'Tópico Concluído! Desmarcar' : 'Marcar Tópico como Lido'}
+                            </button>
+                        `;
+                        
+                        if (position === 'beforeend') {
+                            targetEl.appendChild(confirmationBox);
+                        } else if (position === 'beforebegin') {
+                            targetEl.parentNode.insertBefore(confirmationBox, targetEl);
+                        }
+                        
+                        const btnToggleTopic = confirmationBox.querySelector(".btn-toggle-topic");
+                        if (btnToggleTopic) {
+                            btnToggleTopic.addEventListener("click", () => {
+                                const tId = parseInt(btnToggleTopic.getAttribute('data-topic'));
+                                const index = completedUnits[key].indexOf(tId);
+                                
+                                if (index > -1) {
+                                    completedUnits[key].splice(index, 1);
+                                    confirmationBox.classList.remove('completed');
+                                    btnToggleTopic.innerHTML = `<span class="read-icon">⬜</span> Marcar Tópico como Lido`;
+                                } else {
+                                    completedUnits[key].push(tId);
+                                    confirmationBox.classList.add('completed');
+                                    btnToggleTopic.innerHTML = `<span class="read-icon">✅</span> Tópico Concluído! Desmarcar`;
+                                }
+                                
+                                localStorage.setItem("completed_units", JSON.stringify(completedUnits));
+                                updateProgressBadges();
+                            });
+                        }
+                    }
+
+                    if (h2Tags.length > 0) {
+                        // Se houver h2, insere antes de cada h2 (a partir do segundo)
+                        // O primeiro h2 geralmente é o primeiro subtítulo, então o box 1 vai antes do segundo h2.
+                        for (let i = 1; i < h2Tags.length; i++) {
+                            createTopicBox(i, h2Tags[i], 'beforebegin');
+                        }
+                        // O último box vai no final do documento
+                        createTopicBox(h2Tags.length, contentViewer, 'beforeend');
+                    } else {
+                        // Se não houver h2, apenas um box no final
+                        createTopicBox(1, contentViewer, 'beforeend');
                     }
 
                     // Fórum integrado no fim
@@ -2008,6 +2164,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         ? (names[0][0] + names[names.length - 1][0]).toUpperCase()
                         : names[0].substring(0, 2).toUpperCase();
                     studentAvatar.textContent = initials;
+                    
+                    const welcomeGreeting = document.getElementById('welcome-greeting');
+                    if (welcomeGreeting) {
+                        welcomeGreeting.innerHTML = `Olá, ${names[0]}! 👋`;
+                    }
                 }
 
                 // Inicia sincronização de cadeados da barra lateral
@@ -2015,6 +2176,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!sidebarLocksPoll) {
                     sidebarLocksPoll = setInterval(syncSidebarLocks, 5000);
                 }
+                updateProgressBadges();
+                loadStudentSubmissionsDashboard();
             } catch (e) {
                 sessionStorage.removeItem("student_info");
                 if (studentOverlay) studentOverlay.style.display = 'flex';
@@ -2667,13 +2830,29 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        const info = studentInfoStr ? JSON.parse(studentInfoStr) : null;
+        const currentStudentEmail = info ? info.email.toLowerCase() : "";
+
         container.innerHTML = "";
         comments.forEach(comment => {
             const card = document.createElement("div");
             card.className = "comment-card";
+            card.id = `comment-card-${comment.id}`;
 
             const initials = comment.studentName.trim().split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
             const dateStr = new Date(comment.timestamp).toLocaleDateString('pt-BR') + ' ' + new Date(comment.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            const isOwnComment = comment.studentEmail && comment.studentEmail.toLowerCase() === currentStudentEmail;
+            let commentActionsHTML = "";
+            if (isOwnComment) {
+                commentActionsHTML = `
+                    <div class="comment-actions" style="margin-left: auto; display: flex; gap: 8px;">
+                        <button class="btn-comment-action edit" onclick="editComment('${comment.id}', '${key}')" style="background: none; border: none; color: #a7f3d0; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: bold; padding: 2px 6px; border-radius: 4px; transition: background-color 0.2s;">✏️ Editar</button>
+                        <button class="btn-comment-action delete" onclick="deleteComment('${comment.id}', '${key}')" style="background: none; border: none; color: #fecaca; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: bold; padding: 2px 6px; border-radius: 4px; transition: background-color 0.2s;">🗑️ Excluir</button>
+                    </div>
+                `;
+            }
 
             let repliesHTML = "";
             if (comment.replies && comment.replies.length > 0) {
@@ -2682,31 +2861,48 @@ document.addEventListener("DOMContentLoaded", () => {
                     const replyInitials = reply.authorName.trim().split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
                     const replyDateStr = new Date(reply.timestamp).toLocaleDateString('pt-BR') + ' ' + new Date(reply.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
-                    repliesHTML += `
-                        <div class="reply-card ${isInstructor ? 'instructor-reply' : ''}">
-                            <div class="reply-card-header" style="text-align: left;">
-                                <div class="reply-avatar ${isInstructor ? 'instructor' : ''}">${replyInitials}</div>
-                                <span class="reply-author-name">
-                                    ${reply.authorName}
-                                    ${isInstructor ? '<span class="reply-badge">Instrutor</span>' : ''}
-                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;">${replyDateStr}</span>
-                                </span>
+                    const isOwnReply = reply.authorEmail && reply.authorEmail.toLowerCase() === currentStudentEmail;
+                    let replyActionsHTML = "";
+                    if (isOwnReply) {
+                        replyActionsHTML = `
+                            <div class="reply-actions" style="margin-left: auto; display: flex; gap: 8px;">
+                                <button class="btn-reply-action edit" onclick="editReply('${comment.id}', '${reply.id}', '${key}')" style="background: none; border: none; color: #a7f3d0; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 2px; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: background-color 0.2s;">✏️</button>
+                                <button class="btn-reply-action delete" onclick="deleteReply('${comment.id}', '${reply.id}', '${key}')" style="background: none; border: none; color: #fecaca; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 2px; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: background-color 0.2s;">🗑️</button>
                             </div>
-                            <div class="reply-text" style="text-align: left;">${reply.text}</div>
+                        `;
+                    }
+
+                    repliesHTML += `
+                        <div class="reply-card ${isInstructor ? 'instructor-reply' : ''}" id="reply-card-${reply.id}">
+                            <div class="reply-card-header" style="text-align: left; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div class="reply-avatar ${isInstructor ? 'instructor' : ''}">${replyInitials}</div>
+                                    <span class="reply-author-name">
+                                        ${reply.authorName}
+                                        ${isInstructor ? '<span class="reply-badge">Instrutor</span>' : ''}
+                                        <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal; margin-left: 5px;">${replyDateStr}</span>
+                                    </span>
+                                </div>
+                                ${replyActionsHTML}
+                            </div>
+                            <div class="reply-text" style="text-align: left;" data-original-text="${reply.text.replace(/"/g, '&quot;')}">${reply.text}</div>
                         </div>
                     `;
                 });
             }
 
             card.innerHTML = `
-                <div class="comment-card-header" style="text-align: left;">
-                    <div class="comment-avatar">${initials}</div>
-                    <div class="comment-author-info">
-                        <span class="comment-author-name">${comment.studentName}</span>
-                        <span class="comment-date">${dateStr}</span>
+                <div class="comment-card-header" style="text-align: left; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="comment-avatar">${initials}</div>
+                        <div class="comment-author-info">
+                            <span class="comment-author-name">${comment.studentName}</span>
+                            <span class="comment-date">${dateStr}</span>
+                        </div>
                     </div>
+                    ${commentActionsHTML}
                 </div>
-                <div class="comment-text" style="text-align: left;">${comment.text}</div>
+                <div class="comment-text" style="text-align: left;" data-original-text="${comment.text.replace(/"/g, '&quot;')}">${comment.text}</div>
                 <div class="replies-container" id="replies-${comment.id}">
                     ${repliesHTML}
                 </div>
@@ -2739,6 +2935,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 commentId,
                 authorName: info.name,
                 authorRole: "Aluno",
+                authorEmail: info.email,
                 text
             })
         })
@@ -2752,6 +2949,186 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         })
         .catch(err => alert("Erro ao conectar: " + err));
+    };
+
+    window.editComment = function(commentId, key) {
+        const card = document.getElementById(`comment-card-${commentId}`);
+        if (!card) return;
+        const textEl = card.querySelector(".comment-text");
+        if (!textEl) return;
+        const originalText = textEl.getAttribute("data-original-text") || textEl.innerText;
+        
+        textEl.style.display = "none";
+        
+        let editor = card.querySelector(".inline-editor");
+        if (editor) editor.remove();
+        
+        editor = document.createElement("div");
+        editor.className = "inline-editor";
+        editor.innerHTML = `
+            <textarea class="inline-editor-textarea" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; font-family: inherit; margin-top: 5px; resize: none; outline: none; height: 80px;">${originalText}</textarea>
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px;">
+                <button class="btn-inline-cancel" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Cancelar</button>
+                <button class="btn-inline-save" style="background: var(--primary); color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">Salvar</button>
+            </div>
+        `;
+        
+        textEl.parentNode.insertBefore(editor, textEl.nextSibling);
+        
+        editor.querySelector(".btn-inline-cancel").addEventListener("click", () => {
+            editor.remove();
+            textEl.style.display = "block";
+        });
+        
+        editor.querySelector(".btn-inline-save").addEventListener("click", () => {
+            const newText = editor.querySelector(".inline-editor-textarea").value.trim();
+            if (newText === "") {
+                alert("O comentário não pode ser vazio.");
+                return;
+            }
+            
+            const studentInfoStr = sessionStorage.getItem("student_info");
+            const info = studentInfoStr ? JSON.parse(studentInfoStr) : null;
+            if (!info) return;
+
+            fetch("/api/forum/comment/edit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    commentId,
+                    email: info.email,
+                    text: newText
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderForumSection(key);
+                } else {
+                    alert("Erro ao editar: " + data.error);
+                }
+            })
+            .catch(err => alert("Erro de conexão: " + err));
+        });
+    };
+
+    window.deleteComment = function(commentId, key) {
+        if (!confirm("Deseja realmente excluir esta dúvida? Todas as respostas a ela também serão removidas.")) {
+            return;
+        }
+        
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        const info = studentInfoStr ? JSON.parse(studentInfoStr) : null;
+        if (!info) return;
+
+        fetch("/api/forum/comment/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                commentId,
+                email: info.email
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderForumSection(key);
+            } else {
+                alert("Erro ao excluir: " + data.error);
+            }
+        })
+        .catch(err => alert("Erro de conexão: " + err));
+    };
+
+    window.editReply = function(commentId, replyId, key) {
+        const replyEl = document.getElementById(`reply-card-${replyId}`);
+        if (!replyEl) return;
+        const textEl = replyEl.querySelector(".reply-text");
+        if (!textEl) return;
+        const originalText = textEl.getAttribute("data-original-text") || textEl.innerText;
+        
+        textEl.style.display = "none";
+        
+        let editor = replyEl.querySelector(".inline-editor");
+        if (editor) editor.remove();
+        
+        editor = document.createElement("div");
+        editor.className = "inline-editor";
+        editor.innerHTML = `
+            <textarea class="inline-editor-textarea" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; font-family: inherit; margin-top: 5px; resize: none; outline: none; height: 80px;">${originalText}</textarea>
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px;">
+                <button class="btn-inline-cancel" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Cancelar</button>
+                <button class="btn-inline-save" style="background: var(--primary); color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">Salvar</button>
+            </div>
+        `;
+        
+        textEl.parentNode.insertBefore(editor, textEl.nextSibling);
+        
+        editor.querySelector(".btn-inline-cancel").addEventListener("click", () => {
+            editor.remove();
+            textEl.style.display = "block";
+        });
+        
+        editor.querySelector(".btn-inline-save").addEventListener("click", () => {
+            const newText = editor.querySelector(".inline-editor-textarea").value.trim();
+            if (newText === "") {
+                alert("A resposta não pode ser vazia.");
+                return;
+            }
+            
+            const studentInfoStr = sessionStorage.getItem("student_info");
+            const info = studentInfoStr ? JSON.parse(studentInfoStr) : null;
+            if (!info) return;
+
+            fetch("/api/forum/reply/edit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    commentId,
+                    replyId,
+                    email: info.email,
+                    text: newText
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderForumSection(key);
+                } else {
+                    alert("Erro ao editar: " + data.error);
+                }
+            })
+            .catch(err => alert("Erro de conexão: " + err));
+        });
+    };
+
+    window.deleteReply = function(commentId, replyId, key) {
+        if (!confirm("Deseja realmente excluir esta resposta?")) {
+            return;
+        }
+        
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        const info = studentInfoStr ? JSON.parse(studentInfoStr) : null;
+        if (!info) return;
+
+        fetch("/api/forum/reply/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                commentId,
+                replyId,
+                email: info.email
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderForumSection(key);
+            } else {
+                alert("Erro ao excluir: " + data.error);
+            }
+        })
+        .catch(err => alert("Erro de conexão: " + err));
     };
 
 });

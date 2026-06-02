@@ -5,7 +5,7 @@
     "password": "123",
     "studentClass": "1DES",
     "period": "Manhã",
-    "loginTime": "2026-06-02T12:06:06.012Z",
+    "loginTime": "2026-06-02T19:29:41.957Z",
     "recoveryRequested": false
   },
   {
@@ -15,6 +15,15 @@
     "studentClass": "1DES",
     "period": "Manhã",
     "loginTime": "2026-06-02T11:02:45.885Z",
+    "recoveryRequested": false
+  },
+  {
+    "name": "Marcos Vinícius De Oliveira Santos",
+    "email": "marcos.v.santos15@edu.senai.br",
+    "password": "241002Ma@",
+    "studentClass": "1DES",
+    "period": "Manhã",
+    "loginTime": "2026-06-02T16:59:27.934Z",
     "recoveryRequested": false
   }
 ]
