@@ -1311,16 +1311,7 @@
                 refreshDashboard();
             })
             .catch(err => alert(err.message));
-        }; })
-                    .then(data => {
-                        alert('Estudante removido com sucesso!');
-                        refreshDashboard();
-                    })
-                    .catch(err => alert(err.message));
-                });
-            });
-        }
-
+        };
         // Listener para Cadastro Manual de Estudantes
         document.getElementById('btn-create-student').addEventListener('click', () => {
             const name = document.getElementById('create-student-name').value.trim();
