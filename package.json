@@ -1,0 +1,14 @@
+{
+  "name": "portal-senai-4.0",
+  "version": "2.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "compile": "node generate_data.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "pdf-parse": "^2.4.5",
+    "pdf2json": "^4.0.3"
+  }
+}

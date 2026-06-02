@@ -1,0 +1,62 @@
+UNIDADE CURRICULAR: Ferramentas de Colaboração e Produtividade - 120 horas
+MÓDULO ESPECÍFICO
+
+Objetivo Geral: Ferramentas de Colaboração e Produtividade tem como objetivo proporcionar a aquisição de capacidades técnicas relativas ao suporte do usuário na utilização de softwares para sistema operacional de código fechado, preparando os recursos computacionais que permitam a funcionalidade de colaboração, armazenamento e compartilhamento nos meios multimídias, bem como, o desenvolvimento de capacidades sociais, organizativas e metodológicas adequadas a diferentes situações profissionais.
+
+1. Agenda eletrônica
+1.1. Calendários
+1.2. Reuniões
+1.3. Lembretes
+1.4. Compartilhamento
+1.5. Importação
+
+2. Grupos em ambientes multimídia
+2.1. Correio eletrônico
+2.2. Redes sociais
+2.3. Agenda eletrônica
+
+3. Planilhas eletrônicas
+3.1. Dashboards
+3.2. Tabelas dinâmicas
+3.3. Macros
+3.4. Compartilhamento online
+
+4. Apresentações eletrônicas e colaboração
+4.1. Fluxo de trabalho
+4.1.1. Características
+4.1.2. Aplicabilidade
+4.1.3. Compartilhamento online
+4.2. Reunião online
+4.2.1. Características
+4.2.2. Aplicabilidade
+4.2.3. Recursos operacionais
+4.2.4. Compartilhamento online
+4.3. Apresentações eletrônicas interativas
+4.3.1. Características
+4.3.2. Aplicabilidade
+4.3.3. Compartilhamento online
+4.4. Planejamento
+4.4.1. Características
+4.4.2. Aplicabilidade
+4.4.3. Compartilhamento online
+4.5. Projetos
+4.5.1. Características
+4.5.2. Aplicabilidade
+4.5.3. Compartilhamento online
+4.6. Formulários
+4.6.1. Características
+4.6.2. Aplicabilidade
+4.6.3. Compartilhamento online
+4.7. Ferramentas de compartilhamento
+4.7.1. Biblioteca de documentos
+4.7.2. Gerenciamento de rotinas
+4.7.3. Permissões
+4.7.4. Exportação de conteúdos
+4.7.5. Importação de conteúdos
+
+5. Armazenamento em nuvem
+5.1. Sincronização
+5.2. Permissões
+5.3. Compartilhamento
+5.4. Uploads
+5.5. Downloads

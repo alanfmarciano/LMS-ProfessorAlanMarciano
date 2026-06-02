@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Portal de Treinamento e Avaliação do SENAI 4.0 - Módulos de Fundamentos de TI e Ferramentas de Colaboração.">
+    <title>SENAI 4.0 - Portal do Aluno</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400&display=swap"
+        rel="stylesheet">
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="protocol-warning-overlay" style="display: none; background: #ef4444; color: white; padding: 12px 20px; font-weight: bold; text-align: center; font-size: 0.9rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-bottom: 2px solid #b91c1c;">
+        ⚠️ ATENÇÃO: Você abriu o arquivo HTML diretamente no navegador (protocolo file://). As requisições de rede falharão (Erro: failed to fetch).
+        Para que o sistema funcione corretamente, acesse o endereço do servidor local: 
+        <a href="http://localhost:3000" id="protocol-warning-link" style="color: #fef08a; text-decoration: underline; margin-left: 8px;">http://localhost:3000</a>
+    </div>
+    <script>
+        if (window.location.protocol === 'file:') {
+            document.getElementById('protocol-warning-overlay').style.display = 'block';
+            document.body.style.paddingTop = '45px';
+        }
+    </script>
+    <div id="app-container">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar">
+            <div class="logo-area" onclick="window.location.href='index.html'" style="cursor: pointer;">
+                <h1>SENAI<span class="highlight">4.0</span></h1>
+                <p>Portal de Treinamento</p>
+            </div>
+
+            <!-- Barra de Busca -->
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões...">
+            </div>
+
+            <div class="nav-section">
+                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <span>FUTEC — Fund. de TI (80h)</span>
+                    <span class="module-progress" id="progress-m1">0%</span>
+                    <span class="toggle-icon">▾</span>
+                </h3>
+                <ul id="nav-fundamentos">
+                    <!-- Injected by JS -->
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <span>FECOP — Colab. e Prod. (120h)</span>
+                    <span class="module-progress" id="progress-m2">0%</span>
+                    <span class="toggle-icon">▾</span>
+                </h3>
+                <ul id="nav-colaboracao">
+                    <!-- Injected by JS -->
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <span>IRCOM — Inst. Rec. Comp. (120h)</span>
+                    <span class="module-progress" id="progress-m3">0%</span>
+                    <span class="toggle-icon">▾</span>
+                </h3>
+                <ul id="nav-ircom">
+                    <!-- Injected by JS -->
+                </ul>
+            </div>
+
+            <!-- Card do Aluno e Instrutor (Rodapé da Sidebar) -->
+            <div class="sidebar-footer">
+                <div class="instructor-card" id="student-profile-card" style="display: none; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 12px; align-items: center; gap: 10px;">
+                    <div class="instructor-avatar" id="student-avatar" style="background: var(--primary); font-size: 13px; font-weight: 800; width: 34px; height: 34px;">
+                        AL
+                    </div>
+                    <div class="instructor-info" style="display: flex; flex-direction: column;">
+                        <span class="instructor-name" id="student-profile-name" style="font-size: 0.8rem; font-weight: 700;">Aluno</span>
+                        <span class="instructor-role" id="student-profile-class" style="font-size: 0.7rem; color: var(--text-muted);">Turma</span>
+                    </div>
+                    <button id="btn-student-logout" title="Sair da conta" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 1rem; margin-left: auto;">🚪</button>
+                </div>
+
+                <div class="instructor-card">
+                    <div class="instructor-avatar">
+                        AM
+                        <span class="online-dot"></span>
+                    </div>
+                    <div class="instructor-info">
+                        <span class="instructor-name">Alan Marciano</span>
+                        <span class="instructor-role">Gestor em T.I. • SENAI</span>
+                        <span class="instructor-badge">👨‍🏫 Instrutor</span>
+                    </div>
+                </div>
+                <div class="sidebar-version">SENAI 4.0 • Portal do Aluno • v2.0 · <span id="diagnostico-link" style="text-decoration: underline; cursor: pointer; color: var(--primary);">🩺 Validador</span></div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <header id="topbar">
+                <button id="mobile-menu-btn">☰ Menu</button>
+                <div id="breadcrumb" class="breadcrumb-home" onclick="window.location.href='index.html'">SENAI 4.0</div>
+                <div class="topbar-actions" style="display: flex; gap: 10px;">
+                    <button id="focus-mode-btn" title="Ativar Modo Foco (Otimizado para leitura)">
+                        <span class="btn-icon">👁️</span> Modo Foco
+                    </button>
+                    <button id="export-pdf-btn" title="Exportar esta apostila como PDF para os alunos" disabled>
+                        <span class="btn-icon">📄</span> Exportar PDF
+                    </button>
+                </div>
+            </header>
+
+            <div id="content-viewer" class="markdown-body">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen">
+                    <img src="banner.png" alt="SENAI 4.0 Banner Futurista" class="welcome-banner">
+                    <h2>Bem-vindo ao Treinamento <span class="highlight">SENAI 4.0</span></h2>
+                    <p>Selecione uma Unidade ou Avaliação no menu lateral para iniciar seu aprendizado.</p>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h4>320</h4>
+                            <p>Horas de Carga Horária</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4>15</h4>
+                            <p>Unidades</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4>15</h4>
+                            <p>Avaliações</p>
+                        </div>
+                    </div>
+
+                    <!-- Índice do Curso -->
+                    <div class="curriculum-index">
+                        <h3>📚 Índice do Curso</h3>
+                        
+                        <div class="module-index">
+                            <h4><span class="module-tag basics">FUTEC</span> Fundamentos de TI (80h)</h4>
+                            <table class="index-table">
+                                <tr>
+                                    <td><strong>Unidade 1</strong></td>
+                                    <td>📺 Sistemas Operacionais (Código Fechado/Aberto) + 💾 Dispositivos Computacionais</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 2</strong></td>
+                                    <td>🏭 Indústria 4.0 + 🌐 Internet (Segurança, Websites)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 3</strong></td>
+                                    <td>📊 Planilhas Eletrônicas + 📧 Correio Eletrônico + 🎤 Apresentações</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 4</strong></td>
+                                    <td>🗄️ Banco de Dados (SGBD) + 💻 Programação (Lógica)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 5</strong></td>
+                                    <td>☁️ Aplicações Web + 📱 Mídias Sociais + 🎮 Gamificação</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="module-index">
+                            <h4><span class="module-tag specific">FECOP</span> Colaboração e Produtividade (120h)</h4>
+                            <table class="index-table">
+                                <tr>
+                                    <td><strong>Unidade 1</strong></td>
+                                    <td>📅 Agenda Eletrônica + 👥 Grupos (E-mail, Redes Corporativas)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 2</strong></td>
+                                    <td>☁️ Armazenamento em Nuvem (OneDrive, SharePoint)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 3</strong></td>
+                                    <td>📊 Planilhas Avançadas (Dashboards, Tabelas Dinâmicas, Macros)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 4</strong></td>
+                                    <td>🎬 Apresentações + 📹 Reuniões Online (Teams/Meet)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 5</strong></td>
+                                    <td>📋 Projetos + 📝 Formulários + 🔧 Automação (Planner, Power Automate)</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="module-index">
+                            <h4><span class="module-tag" style="background: #8b5cf6;">IRCOM</span> Instalação de Recursos Computacionais (120h)</h4>
+                            <table class="index-table">
+                                <tr>
+                                    <td><strong>Unidade 1</strong></td>
+                                    <td>📚 Histórico + Terminologia + Sistemas Numéricos</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 2</strong></td>
+                                    <td>🖥️ Meios Computacionais (Desktop, Notebook, Servidores)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 3</strong></td>
+                                    <td>⚙️ Arquitetura (Processador, Placa Mãe, Periféricos)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 4</strong></td>
+                                    <td>💾 Armazenamento (HD, SSD) + Fontes + Gabinetes</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 5</strong></td>
+                                    <td>🔧 Montagem/Desmontagem + Documentação + Instalação SO</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Card de Autoria -->
+                    <div class="author-card">
+                        <div class="author-avatar">AM</div>
+                        <div class="author-details">
+                            <span class="author-label">Material desenvolvido por</span>
+                            <span class="author-name">Alan Marciano</span>
+                            <span class="author-title">Instrutor • Gestor em T.I. • SENAI Sertãozinho</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Aluno Login Modal Overlay -->
+    <div id="student-login-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-dark); z-index: 9998; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+        <div class="login-card" style="background: var(--bg-panel); border: 1px solid var(--border); padding: 35px; border-radius: 16px; width: 100%; max-width: 440px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); animation: scaleUp 0.3s ease;">
+            
+            <!-- TELA DE LOGIN -->
+            <div id="student-login-container">
+                <h2 style="font-weight: 800; margin-bottom: 6px;">🎓 Acesso do Aluno</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Portal de Treinamento SENAI 4.0</p>
+                
+                <div id="login-error-msg" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center;"></div>
+                
+                <div class="input-group" style="margin-bottom: 16px; text-align: left;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted); font-family: sans-serif;">E-mail</label>
+                    <input type="email" id="login-email" placeholder="Digite seu e-mail..." required style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.95rem; outline: none; transition: border-color 0.2s;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 20px; text-align: left;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted); font-family: sans-serif;">Senha</label>
+                    <input type="password" id="login-password" placeholder="Digite sua senha..." required style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.95rem; outline: none; transition: border-color 0.2s;">
+                </div>
+                
+                <button class="btn-submit" id="btn-student-login" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; margin-bottom: 20px;">Entrar no Portal</button>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span id="link-go-register" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Criar uma Conta</span>
+                    <span id="link-go-recovery" style="color: var(--text-muted); cursor: pointer; text-decoration: underline;">Esqueci minha senha</span>
+                </div>
+            </div>
+
+            <!-- TELA DE CADASTRO -->
+            <div id="student-register-container" style="display: none;">
+                <h2 style="font-weight: 800; margin-bottom: 6px;">📝 Cadastro de Aluno</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Crie sua conta para acompanhar seu progresso</p>
+                
+                <div id="register-error-msg" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center;"></div>
+                
+                <div class="input-group" style="margin-bottom: 12px; text-align: left;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">Nome Completo</label>
+                    <input type="text" id="register-name" placeholder="Nome Completo..." required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.9rem; outline: none;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 12px; text-align: left;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">E-mail</label>
+                    <input type="email" id="register-email" placeholder="nome@email.com..." required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.9rem; outline: none;">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 12px; text-align: left;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">Senha</label>
+                    <input type="password" id="register-password" placeholder="Criar senha..." required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.9rem; outline: none;">
+                </div>
+
+                <div class="input-group" style="text-align: left; margin-bottom: 20px;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">Turma</label>
+                    <select id="register-class" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; font-size: 0.9rem; outline: none; cursor: pointer; height: 40px;">
+                        <!-- Carregado via API -->
+                    </select>
+                </div>
+                
+                <button class="btn-submit" id="btn-student-register" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; margin-bottom: 20px;">Cadastrar e Acessar</button>
+                
+                <div style="text-align: center; font-size: 0.8rem;">
+                    <span id="link-go-login" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Voltar para o Login</span>
+                </div>
+            </div>
+
+            <!-- TELA DE RECUPERAÇÃO -->
+            <div id="student-recovery-container" style="display: none;">
+                <h2 style="font-weight: 800; margin-bottom: 6px;">🔑 Recuperação de Senha</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Solicite o reset da sua senha ao instrutor</p>
+                
+                <div id="recovery-status-msg" style="padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center;"></div>
+                
+                <div class="input-group" style="margin-bottom: 20px; text-align: left;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted); font-family: sans-serif;">E-mail Cadastrado</label>
+                    <input type="email" id="recovery-email" placeholder="Digite seu e-mail..." required style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.95rem; outline: none;">
+                </div>
+                
+                <button class="btn-submit" id="btn-student-recover" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; margin-bottom: 20px;">Enviar Solicitação</button>
+                
+                <div style="text-align: center; font-size: 0.8rem;">
+                    <span id="link-go-login-from-recovery" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Voltar para o Login</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Load the data and application logic -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

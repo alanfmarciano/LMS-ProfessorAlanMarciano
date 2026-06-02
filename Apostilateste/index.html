@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Portal de Treinamento e Avaliação do SENAI 4.0 - Módulos de Fundamentos de TI e Ferramentas de Colaboração.">
+    <title>SENAI 4.0 - Portal do Aluno</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400&display=swap"
+        rel="stylesheet">
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app-container">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar">
+            <div class="logo-area" onclick="window.location.href='index.html'" style="cursor: pointer;">
+                <h1>SENAI<span class="highlight">4.0</span></h1>
+                <p>Portal de Treinamento</p>
+            </div>
+
+            <!-- Barra de Busca -->
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões...">
+            </div>
+
+            <div class="nav-section">
+                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">FUTEC — Fund. de TI (80h) <span class="toggle-icon">▾</span></h3>
+                <ul id="nav-fundamentos">
+                    <!-- Injected by JS -->
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">FECOP — Colab. e Prod. (120h) <span class="toggle-icon">▾</span></h3>
+                <ul id="nav-colaboracao">
+                    <!-- Injected by JS -->
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">IRCOM — Inst. Rec. Comp. (120h) <span class="toggle-icon">▾</span></h3>
+                <ul id="nav-ircom">
+                    <!-- Injected by JS -->
+                </ul>
+            </div>
+
+            <!-- Card do Instrutor (Rodapé da Sidebar) -->
+            <div class="sidebar-footer">
+                <div class="instructor-card">
+                    <div class="instructor-avatar">
+                        AM
+                        <span class="online-dot"></span>
+                    </div>
+                    <div class="instructor-info">
+                        <span class="instructor-name">Alan Marciano</span>
+                        <span class="instructor-role">Gestor em T.I. • SENAI</span>
+                        <span class="instructor-badge">👨‍🏫 Instrutor</span>
+                    </div>
+                </div>
+                <div class="sidebar-version">SENAI 4.0 • Portal do Aluno • v2.0</div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <header id="topbar">
+                <button id="mobile-menu-btn">☰ Menu</button>
+                <div id="breadcrumb" class="breadcrumb-home" onclick="window.location.href='index.html'">SENAI 4.0</div>
+                <button id="export-pdf-btn" title="Exportar esta apostila como PDF para os alunos" disabled>
+                    <span class="btn-icon">📄</span> Exportar PDF
+                </button>
+            </header>
+
+            <div id="content-viewer" class="markdown-body">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen">
+                    <img src="banner.png" alt="SENAI 4.0 Banner Futurista" class="welcome-banner">
+                    <h2>Bem-vindo ao Treinamento <span class="highlight">SENAI 4.0</span></h2>
+                    <p>Selecione uma Unidade ou Avaliação no menu lateral para iniciar seu aprendizado.</p>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h4>320</h4>
+                            <p>Horas de Carga Horária</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4>15</h4>
+                            <p>Unidades</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4>15</h4>
+                            <p>Avaliações</p>
+                        </div>
+                    </div>
+
+                    <!-- Índice do Curso -->
+                    <div class="curriculum-index">
+                        <h3>📚 Índice do Curso</h3>
+                        
+                        <div class="module-index">
+                            <h4><span class="module-tag basics">FUTEC</span> Fundamentos de TI (80h)</h4>
+                            <table class="index-table">
+                                <tr>
+                                    <td><strong>Unidade 1</strong></td>
+                                    <td>📺 Sistemas Operacionais (Código Fechado/Aberto) + 💾 Dispositivos Computacionais</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 2</strong></td>
+                                    <td>🏭 Indústria 4.0 + 🌐 Internet (Segurança, Websites)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 3</strong></td>
+                                    <td>📊 Planilhas Eletrônicas + 📧 Correio Eletrônico + 🎤 Apresentações</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 4</strong></td>
+                                    <td>🗄️ Banco de Dados (SGBD) + 💻 Programação (Lógica)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 5</strong></td>
+                                    <td>☁️ Aplicações Web + 📱 Mídias Sociais + 🎮 Gamificação</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="module-index">
+                            <h4><span class="module-tag specific">FECOP</span> Colaboração e Produtividade (120h)</h4>
+                            <table class="index-table">
+                                <tr>
+                                    <td><strong>Unidade 1</strong></td>
+                                    <td>📅 Agenda Eletrônica + 👥 Grupos (E-mail, Redes Corporativas)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 2</strong></td>
+                                    <td>☁️ Armazenamento em Nuvem (OneDrive, SharePoint)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 3</strong></td>
+                                    <td>📊 Planilhas Avançadas (Dashboards, Tabelas Dinâmicas, Macros)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 4</strong></td>
+                                    <td>🎬 Apresentações + 📹 Reuniões Online (Teams/Meet)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 5</strong></td>
+                                    <td>📋 Projetos + 📝 Formulários + 🔧 Automação (Planner, Power Automate)</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="module-index">
+                            <h4><span class="module-tag" style="background: #8b5cf6;">IRCOM</span> Instalação de Recursos Computacionais (120h)</h4>
+                            <table class="index-table">
+                                <tr>
+                                    <td><strong>Unidade 1</strong></td>
+                                    <td>📚 Histórico + Terminologia + Sistemas Numéricos</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 2</strong></td>
+                                    <td>🖥️ Meios Computacionais (Desktop, Notebook, Servidores)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 3</strong></td>
+                                    <td>⚙️ Arquitetura (Processador, Placa Mãe, Periféricos)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 4</strong></td>
+                                    <td>💾 Armazenamento (HD, SSD) + Fontes + Gabinetes</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Unidade 5</strong></td>
+                                    <td>🔧 Montagem/Desmontagem + Documentação + Instalação SO</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Card de Autoria -->
+                    <div class="author-card">
+                        <div class="author-avatar">AM</div>
+                        <div class="author-details">
+                            <span class="author-label">Material desenvolvido por</span>
+                            <span class="author-name">Alan Marciano</span>
+                            <span class="author-title">Instrutor • Gestor em T.I. • SENAI Sertãozinho</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Load the data and application logic -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

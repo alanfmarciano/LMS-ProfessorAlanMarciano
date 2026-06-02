@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Instrutor — LMS Local SENAI 4.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --primary: #ef4444; /* SENAI Red */
+            --primary-hover: #dc2626;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --warning: #eab308;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-dark);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: scaleUp 0.3s ease;
+        }
+
+        .login-card h2 {
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        /* App Container */
+        .admin-header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .logo-area span {
+            color: var(--primary);
+        }
+
+        .logo-area p {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-header {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-header:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--text-muted);
+        }
+
+        .btn-reset-room {
+            border-color: rgba(239,68,68,0.4);
+            color: #f87171;
+        }
+
+        .btn-reset-room:hover {
+            background: rgba(239,68,68,0.1);
+            border-color: var(--primary);
+        }
+
+        /* Main Workspace Grid */
+        .workspace {
+            flex: 1;
+            padding: 30px 40px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Sidebar Control Center */
+        .control-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        /* Exam Switcher List */
+        .exam-release-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 480px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .exam-release-item {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .exam-release-item.active {
+            border-color: rgba(34, 197, 94, 0.4);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .exam-release-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .exam-release-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .exam-release-module {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            transition: .2s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-muted);
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+            background-color: #22c55e;
+        }
+
+        /* Stats Grid */
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-value.ok {
+            color: var(--success);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Dashboard Panel */
+        .dashboard-content {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .submission-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .submission-table th {
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.2);
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .submission-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .submission-table tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-status.approved {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-status.failed {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Warnings/Blank screens */
+        .empty-submissions {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-submissions-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        /* Animations */
+        @keyframes scaleUp {
+            from { transform: scale(0.96); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Scrollbar custom */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div id="protocol-warning-overlay" style="display: none; background: #ef4444; color: white; padding: 12px 20px; font-weight: bold; text-align: center; font-size: 0.9rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-bottom: 2px solid #b91c1c;">
+        ⚠️ ATENÇÃO: Você abriu o arquivo HTML diretamente no navegador (protocolo file://). As requisições de rede falharão (Erro: failed to fetch).
+        Para que o sistema funcione corretamente, acesse o endereço do servidor local: 
+        <a href="http://localhost:3000/admin.html" id="protocol-warning-link" style="color: #fef08a; text-decoration: underline; margin-left: 8px;">http://localhost:3000/admin.html</a>
+    </div>
+    <script>
+        if (window.location.protocol === 'file:') {
+            document.getElementById('protocol-warning-overlay').style.display = 'block';
+            document.body.style.paddingTop = '45px';
+        }
+    </script>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2>🔑 Acesso Administrativo</h2>
+            <p>Portal do Instrutor — LMS Local SENAI 4.0</p>
+            
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label for="admin-email">E-mail do Administrador</label>
+                <input type="email" id="admin-email" placeholder="admin@senai.br..." value="admin@senai.br">
+            </div>
+            <div class="input-group">
+                <label for="admin-pass">Senha</label>
+                <input type="password" id="admin-pass" placeholder="Digite a senha..." value="admin">
+                <div id="login-error" style="color: #f87171; font-size: 0.8rem; margin-top: 8px; display: none;">E-mail ou senha incorretos.</div>
+            </div>
+            
+            <button class="btn-submit" id="btn-login" style="margin-top: 15px;">Entrar no Dashboard</button>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="admin-app" style="display: none; flex-direction: column; flex: 1;">
+        <header class="admin-header">
+            <div class="logo-area">
+                <h1>Painel do <span>Instrutor</span></h1>
+                <p>LMS Local • Gestão de Sala de Aula</p>
+            </div>
+            
+            <!-- Badge do Endereço de Rede dos Alunos -->
+            <div id="network-badge" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px 18px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #f87171;">
+                <span style="font-size: 1.1rem;">📢</span>
+                <span>Endereço para os alunos: <a id="network-url" style="color: white; font-family: monospace; font-size: 0.9rem; text-decoration: underline; font-weight: bold;" target="_blank">Carregando...</a></span>
+            </div>
+
+            <div class="header-actions">
+                <div style="display: flex; align-items: center; gap: 8px; margin-right: 15px;">
+                    <label for="admin-active-class" style="font-weight: 700; font-size: 0.9rem; color: var(--text-muted); white-space: nowrap;">Turma Ativa:</label>
+                    <select id="admin-active-class" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; font-weight: 700; outline: none; cursor: pointer;">
+                        <!-- Carregado via API -->
+                    </select>
+                </div>
+                <button class="btn-header" id="btn-restart-server" style="border-color: rgba(234, 179, 8, 0.4); color: #fef08a;">🔄 Reiniciar Servidor</button>
+                <button class="btn-header" id="btn-export-csv">📥 Exportar Planilha (CSV)</button>
+                <button class="btn-header btn-reset-room" id="btn-reset-room">⚠️ Limpar Sala (Reset)</button>
+                <button class="btn-header" id="btn-logout">Sair</button>
+            </div>
+        </header>
+
+        <!-- Barra de Navegação por Abas -->
+        <div class="tab-navbar" style="background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0 40px; display: flex; gap: 20px;">
+            <button class="tab-btn active" data-tab="tab-dashboard" style="background: none; border: none; border-bottom: 3px solid var(--primary); color: white; padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">📊 Monitor Geral</button>
+            <button class="tab-btn" data-tab="tab-materials" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">🔓 Controle de Liberação</button>
+            <button class="tab-btn" data-tab="tab-classes" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">🏫 Turmas</button>
+            <button class="tab-btn" data-tab="tab-students" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">👥 Contas de Alunos</button>
+            <button class="tab-btn" data-tab="tab-admins" style="background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 15px 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; outline: none;">🔑 Administradores</button>
+        </div>
+
+        <div class="workspace" style="max-width: 1600px; width: 100%; margin: 0 auto; padding: 30px 40px; display: block;">
+            
+            <!-- ABA 1: MONITOR GERAL -->
+            <div id="tab-dashboard" class="tab-content" style="display: grid; grid-template-columns: 350px 1fr; gap: 30px; width: 100%;">
+                <!-- Sidebar: Select Active Exam -->
+                <div class="control-sidebar">
+                    <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                        <div class="card-title">
+                            <span>🔓 Prova Ativa no Simulador</span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">
+                            Selecione a chave da prova que estará ativa para o Simulador dos alunos. Apenas uma prova pode estar ativa por vez para submissão de notas online.
+                        </p>
+                        <ul class="exam-release-list" id="exam-release-list">
+                            <!-- Injected dynamically by JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Dashboard Content: Stats & Table -->
+                <div class="dashboard-content" style="display: flex; flex-direction: column; gap: 25px;">
+                    <!-- Stats Summaries -->
+                    <div class="stats-summary">
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-students">0</div>
+                            <div class="stat-label">Alunos Online</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value ok" id="stat-submissions">0</div>
+                            <div class="stat-label">Provas Entregues</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-average">0%</div>
+                            <div class="stat-label">Média de Acertos</div>
+                        </div>
+                    </div>
+
+                    <!-- Table Submissions -->
+                    <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span>📝 Entregas de Provas (Tempo Real)</span>
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">
+                                <label for="filter-class">Filtrar por Turma:</label>
+                                <select id="filter-class" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none; cursor: pointer;">
+                                    <option value="">Todas as Turmas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container" id="table-container">
+                            <table class="submission-table">
+                                <thead>
+                                    <tr>
+                                        <th>Aluno</th>
+                                        <th>Turma / Período</th>
+                                        <th>Avaliação</th>
+                                        <th>Pontuação</th>
+                                        <th>Acertos</th>
+                                        <th>Data / Hora</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="submissions-body">
+                                    <!-- Injected dynamically by JS -->
+                                </tbody>
+                            </table>
+                            <div class="empty-submissions" id="empty-submissions" style="display: none;">
+                                <div class="empty-submissions-icon">📭</div>
+                                <p>Nenhuma prova foi enviada por alunos nesta sessão ainda.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 2: CONTROLE DE LIBERAÇÃO -->
+            <div id="tab-materials" class="tab-content" style="display: none; flex-direction: column; gap: 25px; width: 100%;">
+                <div class="card" style="margin-bottom: 10px;">
+                    <div class="card-title">🔓 Controle Geral de Liberação de Materiais e Avaliações</div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">
+                        Aqui você decide quais apostilas e provas estão acessíveis para leitura e estudo no portal dos alunos. Toggles desativados bloqueiam o acesso e exibem um cadeado vermelho na barra lateral deles.
+                    </p>
+                </div>
+                <div class="materials-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;">
+                    <!-- FUTEC -->
+                    <div class="card" style="display: flex; flex-direction: column; gap: 15px; background: rgba(30, 41, 59, 0.45);">
+                        <div class="card-title" style="color: #ef4444; font-weight: 800; border-bottom: 2px solid #ef4444; padding-bottom: 6px; font-size: 1.05rem;">FUTEC — Fundamentos de TI</div>
+                        <div class="material-items-list" id="materials-list-FUTEC" style="display: flex; flex-direction: column; gap: 15px;">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                    <!-- FECOP -->
+                    <div class="card" style="display: flex; flex-direction: column; gap: 15px; background: rgba(30, 41, 59, 0.45);">
+                        <div class="card-title" style="color: #60a5fa; font-weight: 800; border-bottom: 2px solid #60a5fa; padding-bottom: 6px; font-size: 1.05rem;">FECOP — Colaboração e Prod.</div>
+                        <div class="material-items-list" id="materials-list-FECOP" style="display: flex; flex-direction: column; gap: 15px;">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                    <!-- IRCOM -->
+                    <div class="card" style="display: flex; flex-direction: column; gap: 15px; background: rgba(30, 41, 59, 0.45);">
+                        <div class="card-title" style="color: #a78bfa; font-weight: 800; border-bottom: 2px solid #a78bfa; padding-bottom: 6px; font-size: 1.05rem;">IRCOM — Instalação de Recursos</div>
+                        <div class="material-items-list" id="materials-list-IRCOM" style="display: flex; flex-direction: column; gap: 15px;">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 4: GESTÃO DE TURMAS -->
+            <div id="tab-classes" class="tab-content" style="display: none; grid-template-columns: 380px 1fr; gap: 30px; width: 100%;">
+                <!-- Left Column: register new class -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px; height: fit-content;">
+                    <div class="card-title">🏫 Adicionar Nova Turma</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">
+                        Cadastre novas turmas no sistema. Os alunos só conseguirão se cadastrar selecionando uma dessas turmas pré-aprovadas.
+                    </p>
+                    
+                    <div id="class-create-error" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center;"></div>
+                    <div id="class-create-success" style="color: #4ade80; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center;"></div>
+                    
+                    <div class="input-group">
+                        <label>Identificador da Turma</label>
+                        <input type="text" id="create-class-name" placeholder="Ex: 1DES, 2FECOP, 2DES...">
+                    </div>
+                    <div class="input-group">
+                        <label>Período</label>
+                        <select id="create-class-period" style="width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none; cursor: pointer; height: 44px;">
+                            <option value="Manhã">Manhã</option>
+                            <option value="Tarde" selected>Tarde</option>
+                            <option value="Noite">Noite</option>
+                        </select>
+                    </div>
+                    <button class="btn-submit" id="btn-create-class" style="margin-top: 10px;">Salvar Turma</button>
+                </div>
+
+                <!-- Right Column: Classes Table -->
+                <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="card-title">🏫 Turmas Pré-Cadastradas no Sistema</div>
+                    <div class="table-container">
+                        <table class="submission-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Identificador da Turma</th>
+                                    <th>Período</th>
+                                    <th>Liberação para Cadastro de Aluno</th>
+                                    <th>Alunos Cadastrados</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="classes-body">
+                                <!-- Injetado dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 3: CONTAS DE ALUNOS -->
+            <div id="tab-students" class="tab-content" style="display: none; grid-template-columns: 380px 1fr; gap: 30px; width: 100%;">
+                <!-- Left Column: manual student registry -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px; height: fit-content;">
+                    <div class="card-title">➕ Cadastrar Aluno Manualmente</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">
+                        Crie credenciais de login para estudantes que não tenham efetuado o autocadastro.
+                    </p>
+                    
+                    <div id="student-create-error" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center;"></div>
+                    <div id="student-create-success" style="color: #4ade80; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center;"></div>
+                    
+                    <div class="input-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="create-student-name" placeholder="Ex: Maria Souza...">
+                    </div>
+                    <div class="input-group">
+                        <label>E-mail (Login)</label>
+                        <input type="email" id="create-student-email" placeholder="mariasouza@senai.br...">
+                    </div>
+                    <div class="input-group">
+                        <label>Senha Provisória</label>
+                        <input type="text" id="create-student-password" placeholder="Definir senha provisória...">
+                    </div>
+                    <div class="input-group">
+                        <label>Turma</label>
+                        <select id="create-student-class" style="width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none; cursor: pointer; height: 44px;">
+                            <!-- Carregado via API -->
+                        </select>
+                    </div>
+                    <button class="btn-submit" id="btn-create-student" style="margin-top: 10px;">Salvar Conta do Aluno</button>
+                </div>
+
+                <!-- Right Column: Student Table -->
+                <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="card-title">👥 Contas de Alunos Cadastradas</div>
+                    <div class="table-container">
+                        <table class="submission-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Nome / E-mail</th>
+                                    <th>Senha</th>
+                                    <th>Turma / Período</th>
+                                    <th>Último Acesso</th>
+                                    <th>Ajuda / Redefinir</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-body">
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 5: GESTÃO DE ADMINISTRADORES -->
+            <div id="tab-admins" class="tab-content" style="display: none; grid-template-columns: 380px 1fr; gap: 30px; width: 100%;">
+                <!-- Left Column: manual admin registry -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px; height: fit-content;">
+                    <div class="card-title">🔑 Adicionar Administrador</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">
+                        Cadastre novas contas de instrutores ou professores com acesso total ao painel administrativo.
+                    </p>
+                    
+                    <div id="admin-create-error" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center;"></div>
+                    <div id="admin-create-success" style="color: #4ade80; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center;"></div>
+                    
+                    <div class="input-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="create-admin-name" placeholder="Ex: Prof. Carlos...">
+                    </div>
+                    <div class="input-group">
+                        <label>E-mail (Login)</label>
+                        <input type="email" id="create-admin-email" placeholder="carlos@senai.br...">
+                    </div>
+                    <div class="input-group">
+                        <label>Senha</label>
+                        <input type="password" id="create-admin-password" placeholder="Definir senha de acesso...">
+                    </div>
+                    <button class="btn-submit" id="btn-create-admin" style="margin-top: 10px;">Salvar Administrador</button>
+                </div>
+
+                <!-- Right Column: Admins Table -->
+                <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="card-title">👥 Contas de Administradores Cadastradas</div>
+                    <div class="table-container">
+                        <table class="submission-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Nome / E-mail</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admins-table-body">
+                                <!-- Injetado dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL DE PREVIEW E IMPRESSÃO DE AVALIAÇÃO -->
+    <div id="exam-preview-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-card" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 900px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); animation: scaleUp 0.3s ease;">
+            <!-- Cabeçalho do Modal -->
+            <div class="modal-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🖨️</span>
+                    <div>
+                        <h2 id="modal-exam-title" style="font-size: 1.25rem; font-weight: 800;">Preview & Impressão da Prova</h2>
+                        <p id="modal-exam-theme" style="font-size: 0.8rem; color: var(--text-muted);"></p>
+                    </div>
+                </div>
+                <button id="btn-close-modal" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem; transition: color 0.2s;" onmouseenter="this.style.color='white'" onmouseleave="this.style.color='var(--text-muted)'">✕</button>
+            </div>
+            
+            <!-- Conteúdo do Modal -->
+            <div class="modal-body" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: 320px 1fr; gap: 20px; padding: 24px;">
+                <!-- Coluna de Configuração -->
+                <div class="modal-config-sidebar" style="display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--border); padding-right: 20px;">
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Questões na Prova</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="modal-question-slider" min="5" max="20" value="20" style="flex: 1; accent-color: var(--primary);">
+                            <span id="modal-question-count-badge" style="font-weight: 700; background: var(--bg-dark); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem;">20</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quantidade de Versões</label>
+                        <input type="number" id="modal-versions-count" min="1" max="5" value="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white; font-weight: 700; outline: none;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Embaralha as questões e alternativas para evitar colas.</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <button id="modal-btn-shuffle" class="btn-submit" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; box-shadow: none;">
+                            🔄 Embaralhar Preview
+                        </button>
+                        <button id="modal-btn-print-exam" class="btn-submit" style="background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%);">
+                            🖨️ Gerar Provas (PDF)
+                        </button>
+                        <button id="modal-btn-print-answer" class="btn-submit" style="background: linear-gradient(135deg, var(--success) 0%, #15803d 100%); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);">
+                            🔑 Gerar Gabaritos (PDF)
+                        </button>
+                    </div>
+
+                    <div style="margin-top: auto; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
+                        <span style="font-size: 0.75rem; color: #f87171; font-weight: 700; display: block; margin-bottom: 4px;">⚠️ Salvar Configurações</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 8px;">Ao alterar as questões, clique para atualizar a prova da turma.</span>
+                        <button id="modal-btn-save-config" style="width: 100%; padding: 8px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                            Salvar p/ Turma Ativa
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Coluna de Questões (Preview) -->
+                <div style="display: flex; flex-direction: column; gap: 15px; height: 100%; overflow: hidden;">
+                    <h3 style="font-size: 0.95rem; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 6px;">📋 Preview das Questões (com Respostas Corretas)</h3>
+                    <div id="modal-questions-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 5px;">
+                        <!-- Injetado dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO DE ESTUDANTE -->
+    <div id="edit-student-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-card" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 500px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); animation: scaleUp 0.3s ease;">
+            <!-- Cabeçalho do Modal -->
+            <div class="modal-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">✏️</span>
+                    <div>
+                        <h2 style="font-size: 1.25rem; font-weight: 800;">Editar Informações do Aluno</h2>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Altere os dados de cadastro do estudante</p>
+                    </div>
+                </div>
+                <button id="btn-close-edit-modal" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem; transition: color 0.2s;" onmouseenter="this.style.color='white'" onmouseleave="this.style.color='var(--text-muted)'">✕</button>
+            </div>
+            
+            <!-- Conteúdo do Modal / Formulário -->
+            <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; gap: 15px;">
+                <input type="hidden" id="edit-student-original-email">
+                
+                <div class="input-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="edit-student-name" placeholder="Nome Completo..." required style="width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none;">
+                </div>
+                <div class="input-group">
+                    <label>E-mail (Login)</label>
+                    <input type="email" id="edit-student-email" placeholder="mariasouza@senai.br..." required style="width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none;">
+                </div>
+                <div class="input-group">
+                    <label>Senha</label>
+                    <input type="text" id="edit-student-password" placeholder="Definir nova senha..." required style="width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="input-group">
+                        <label>Turma</label>
+                        <select id="edit-student-class" style="width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none; cursor: pointer; height: 44px;">
+                            <!-- Carregado via API -->
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Período</label>
+                        <select id="edit-student-period" style="width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; outline: none; cursor: pointer; height: 44px;">
+                            <option value="Manhã">Manhã</option>
+                            <option value="Tarde">Tarde</option>
+                            <option value="Noite">Noite</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="student-edit-error" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 8px; border-radius: 6px; font-size: 0.8rem; display: none; text-align: center; margin-top: 5px;"></div>
+                
+                <button class="btn-submit" id="btn-save-student-edit" style="margin-top: 15px;">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY DE REINICIALIZAÇÃO DO SERVIDOR -->
+    <div id="restart-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); z-index: 10001; align-items: center; justify-content: center; flex-direction: column; gap: 20px;">
+        <div style="font-size: 4rem; animation: spin 2s infinite linear; color: var(--primary);">🔄</div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: white;">Reiniciando o Servidor LMS...</h2>
+        <p style="color: var(--text-muted); text-align: center; max-width: 400px; line-height: 1.5;">
+            Aguarde alguns segundos enquanto o Express fecha a porta e reinicia o processo. A página recarregará automaticamente.
+        </p>
+        <div style="width: 200px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative;">
+            <div id="restart-progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.2s linear; border-radius: 3px;"></div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Scripts do LMS -->
+    <script src="data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Mapeamento das 15 avaliações
+        const allExams = [];
+        const modules = {
+            'FUTEC': 'Fundamentos de TI',
+            'FECOP': 'Colaboração e Produtividade',
+            'IRCOM': 'Instalação de Recursos'
+        };
+        for(let m in modules) {
+            for(let i=1; i<=5; i++) {
+                allExams.push({
+                    key: `Avaliacao_${m}_${i}`,
+                    name: `Unidade ${i} - ${m}`,
+                    module: modules[m]
+                });
+            }
+        }
+
+        let adminPassword = '';
+        let activeExamKey = null;
+        let pollInterval = null;
+        let allStudentsCache = [];
+        let allClassesCache = [];
+        let selectedFilterClass = '';
+        let currentModalExamKey = null;
+        let currentModalExamState = null;
+
+        // Login Handler
+        document.getElementById('btn-login').addEventListener('click', attemptLogin);
+        document.getElementById('admin-pass').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptLogin();
+        });
+
+        function attemptLogin() {
+            const email = document.getElementById('admin-email').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.style.display = 'none';
+
+            if (!email || !pass) {
+                errorDiv.textContent = 'Por favor, preencha todos os campos.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            const token = `${email}:${pass}`;
+
+            fetch('/api/admin/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                }
+            })
+            .then(res => {
+                if (res.ok) {
+                    adminPassword = token;
+                    sessionStorage.setItem('admin_pass', token);
+                    showDashboard();
+                } else {
+                    errorDiv.textContent = 'E-mail ou senha incorretos.';
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                alert('Erro ao conectar ao servidor local. Verifique se ele está rodando.');
+            });
+        }
+
+        // Recupera sessão se recarregou
+        const savedPass = sessionStorage.getItem('admin_pass');
+        if (savedPass) {
+            document.getElementById('admin-pass').value = savedPass;
+            attemptLogin();
+        }
+
+        function showDashboard() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('admin-app').style.display = 'flex';
+            
+            renderExamList();
+            renderMaterialsList();
+            
+            refreshDashboard();
+            pollInterval = setInterval(refreshDashboard, 3000);
+        }
+
+        // Renderiza lista de chaves na barra lateral (Aba Monitor Geral)
+        function renderExamList() {
+            const listEl = document.getElementById('exam-release-list');
+            listEl.innerHTML = '';
+
+            allExams.forEach(exam => {
+                const li = document.createElement('li');
+                li.className = 'exam-release-item';
+                li.id = `exam-item-${exam.key}`;
+                li.innerHTML = `
+                    <div class="exam-release-info">
+                        <span class="exam-release-name">${exam.name}</span>
+                        <span class="exam-release-module">${exam.module}</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" class="exam-toggle" data-key="${exam.key}" id="toggle-${exam.key}">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                listEl.appendChild(li);
+            });
+
+            document.querySelectorAll('.exam-toggle').forEach(chk => {
+                chk.addEventListener('change', (e) => {
+                    const key = e.target.getAttribute('data-key');
+                    const isChecked = e.target.checked;
+                    
+                    if (isChecked) {
+                        document.querySelectorAll('.exam-toggle').forEach(c => {
+                            if (c.getAttribute('data-key') !== key) {
+                                c.checked = false;
+                                document.getElementById(`exam-item-${c.getAttribute('data-key')}`).classList.remove('active');
+                            }
+                        });
+                        activeExamKey = key;
+                        document.getElementById(`exam-item-${key}`).classList.add('active');
+                    } else {
+                        activeExamKey = null;
+                        document.getElementById(`exam-item-${key}`).classList.remove('active');
+                    }
+                    
+                    sendExamStatus(activeExamKey);
+                });
+            });
+        }
+
+        // Salva status da prova ativa no servidor por turma
+        function sendExamStatus(key) {
+            const activeClassSel = document.getElementById('admin-active-class');
+            const currentActiveClass = activeClassSel ? activeClassSel.value : '';
+            if (!currentActiveClass) {
+                alert('Selecione uma turma ativa primeiro!');
+                return;
+            }
+
+            fetch('/api/admin/lock-exam', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ 
+                    studentClass: currentActiveClass, 
+                    activeExamKey: key 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Status da prova atualizado:', data.activeExamKey);
+            })
+            .catch(err => console.error('Erro ao salvar liberação de prova:', err));
+        }
+
+        // Renderiza switches de controle de liberação (Aba Controle de Liberação)
+        function renderMaterialsList() {
+            const modulesList = ['FUTEC', 'FECOP', 'IRCOM'];
+            
+            modulesList.forEach(m => {
+                const container = document.getElementById(`materials-list-${m}`);
+                if (!container) return;
+                
+                container.innerHTML = '';
+                for (let i = 1; i <= 5; i++) {
+                    const apKey = `Apostila_${m}_${i}`;
+                    const apDiv = document.createElement('div');
+                    apDiv.className = 'material-release-item';
+                    apDiv.style.cssText = 'background: rgba(0,0,0,0.15); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;';
+                    apDiv.innerHTML = `
+                        <div class="material-release-info" style="display: flex; flex-direction: column; gap: 2px;">
+                            <span class="material-release-name" style="font-size: 0.85rem; font-weight: 700;">Apostila - Unidade ${i}</span>
+                            <span class="material-release-type" style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">📘 Apostila</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" class="material-toggle" data-key="${apKey}" id="toggle-mat-${apKey}">
+                            <span class="slider"></span>
+                        </label>
+                    `;
+                    container.appendChild(apDiv);
+                    
+                    const avKey = `Avaliacao_${m}_${i}`;
+                    const avDiv = document.createElement('div');
+                    avDiv.className = 'material-release-item';
+                    avDiv.style.cssText = 'background: rgba(0,0,0,0.15); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;';
+                    avDiv.innerHTML = `
+                        <div class="material-release-info" style="display: flex; flex-direction: column; gap: 2px;">
+                            <span class="material-release-name" style="font-size: 0.85rem; font-weight: 700;">Avaliação - Unidade ${i}</span>
+                            <span class="material-release-type" style="font-size: 0.7rem; color: var(--primary); text-transform: uppercase; font-weight: bold;">🎯 Avaliação</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button class="btn-preview-exam" data-key="${avKey}" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                🖨️ Config/Imp
+                            </button>
+                            <label class="switch">
+                                <input type="checkbox" class="material-toggle" data-key="${avKey}" id="toggle-mat-${avKey}">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    `;
+                    container.appendChild(avDiv);
+                }
+            });
+            
+            document.querySelectorAll('.material-toggle').forEach(chk => {
+                chk.addEventListener('change', (e) => {
+                    const itemKey = e.target.getAttribute('data-key');
+                    const released = e.target.checked;
+                    const activeClassSel = document.getElementById('admin-active-class');
+                    const currentActiveClass = activeClassSel ? activeClassSel.value : '';
+                    if (!currentActiveClass) {
+                        alert('Selecione uma turma ativa primeiro!');
+                        e.target.checked = !released;
+                        return;
+                    }
+                    
+                    fetch('/api/admin/release-item', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': adminPassword
+                        },
+                        body: JSON.stringify({ studentClass: currentActiveClass, itemKey, released })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log(`Status do item ${itemKey} atualizado:`, released);
+                    })
+                    .catch(err => console.error('Erro ao atualizar liberação do item:', err));
+                });
+            });
+
+            document.querySelectorAll('.btn-preview-exam').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const key = btn.getAttribute('data-key');
+                    openExamPreviewModal(key);
+                });
+            });
+        }
+        function updateStudentsTable(students) {
+            const tbody = document.getElementById('students-body');
+            if (!tbody) return;
+            
+            if (students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                            Nenhum aluno cadastrado no momento.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            students.sort((a, b) => a.name.localeCompare(b.name));
+            
+            let html = '';
+            students.forEach(student => {
+                const lastAccess = student.loginTime 
+                    ? new Date(student.loginTime).toLocaleTimeString('pt-BR') + ' ' + new Date(student.loginTime).toLocaleDateString('pt-BR')
+                    : 'Nunca';
+                
+                let recoveryHTML = '';
+                if (student.recoveryRequested) {
+                    recoveryHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+                            <span class="badge-status failed" style="font-size: 0.7rem; padding: 2px 6px;">⚠️ AJUDA SOLICITADA</span>
+                            <button onclick="resetStudentPassword('${student.email}')" style="padding: 4px 8px; background: var(--success); color: white; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Redefinir Senha</button>
+                        </div>
+                    `;
+                } else {
+                    recoveryHTML = `
+                        <button onclick="resetStudentPassword('${student.email}')" style="padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-muted); border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">Redefinir</button>
+                    `;
+                }
+                
+                html += `
+                    <tr data-student-email="${student.email}">
+                        <td>
+                            <strong>${student.name}</strong><br>
+                            <span style="font-size:0.75rem; color: var(--text-muted);">${student.email}</span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="pwd-placeholder" style="font-family: monospace; font-size: 0.95rem;">••••••••</span>
+                                <span class="pwd-real" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; display: none; color: #4ade80;">${student.password}</span>
+                                <button onclick="togglePasswordVisibility(this)" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem;" title="Mostrar/Ocultar Senha">👁️</button>
+                            </div>
+                        </td>
+                        <td>${student.studentClass} • ${student.period}</td>
+                        <td style="color:var(--text-muted); font-size:0.8rem;">${lastAccess}</td>
+                        <td>${recoveryHTML}</td>
+                        <td style="white-space: nowrap;">
+                            <button onclick="openEditStudentModal('${student.email}')" style="padding: 6px 10px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #60a5fa; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-right: 5px;">✏️ Editar</button>
+                            <button onclick="deleteStudentAccount('${student.email}')" style="padding: 6px 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        window.togglePasswordVisibility = function(btn) {
+            const container = btn.parentElement;
+            const placeholder = container.querySelector('.pwd-placeholder');
+            const real = container.querySelector('.pwd-real');
+            
+            if (placeholder.style.display !== 'none') {
+                placeholder.style.display = 'none';
+                real.style.display = 'inline';
+                btn.textContent = '🙈';
+            } else {
+                placeholder.style.display = 'inline';
+                real.style.display = 'none';
+                btn.textContent = '👁️';
+            }
+        };
+
+        window.resetStudentPassword = function(email) {
+            const newPassword = prompt(`Digite a nova senha para o aluno ${email}:`);
+            if (newPassword === null) return;
+            
+            const trimmed = newPassword.trim();
+            if (trimmed === '') {
+                alert('A senha não pode estar vazia!');
+                return;
+            }
+            
+            fetch('/api/admin/reset-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ email, newPassword: trimmed })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Erro ao redefinir senha.");
+                return res.json();
+            })
+            .then(data => {
+                alert('Senha redefinida com sucesso!');
+                refreshDashboard();
+            })
+            .catch(err => alert(err.message));
+        };
+
+        window.openEditStudentModal = function(email) {
+            console.log('openEditStudentModal called for:', email);
+            const student = allStudentsCache.find(s => s.email && s.email.trim().toLowerCase() === email.trim().toLowerCase());
+            if (!student) {
+                console.error('Student not found for:', email);
+                return;
+            }
+            
+            document.getElementById('edit-student-original-email').value = student.email;
+            document.getElementById('edit-student-name').value = student.name;
+            document.getElementById('edit-student-email').value = student.email;
+            document.getElementById('edit-student-password').value = student.password || '';
+            document.getElementById('edit-student-class').value = student.studentClass;
+            document.getElementById('edit-student-period').value = student.period || 'Tarde';
+            
+            document.getElementById('student-edit-error').style.display = 'none';
+            document.getElementById('edit-student-modal').style.display = 'flex';
+        };
+
+        window.deleteStudentAccount = function(email) {
+            const confirmDel = confirm(`Você tem certeza que deseja EXCLUIR a conta do aluno ${email}?`);
+            if (!confirmDel) return;
+            
+            fetch('/api/admin/delete-student', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ email })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Erro ao excluir aluno.");
+                return res.json();
+            })
+            .then(data => {
+                alert('Estudante removido com sucesso!');
+                refreshDashboard();
+            })
+            .catch(err => alert(err.message));
+        }; })
+                    .then(data => {
+                        alert('Estudante removido com sucesso!');
+                        refreshDashboard();
+                    })
+                    .catch(err => alert(err.message));
+                });
+            });
+        }
+
+        // Listener para Cadastro Manual de Estudantes
+        document.getElementById('btn-create-student').addEventListener('click', () => {
+            const name = document.getElementById('create-student-name').value.trim();
+            const email = document.getElementById('create-student-email').value.trim();
+            const studentPassword = document.getElementById('create-student-password').value.trim();
+            const studentClass = document.getElementById('create-student-class').value.trim();
+            
+            const errDiv = document.getElementById('student-create-error');
+            const succDiv = document.getElementById('student-create-success');
+            
+            errDiv.style.display = 'none';
+            succDiv.style.display = 'none';
+            
+            if (!name || !email || !studentPassword || !studentClass) {
+                errDiv.textContent = 'Por favor, preencha todos os campos do cadastro.';
+                errDiv.style.display = 'block';
+                return;
+            }
+            
+            fetch('/api/admin/student/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ name, email, studentPassword, studentClass })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(data => { throw new Error(data.error || 'Erro ao criar conta de estudante.') });
+                }
+                return res.json();
+            })
+            .then(data => {
+                succDiv.textContent = 'Conta de estudante criada com sucesso!';
+                succDiv.style.display = 'block';
+                
+                document.getElementById('create-student-name').value = '';
+                document.getElementById('create-student-email').value = '';
+                document.getElementById('create-student-password').value = '';
+                document.getElementById('create-student-class').value = '';
+                
+                refreshDashboard();
+                
+                setTimeout(() => {
+                    succDiv.style.display = 'none';
+                }, 3500);
+            })
+            .catch(err => {
+                errDiv.textContent = err.message;
+                errDiv.style.display = 'block';
+            });
+        });
+
+        // Transição e navegação por abas
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.borderBottom = '3px solid transparent';
+                    b.style.color = 'var(--text-muted)';
+                });
+                
+                btn.classList.add('active');
+                btn.style.borderBottom = '3px solid var(--primary)';
+                btn.style.color = 'white';
+                
+                document.querySelectorAll('.tab-content').forEach(tc => {
+                    tc.style.display = 'none';
+                });
+                
+                const activeTabId = btn.getAttribute('data-tab');
+                const activeTab = document.getElementById(activeTabId);
+                if (activeTabId === 'tab-dashboard') {
+                    activeTab.style.display = 'grid';
+                } else if (activeTabId === 'tab-students') {
+                    activeTab.style.display = 'grid';
+                } else if (activeTabId === 'tab-classes') {
+                    activeTab.style.display = 'grid';
+                } else if (activeTabId === 'tab-admins') {
+                    activeTab.style.display = 'grid';
+                } else {
+                    activeTab.style.display = 'flex';
+                }
+                
+                refreshDashboard();
+            });
+        });
+
+        // Atualiza os dropdowns de seleção de turma
+        function updateClassDropdowns(classes) {
+            const filterSel = document.getElementById('filter-class');
+            const curFilter = filterSel.value;
+            filterSel.innerHTML = '<option value="">Todas as Turmas</option>';
+            classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                filterSel.appendChild(opt);
+            });
+            filterSel.value = curFilter;
+
+            const createSel = document.getElementById('create-student-class');
+            const curCreate = createSel.value;
+            createSel.innerHTML = '';
+            if (classes.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Nenhuma turma cadastrada';
+                createSel.appendChild(opt);
+            } else {
+                classes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.name;
+                    opt.textContent = c.name;
+                    createSel.appendChild(opt);
+                });
+                createSel.value = curCreate;
+            }
+
+            const editSel = document.getElementById('edit-student-class');
+            if (editSel) {
+                const curEdit = editSel.value;
+                editSel.innerHTML = '';
+                if (classes.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'Nenhuma turma cadastrada';
+                    editSel.appendChild(opt);
+                } else {
+                    classes.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.name;
+                        opt.textContent = c.name;
+                        editSel.appendChild(opt);
+                    });
+                    editSel.value = curEdit;
+                }
+            }
+
+            // Cabeçalho admin active class select
+            const activeClassSel = document.getElementById('admin-active-class');
+            const curActiveClass = activeClassSel.value;
+            activeClassSel.innerHTML = '';
+            if (classes.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Nenhuma turma';
+                activeClassSel.appendChild(opt);
+            } else {
+                classes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.name;
+                    opt.textContent = c.name;
+                    activeClassSel.appendChild(opt);
+                });
+            }
+            if (classes.some(c => c.name === curActiveClass)) {
+                activeClassSel.value = curActiveClass;
+            } else if (classes.length > 0) {
+                activeClassSel.value = classes[0].name;
+            }
+        }
+
+        // Renderiza tabela de turmas (Aba Turmas)
+        function updateClassesTable(classes, students) {
+            const tbody = document.getElementById('classes-body');
+            if (!tbody) return;
+            
+            if (classes.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                            Nenhuma turma cadastrada no momento.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            classes.sort((a, b) => a.name.localeCompare(b.name));
+            
+            let html = '';
+            classes.forEach(c => {
+                const count = students.filter(s => s.studentClass === c.name).length;
+                
+                html += `
+                    <tr>
+                        <td><strong style="color: #60a5fa; font-size: 1rem;">${c.name}</strong></td>
+                        <td><span style="font-weight: 600; color: var(--text-main);">${c.period || 'Não definido'}</span></td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label class="switch">
+                                    <input type="checkbox" class="class-toggle" data-name="${c.name}" ${c.registrationEnabled ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="font-size: 0.8rem; color: ${c.registrationEnabled ? '#4ade80' : 'var(--text-muted)'}">
+                                    ${c.registrationEnabled ? 'Liberado' : 'Bloqueado'}
+                                </span>
+                             </div>
+                        </td>
+                        <td><strong style="font-size: 1.1rem; color: var(--text-main);">${count}</strong> alunos</td>
+                        <td>
+                            <button class="btn-action-delete-class" data-name="${c.name}" style="padding: 6px 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">🗑️ Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+            
+            // Ativa/Desativa cadastro da turma
+            tbody.querySelectorAll('.class-toggle').forEach(chk => {
+                chk.addEventListener('change', (e) => {
+                    const name = e.target.getAttribute('data-name');
+                    const registrationEnabled = e.target.checked;
+                    
+                    fetch('/api/admin/class/toggle-registration', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': adminPassword
+                        },
+                        body: JSON.stringify({ name, registrationEnabled })
+                    })
+                    .then(res => res.json())
+                    .then(() => {
+                        refreshDashboard();
+                    })
+                    .catch(err => console.error(err));
+                });
+            });
+            
+            // Deletar turma
+            tbody.querySelectorAll('.btn-action-delete-class').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const name = e.target.getAttribute('data-name');
+                    const confirmDel = confirm(`Tem certeza que deseja EXCLUIR a turma ${name}? Alunos cadastrados continuarão no sistema, mas novos cadastros serão bloqueados.`);
+                    if (!confirmDel) return;
+                    
+                    fetch('/api/admin/class/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': adminPassword
+                        },
+                        body: JSON.stringify({ name })
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error("Erro ao excluir turma.");
+                        return res.json();
+                    })
+                    .then(() => {
+                        alert('Turma excluída com sucesso!');
+                        refreshDashboard();
+                    })
+                    .catch(err => alert(err.message));
+                });
+            });
+        }
+
+        // Cadastro de Turma Manual
+        document.getElementById('btn-create-class').addEventListener('click', () => {
+            const nameInput = document.getElementById('create-class-name');
+            const name = nameInput.value.trim();
+            const errDiv = document.getElementById('class-create-error');
+            const succDiv = document.getElementById('class-create-success');
+            
+            errDiv.style.display = 'none';
+            succDiv.style.display = 'none';
+            
+            if (!name) {
+                errDiv.textContent = 'Por favor, digite o identificador da turma.';
+                errDiv.style.display = 'block';
+                return;
+            }
+            
+            fetch('/api/admin/class/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ name, period: document.getElementById('create-class-period').value })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(data => { throw new Error(data.error || 'Erro ao criar turma.') });
+                }
+                return res.json();
+            })
+            .then(() => {
+                succDiv.textContent = 'Turma criada com sucesso!';
+                succDiv.style.display = 'block';
+                nameInput.value = '';
+                refreshDashboard();
+                setTimeout(() => { succDiv.style.display = 'none'; }, 3000);
+            })
+            .catch(err => {
+                errDiv.textContent = err.message;
+                errDiv.style.display = 'block';
+            });
+        });
+
+        // Busca dados e atualiza o dashboard
+        function refreshDashboard() {
+            if (!adminPassword) return;
+
+            const activeClassSel = document.getElementById('admin-active-class');
+            let currentActiveClass = activeClassSel ? activeClassSel.value : '';
+
+            // 1. Busca turmas cadastradas
+            fetch(`/api/admin/classes?password=${adminPassword}`)
+            .then(res => res.json())
+            .then(classes => {
+                allClassesCache = classes;
+                updateClassDropdowns(classes);
+                currentActiveClass = activeClassSel ? activeClassSel.value : '';
+                updateClassesTable(classes, allStudentsCache);
+
+                // 2. Busca configurações isoladas da turma ativa
+                return fetch('/api/admin/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': adminPassword
+                    },
+                    body: JSON.stringify({ studentClass: currentActiveClass })
+                });
+            })
+            .then(res => res.json())
+            .then(config => {
+                activeExamKey = config.activeExamKey;
+                
+                // Exibe o IP do servidor para os alunos
+                const netUrlEl = document.getElementById('network-url');
+                if (netUrlEl && config.serverUrl) {
+                    netUrlEl.textContent = config.serverUrl;
+                    netUrlEl.href = config.serverUrl;
+                }
+
+                // Sincroniza os switches da barra lateral
+                document.querySelectorAll('.exam-toggle').forEach(chk => {
+                    const key = chk.getAttribute('data-key');
+                    const isActive = (key === activeExamKey);
+                    chk.checked = isActive;
+                    const li = document.getElementById(`exam-item-${key}`);
+                    if (li) {
+                        if (isActive) li.classList.add('active');
+                        else li.classList.remove('active');
+                    }
+                });
+                
+                // Sincroniza os switches de liberação de apostilas/provas
+                const releasedItems = config.releasedItems || {};
+                document.querySelectorAll('.material-toggle').forEach(chk => {
+                    const key = chk.getAttribute('data-key');
+                    chk.checked = !!releasedItems[key];
+                });
+            })
+            .catch(e => console.error('Erro ao buscar status do servidor:', e));
+
+            // Busca alunos online e cadastrados
+            fetch(`/api/admin/students?password=${adminPassword}`)
+            .then(res => res.json())
+            .then(students => {
+                allStudentsCache = students;
+                const filteredStudents = selectedFilterClass 
+                    ? students.filter(s => s.studentClass === selectedFilterClass)
+                    : students;
+                
+                document.getElementById('stat-students').textContent = filteredStudents.length;
+                updateStudentsTable(students);
+            })
+            .catch(e => console.error('Erro ao buscar alunos:', e));
+
+            // Busca submissões de notas
+            fetch(`/api/admin/submissions?password=${adminPassword}`)
+            .then(res => res.json())
+            .then(submissions => {
+                updateSubmissionsTable(submissions);
+            })
+            .catch(e => console.error('Erro ao buscar notas:', e));
+
+            // Busca administradores se a aba estiver ativa
+            const tabAdmins = document.querySelector('.tab-btn[data-tab="tab-admins"]');
+            if (tabAdmins && tabAdmins.classList.contains('active')) {
+                fetch(`/api/admin/accounts?password=${adminPassword}`)
+                .then(res => res.json())
+                .then(admins => {
+                    updateAdminsTable(admins);
+                })
+                .catch(e => console.error('Erro ao buscar administradores:', e));
+            }
+        }
+
+        // Atualiza a tabela live e as estatísticas
+        function updateSubmissionsTable(submissions) {
+            const tbody = document.getElementById('submissions-body');
+            const emptyDiv = document.getElementById('empty-submissions');
+            
+            const filteredSubmissions = selectedFilterClass 
+                ? submissions.filter(sub => sub.student.studentClass === selectedFilterClass)
+                : submissions;
+
+            document.getElementById('stat-submissions').textContent = filteredSubmissions.length;
+
+            if (filteredSubmissions.length === 0) {
+                tbody.innerHTML = '';
+                emptyDiv.style.display = 'block';
+                document.getElementById('stat-average').textContent = '0%';
+                return;
+            }
+
+            emptyDiv.style.display = 'none';
+            let totalScore = 0;
+            
+            filteredSubmissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            let html = '';
+            filteredSubmissions.forEach(sub => {
+                totalScore += sub.score;
+                const isApproved = sub.score >= 60;
+                const date = new Date(sub.timestamp).toLocaleTimeString('pt-BR') + ' ' + new Date(sub.timestamp).toLocaleDateString('pt-BR');
+                const evalLabel = sub.examKey.replace('Avaliacao_', '').replace(/_/g, ' ');
+
+                html += `
+                    <tr>
+                        <td><strong>${sub.student.name}</strong></td>
+                        <td>${sub.student.studentClass} • ${sub.student.period}</td>
+                        <td><span style="font-weight:600; color: #60a5fa">${evalLabel}</span></td>
+                        <td><strong style="color: ${isApproved ? '#4ade80' : '#f87171'}">${sub.score}%</strong></td>
+                        <td>${sub.correctCount} / ${sub.totalCount}</td>
+                        <td style="color:var(--text-muted); font-size:0.8rem;">${date}</td>
+                        <td>
+                            <span class="badge-status ${isApproved ? 'approved' : 'failed'}">
+                                ${isApproved ? 'Aprovado' : 'Reprovado'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            const avg = Math.round(totalScore / filteredSubmissions.length);
+            const avgEl = document.getElementById('stat-average');
+            avgEl.textContent = `${avg}%`;
+            if (avg >= 60) {
+                avgEl.className = 'stat-value ok';
+            } else {
+                avgEl.className = 'stat-value';
+            }
+        }
+
+        // Exportador CSV
+        document.getElementById('btn-export-csv').addEventListener('click', () => {
+            fetch(`/api/admin/submissions?password=${adminPassword}`)
+            .then(res => res.json())
+            .then(submissions => {
+                if (submissions.length === 0) {
+                    alert('Nenhuma submissão encontrada para exportar.');
+                    return;
+                }
+
+                let csvContent = "\ufeff";
+                csvContent += "Nome,Turma,Período,Avaliação,Acertos,Total Questões,Nota (%),Data/Hora\n";
+                
+                submissions.forEach(s => {
+                    const dateStr = new Date(s.timestamp).toLocaleString('pt-BR');
+                    const evalLabel = s.examKey.replace('Avaliacao_', '').replace(/_/g, ' ');
+                    csvContent += `"${s.student.name}","${s.student.studentClass}","${s.student.period}","${evalLabel}",${s.correctCount},${s.totalCount},${s.score},"${dateStr}"\n`;
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `notas_portal_senai_${new Date().toISOString().slice(0, 10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            })
+            .catch(e => alert('Erro ao exportar notas.'));
+        });
+
+        // Limpeza de Sala (Reset)
+        document.getElementById('btn-reset-room').addEventListener('click', () => {
+            const confirmReset = confirm('ATENÇÃO: Isso irá apagar TODOS os alunos conectados e as notas desta sessão de aula! Você tem certeza?');
+            if (!confirmReset) return;
+
+            fetch('/api/admin/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                refreshDashboard();
+            })
+            .catch(err => alert('Erro ao resetar sala.'));
+        });
+
+        // Logout
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            sessionStorage.removeItem('admin_pass');
+            adminPassword = '';
+            clearInterval(pollInterval);
+            document.getElementById('admin-app').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('admin-pass').value = '';
+        });
+
+        // ==========================================
+        // SISTEMA DE PARSE E GERAÇÃO DE EXAMES/PDF (PORTADO)
+        // ==========================================
+        function parseEvaluation(markdownText) {
+            if (!markdownText) return null;
+
+            const titleMatch = markdownText.match(/^#\s+(.+)$/m);
+            const themeMatch = markdownText.match(/\*\*Tema:\*\*\s*(.+)/);
+            const title = titleMatch ? titleMatch[1].replace(/📝\s*/, '') : 'Avaliação';
+            const theme = themeMatch ? themeMatch[1] : '';
+
+            let rubricMarkdown = '';
+            const rubricMatch = markdownText.match(/(## Parte 2[\s\S]*?)(?=<details>)/);
+            if (rubricMatch) {
+                rubricMarkdown = rubricMatch[1].trim();
+            }
+
+            const gabarito = {};
+            const detailsMatch = markdownText.match(/<details>([\s\S]*?)<\/details>/);
+            if (detailsMatch) {
+                const detailsContent = detailsMatch[1];
+                const detailedMatches = detailsContent.matchAll(/(\d+)\.\s*\*\*([A-Da-d])\*\*/g);
+                for (const m of detailedMatches) {
+                    gabarito[parseInt(m[1])] = m[2].toUpperCase();
+                }
+                if (Object.keys(gabarito).length === 0) {
+                    const compactMatches = detailsContent.matchAll(/(\d+)\.\s*([A-Da-d])\b/g);
+                    for (const m of compactMatches) {
+                        gabarito[parseInt(m[1])] = m[2].toUpperCase();
+                    }
+                }
+            }
+
+            const questions = [];
+            const questionRegex = /\*\*(\d+)\.\s*(.*?)\*\*\s*\n([\s\S]*?)(?=\*\*\d+\.|## Parte 2|<details>|$)/g;
+            let qMatch;
+            
+            while ((qMatch = questionRegex.exec(markdownText)) !== null) {
+                const qNumber = parseInt(qMatch[1]);
+                const qText = qMatch[2].trim();
+                const alternativesBlock = qMatch[3];
+
+                const alternatives = [];
+                const altRegex = /([a-d])\)\s*(.+?)(?=\n[a-d]\)|\n---|\n\*\*|\n##|\n<|$)/gs;
+                let altMatch;
+                while ((altMatch = altRegex.exec(alternativesBlock)) !== null) {
+                    alternatives.push({
+                        letter: altMatch[1].toUpperCase(),
+                        text: altMatch[2].trim(),
+                        isCorrect: gabarito[qNumber] === altMatch[1].toUpperCase()
+                    });
+                }
+
+                if (alternatives.length >= 2) {
+                    questions.push({
+                        originalNumber: qNumber,
+                        text: qText,
+                        alternatives: alternatives,
+                        correctAnswer: gabarito[qNumber]
+                    });
+                }
+            }
+
+            if (questions.length === 0) return null;
+
+            return {
+                title,
+                theme,
+                questions,
+                rubricMarkdown,
+                totalQuestions: questions.length
+            };
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function shuffleAlternatives(question) {
+            const shuffledAlts = shuffleArray(question.alternatives);
+            const newLetters = ['A', 'B', 'C', 'D'];
+            let correctLetter = '';
+
+            const mappedAlts = shuffledAlts.map((alt, idx) => {
+                const newLetter = newLetters[idx];
+                if (alt.isCorrect) correctLetter = newLetter;
+                return {
+                    ...alt,
+                    displayLetter: newLetter
+                };
+            });
+
+            return {
+                ...question,
+                alternatives: mappedAlts,
+                correctAnswer: correctLetter
+            };
+        }
+
+        function generateExam(allQuestions, count) {
+            let selected = [...allQuestions];
+            if (count < selected.length) {
+                selected = shuffleArray(selected).slice(0, count);
+            }
+            selected = shuffleArray(selected);
+            
+            const answerKey = {};
+            const examQuestions = selected.map((q, idx) => {
+                const shuffled = shuffleAlternatives(q);
+                const newNumber = idx + 1;
+                answerKey[newNumber] = shuffled.correctAnswer;
+                return {
+                    ...shuffled,
+                    examNumber: newNumber
+                };
+            });
+
+            return { questions: examQuestions, answerKey };
+        }
+
+        function openExamPreviewModal(examKey) {
+            currentModalExamKey = examKey;
+            
+            const rawMarkdown = courseData[examKey];
+            if (!rawMarkdown) {
+                alert('Erro: Conteúdo da prova não encontrado em data.js.');
+                return;
+            }
+
+            const parsed = parseEvaluation(rawMarkdown);
+            if (!parsed) {
+                alert('Erro ao processar as questões da prova.');
+                return;
+            }
+
+            const activeClassSel = document.getElementById('admin-active-class');
+            const currentActiveClass = activeClassSel ? activeClassSel.value : '';
+            
+            let initialCount = parsed.totalQuestions;
+            
+            fetch('/api/admin/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ studentClass: currentActiveClass })
+            })
+            .then(res => res.json())
+            .then(config => {
+                const count = config.activeExamQuestionCount || parsed.totalQuestions;
+                initialCount = Math.min(count, parsed.totalQuestions);
+                setupModal(parsed, initialCount);
+            })
+            .catch(err => {
+                console.error(err);
+                setupModal(parsed, initialCount);
+            });
+        }
+        
+        function setupModal(parsed, initialCount) {
+            const slider = document.getElementById('modal-question-slider');
+            slider.max = parsed.totalQuestions;
+            slider.value = initialCount;
+            document.getElementById('modal-question-count-badge').textContent = initialCount;
+
+            const exam = generateExam(parsed.questions, initialCount);
+            currentModalExamState = {
+                ...parsed,
+                shuffledQuestions: exam.questions,
+                answerKey: exam.answerKey,
+                questionCount: initialCount
+            };
+
+            document.getElementById('modal-exam-title').textContent = parsed.title;
+            document.getElementById('modal-exam-theme').textContent = parsed.theme;
+
+            updateModalPreview(false);
+
+            document.getElementById('exam-preview-modal').style.display = 'flex';
+        }
+        
+        function updateModalPreview(regenerate = true) {
+            if (regenerate) {
+                const exam = generateExam(currentModalExamState.questions, currentModalExamState.questionCount);
+                currentModalExamState.shuffledQuestions = exam.questions;
+                currentModalExamState.answerKey = exam.answerKey;
+            }
+
+            const listEl = document.getElementById('modal-questions-list');
+            const badgeEl = document.getElementById('modal-question-count-badge');
+            const count = Math.min(currentModalExamState.questionCount, currentModalExamState.shuffledQuestions.length);
+            
+            if (badgeEl) badgeEl.textContent = count;
+
+            if (listEl) {
+                let html = '';
+                currentModalExamState.shuffledQuestions.forEach((q, idx) => {
+                    if (idx >= count) return;
+                    html += `
+                        <div class="exam-question-card" style="background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 8px; padding: 15px; position: relative;">
+                            <div class="exam-question-number" style="position: absolute; top: 12px; left: 12px; background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">${idx + 1}</div>
+                            <div class="exam-question-body" style="padding-left: 30px;">
+                                <p class="exam-question-text" style="font-weight: 600; margin-bottom: 10px;">${q.text}</p>
+                                <div class="exam-alternatives" style="display: flex; flex-direction: column; gap: 8px;">
+                                    ${q.alternatives.map(alt => {
+                                        const isCorrect = alt.isCorrect;
+                                        return `
+                                            <div class="exam-alt" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: ${isCorrect ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${isCorrect ? '#22c55e' : 'var(--border)'};">
+                                                <span style="font-weight: 700; color: ${isCorrect ? '#22c55e' : 'var(--text-muted)'}">${alt.displayLetter}</span>
+                                                <span>${alt.text}</span>
+                                                ${isCorrect ? '<span style="margin-left: auto; color: #22c55e; font-weight: bold; font-size: 0.75rem;">CORRETA</span>' : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }
+        }
+
+        function generateModalExamPDF(isAnswerKey) {
+            if (!currentModalExamState) return;
+
+            const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+            const versionsInput = document.getElementById('modal-versions-count');
+            const versionsCount = versionsInput ? Math.max(1, Math.min(5, parseInt(versionsInput.value))) : 1;
+            const titleText = isAnswerKey 
+                ? `GABARITO — ${currentModalExamState.title}` 
+                : currentModalExamState.title;
+
+            let documentsHTML = '';
+            const versionLabels = ['A', 'B', 'C', 'D', 'E'];
+
+            for (let v = 0; v < versionsCount; v++) {
+                let examData;
+                if (versionsCount === 1) {
+                    examData = {
+                        questions: currentModalExamState.shuffledQuestions,
+                        answerKey: currentModalExamState.answerKey
+                    };
+                } else {
+                    examData = generateExam(currentModalExamState.questions, currentModalExamState.questionCount);
+                }
+
+                const count = Math.min(currentModalExamState.questionCount, examData.questions.length);
+                const versionLabel = versionLabels[v];
+                const versionTitleText = versionsCount > 1 ? ` (VERSÃO ${versionLabel})` : '';
+
+                let headerHTML = '';
+                if (!isAnswerKey) {
+                    headerHTML = `
+                    <div class="student-info">
+                        <div class="student-info-grid">
+                            <div class="student-field student-field-full">
+                                <label>Nome do Aluno(a):</label>
+                                <div class="field-line"></div>
+                            </div>
+                            <div class="student-field">
+                                <label>Turma:</label>
+                                <div class="field-line"></div>
+                            </div>
+                            <div class="student-field">
+                                <label>Período:</label>
+                                <div class="field-line"></div>
+                            </div>
+                            <div class="student-field">
+                                <label>Data:</label>
+                                <div class="field-line" style="min-width: 80px;"></div>
+                            </div>
+                            <div class="student-field">
+                                <label>Nota:</label>
+                                <div class="field-line" style="min-width: 60px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+
+                let bubbleSheetHTML = '';
+                if (isAnswerKey) {
+                    bubbleSheetHTML = `
+                    <div class="print-bubble-sheet">
+                        <div class="print-bubble-sheet-title">🔑 GABARITO DE RESPOSTAS RÁPIDAS - VERSÃO ${versionLabel}</div>
+                        <div class="print-bubble-sheet-grid">
+                            ${examData.questions.slice(0, count).map((q, idx) => {
+                                const correctLetter = examData.answerKey[idx + 1];
+                                return `
+                                    <div class="print-bubble-row">
+                                        <span class="q-num">${idx + 1}.</span>
+                                        <span class="bubble ${correctLetter === 'A' ? 'filled' : ''}">A</span>
+                                        <span class="bubble ${correctLetter === 'B' ? 'filled' : ''}">B</span>
+                                        <span class="bubble ${correctLetter === 'C' ? 'filled' : ''}">C</span>
+                                        <span class="bubble ${correctLetter === 'D' ? 'filled' : ''}">D</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    bubbleSheetHTML = `
+                    <div class="print-bubble-sheet">
+                        <div class="print-bubble-sheet-title">✏️ CARTÃO RESPOSTA (VERSÃO ${versionLabel}) - PREENCHA COM CANETA AZUL OU PRETA</div>
+                        <div class="print-bubble-sheet-grid">
+                            ${Array.from({ length: count }).map((_, idx) => `
+                                <div class="print-bubble-row">
+                                    <span class="q-num">${idx + 1}.</span>
+                                    <span class="bubble">A</span>
+                                    <span class="bubble">B</span>
+                                    <span class="bubble">C</span>
+                                    <span class="bubble">D</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    `;
+                }
+
+                let questionsHTML = '';
+                if (isAnswerKey) {
+                    questionsHTML = `
+                        <div class="answer-key-detail">
+                            <h3>Detalhamento das Respostas</h3>
+                            ${examData.questions.slice(0, count).map((q, idx) => `
+                                <p><strong>${idx + 1}. ${examData.answerKey[idx + 1]}</strong> — ${q.text}</p>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    questionsHTML = examData.questions.slice(0, count).map((q, idx) => `
+                        <div class="print-question" style="margin-bottom: 22px; page-break-inside: avoid;">
+                            <p style="font-weight: 700; color: #1a1a2e; margin-bottom: 8px;">
+                                <strong>${idx + 1}.</strong> ${q.text}
+                            </p>
+                            <div style="padding-left: 20px;">
+                                ${q.alternatives.map(alt => `
+                                    <p style="margin: 4px 0; color: #333;">
+                                        ${alt.displayLetter.toLowerCase()}) ${alt.text}
+                                    </p>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                documentsHTML += `
+                <div class="pdf-page" style="page-break-after: ${v < versionsCount - 1 ? 'always' : 'auto'}; min-height: 98vh; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="pdf-header" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 22px 40px; display: flex; align-items: center; justify-content: space-between;">
+                            <div class="logo" style="font-size: 24pt; font-weight: 800; letter-spacing: -1px;">SENAI<span style="color:#e94560">4.0</span></div>
+                            <div class="meta" style="text-align: right; font-size: 8.5pt; opacity: 0.85; line-height: 1.5;">
+                                <span style="font-size:11pt;font-weight:800;color:#e9c46a;display:block;margin-bottom:2px">
+                                    ${isAnswerKey ? '🔑 GABARITO DO PROFESSOR' : '📝 AVALIAÇÃO'}${versionTitleText}
+                                </span>
+                                <span style="color:#a8d8ff;font-size:9pt">Instrutor Alan Marciano — Gestor em T.I.</span><br>
+                                ${dateStr}<br>
+                                <strong style="color:#e9c46a">USO RESTRITO — MATERIAL DIDÁTICO</strong>
+                            </div>
+                        </div>
+                        
+                        ${headerHTML}
+                        
+                        <div class="pdf-breadcrumb" style="background: #f0f4ff; border-left: 5px solid #e94560; padding: 8px 40px; font-size: 9pt; color: #555; font-weight: 600;">${currentModalExamState.title}${currentModalExamState.theme ? ' — ' + currentModalExamState.theme : ''}</div>
+                        
+                        ${!isAnswerKey ? `
+                        <div class="exam-instructions" style="padding: 12px 40px; background: #fffbf0; border-left: 5px solid #f39c12; font-size: 9.5pt; color: #5a4a00;">
+                            <strong>Instruções:</strong> Responda às questões e preencha as bolhas correspondentes no Cartão Resposta. Prova com <strong>${count} questões</strong>. Boa prova!
+                        </div>
+                        ` : ''}
+                        
+                        <div class="pdf-body" style="padding: 25px 40px 10px;">
+                            ${bubbleSheetHTML}
+                            ${isAnswerKey ? `<h1>🔑 Gabarito Detalhado — Versão ${versionLabel}</h1>` : ''}
+                            ${questionsHTML}
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-footer" style="padding: 10px 40px 30px; margin-top: auto;">
+                        <hr style="border: none; border-top: 2px solid #e0e6f0; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 8.5pt; color: #888;">
+                            <span>SENAI Sertãozinho — Portal SENAI 4.0 · ${dateStr}</span>
+                            <span style="color:#0f3460;font-weight:700">✍️ Instrutor Alan Marciano — Gestor em T.I.</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }
+
+            const printWindow = window.open("", "_blank");
+            printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>${titleText}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Inter', sans-serif;
+                font-size: 11pt;
+                line-height: 1.6;
+                color: #1a1a2e;
+                background: #fff;
+            }
+            .pdf-header {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                color: white;
+                padding: 22px 40px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .pdf-header .logo { font-size: 24pt; font-weight: 800; letter-spacing: -1px; }
+            .pdf-header .logo span { color: #e94560; }
+            .pdf-header .meta { text-align: right; font-size: 8.5pt; opacity: 0.85; line-height: 1.5; }
+
+            .student-info {
+                border: 2px solid #1a1a2e;
+                margin: 0;
+                padding: 16px 40px;
+                background: #f8faff;
+            }
+            .student-info-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px 30px;
+            }
+            .student-field {
+                display: flex;
+                align-items: baseline;
+                gap: 8px;
+                font-size: 11pt;
+            }
+            .student-field label {
+                font-weight: 700;
+                color: #1a1a2e;
+                white-space: nowrap;
+                font-size: 10pt;
+            }
+            .student-field .field-line {
+                flex: 1;
+                border-bottom: 1.5px solid #333;
+                min-width: 120px;
+                height: 20px;
+            }
+            .student-field-full {
+                grid-column: 1 / -1;
+            }
+
+            .pdf-breadcrumb {
+                background: #f0f4ff;
+                border-left: 5px solid #e94560;
+                padding: 8px 40px;
+                font-size: 9pt;
+                color: #555;
+                font-weight: 600;
+            }
+            .exam-instructions {
+                padding: 12px 40px;
+                background: #fffbf0;
+                border-left: 5px solid #f39c12;
+                font-size: 9.5pt;
+                color: #5a4a00;
+            }
+            
+            h1 { font-size: 16pt; font-weight: 800; color: #0f3460; margin-bottom: 18px; margin-top: 10px; }
+            h2 { font-size: 13pt; font-weight: 700; color: #16213e; margin-top: 24px; margin-bottom: 10px; }
+            h3 { font-size: 11pt; font-weight: 600; color: #0f3460; margin-top: 16px; margin-bottom: 8px; }
+            p { margin-bottom: 6px; }
+
+            .print-question { margin-bottom: 18px; }
+            
+            .answer-key-detail {
+                margin-top: 20px;
+                padding-top: 10px;
+            }
+            .answer-key-detail h3 { margin-bottom: 12px; }
+            .answer-key-detail p { font-size: 9.5pt; margin-bottom: 6px; color: #444; }
+
+            /* Cartão Resposta de Impressão */
+            .print-bubble-sheet {
+                border: 2px solid #1a1a2e;
+                background: #f8faff;
+                padding: 12px 20px;
+                margin-bottom: 22px;
+                page-break-inside: avoid;
+            }
+            .print-bubble-sheet-title {
+                font-size: 9.5pt;
+                font-weight: 800;
+                text-align: center;
+                color: #1a1a2e;
+                margin-bottom: 10px;
+                border-bottom: 1.5px solid #1a1a2e;
+                padding-bottom: 4px;
+                letter-spacing: 0.5px;
+            }
+            .print-bubble-sheet-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 8px 15px;
+            }
+            .print-bubble-row {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 8.5pt;
+                font-family: monospace;
+            }
+            .print-bubble-row .q-num {
+                font-weight: 800;
+                width: 20px;
+                text-align: right;
+            }
+            .print-bubble-row .bubble {
+                display: inline-block;
+                width: 14px;
+                height: 14px;
+                border: 1px solid #1a1a2e;
+                border-radius: 50%;
+                text-align: center;
+                line-height: 12px;
+                font-size: 6.5pt;
+                font-weight: 700;
+                color: #1a1a2e;
+            }
+            .print-bubble-row .bubble.filled {
+                background-color: #1a1a2e !important;
+                color: #fff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            @media print {
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .pdf-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .print-question { page-break-inside: avoid; }
+                .print-bubble-sheet { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .print-bubble-row .bubble.filled { background-color: #1a1a2e !important; color: #fff !important; }
+                .pdf-page { page-break-after: always; }
+                .pdf-page:last-child { page-break-after: avoid; }
+            }
+        </style>
+    </head>
+    <body>
+        ${documentsHTML}
+    </body>
+    </html>`);
+            printWindow.document.close();
+            printWindow.onload = () => {
+                setTimeout(() => printWindow.print(), 400);
+            };
+        }
+
+        // Modal Event Listeners
+        document.getElementById('btn-close-modal').addEventListener('click', () => {
+            document.getElementById('exam-preview-modal').style.display = 'none';
+        });
+
+        document.getElementById('exam-preview-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'exam-preview-modal') {
+                document.getElementById('exam-preview-modal').style.display = 'none';
+            }
+        });
+
+        const modalSlider = document.getElementById('modal-question-slider');
+        modalSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            currentModalExamState.questionCount = val;
+            updateModalPreview(true);
+        });
+
+        document.getElementById('modal-btn-shuffle').addEventListener('click', () => {
+            updateModalPreview(true);
+        });
+
+        document.getElementById('modal-btn-print-exam').addEventListener('click', () => {
+            generateModalExamPDF(false);
+        });
+
+        document.getElementById('modal-btn-print-answer').addEventListener('click', () => {
+            generateModalExamPDF(true);
+        });
+
+        document.getElementById('modal-btn-save-config').addEventListener('click', () => {
+            const activeClassSel = document.getElementById('admin-active-class');
+            const currentActiveClass = activeClassSel ? activeClassSel.value : '';
+            if (!currentActiveClass) {
+                alert('Selecione uma turma ativa primeiro!');
+                return;
+            }
+
+            fetch('/api/admin/lock-exam', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({
+                    studentClass: currentActiveClass,
+                    activeExamKey: currentModalExamKey,
+                    activeExamQuestionCount: currentModalExamState.questionCount
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(`Prova ${currentModalExamKey} ativada para a turma ${currentActiveClass} com ${currentModalExamState.questionCount} questões!`);
+                document.getElementById('exam-preview-modal').style.display = 'none';
+                refreshDashboard();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Erro ao salvar as configurações.');
+            });
+        });
+
+        // Atualiza a tabela de contas de administradores
+        function updateAdminsTable(admins) {
+            const tbody = document.getElementById('admins-table-body');
+            if (!tbody) return;
+
+            if (admins.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                            Nenhum administrador cadastrado.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Pega o e-mail do admin logado atualmente (primeira parte do token email:senha)
+            const loggedInEmail = adminPassword.split(':')[0].toLowerCase();
+
+            let html = '';
+            admins.forEach(a => {
+                const isSelf = a.email.toLowerCase() === loggedInEmail;
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${a.name}</strong><br>
+                            <span style="font-size:0.75rem; color: var(--text-muted);">${a.email}</span>
+                        </td>
+                        <td>
+                            ${isSelf 
+                                ? `<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">VOCÊ (CONECTADO)</span>`
+                                : `<button class="btn-action-delete-admin" data-email="${a.email}" style="padding: 6px 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">Excluir</button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+
+            tbody.querySelectorAll('.btn-action-delete-admin').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const email = btn.getAttribute('data-email');
+                    const confirmDel = confirm(`Tem certeza que deseja EXCLUIR a conta de administrador ${email}?`);
+                    if (!confirmDel) return;
+
+                    fetch('/api/admin/accounts/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': adminPassword
+                        },
+                        body: JSON.stringify({ email })
+                    })
+                    .then(res => {
+                        if (!res.ok) {
+                            return res.json().then(data => { throw new Error(data.error || 'Erro ao excluir conta.') });
+                        }
+                        return res.json();
+                    })
+                    .then(() => {
+                        alert('Administrador removido com sucesso!');
+                        refreshDashboard();
+                    })
+                    .catch(err => alert(err.message));
+                });
+            });
+        }
+
+        // Listener para Cadastro Manual de Administradores
+        document.getElementById('btn-create-admin').addEventListener('click', () => {
+            const name = document.getElementById('create-admin-name').value.trim();
+            const email = document.getElementById('create-admin-email').value.trim();
+            const password = document.getElementById('create-admin-password').value.trim();
+            
+            const errDiv = document.getElementById('admin-create-error');
+            const succDiv = document.getElementById('admin-create-success');
+            
+            errDiv.style.display = 'none';
+            succDiv.style.display = 'none';
+            
+            if (!name || !email || !password) {
+                errDiv.textContent = 'Por favor, preencha todos os campos.';
+                errDiv.style.display = 'block';
+                return;
+            }
+            
+            fetch('/api/admin/accounts/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ name, email, password })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(data => { throw new Error(data.error || 'Erro ao criar conta.') });
+                }
+                return res.json();
+            })
+            .then(() => {
+                succDiv.textContent = 'Conta de administrador criada com sucesso!';
+                succDiv.style.display = 'block';
+                
+                document.getElementById('create-admin-name').value = '';
+                document.getElementById('create-admin-email').value = '';
+                document.getElementById('create-admin-password').value = '';
+                
+                refreshDashboard();
+                setTimeout(() => { succDiv.style.display = 'none'; }, 3000);
+            })
+            .catch(err => {
+                errDiv.textContent = err.message;
+                errDiv.style.display = 'block';
+            });
+        });
+
+        // Fechar Modal de Edição de Aluno
+        document.getElementById('btn-close-edit-modal').addEventListener('click', () => {
+            document.getElementById('edit-student-modal').style.display = 'none';
+        });
+
+        // Atualizar período automaticamente quando a turma é selecionada na edição
+        document.getElementById('edit-student-class').addEventListener('change', (e) => {
+            const selectedClass = e.target.value;
+            const cls = allClassesCache.find(c => c.name === selectedClass);
+            if (cls && cls.period) {
+                document.getElementById('edit-student-period').value = cls.period;
+            }
+        });
+
+        // Salvar alterações de cadastro do estudante
+        document.getElementById('btn-save-student-edit').addEventListener('click', () => {
+            const originalEmail = document.getElementById('edit-student-original-email').value;
+            const name = document.getElementById('edit-student-name').value.trim();
+            const email = document.getElementById('edit-student-email').value.trim();
+            const password = document.getElementById('edit-student-password').value.trim();
+            const studentClass = document.getElementById('edit-student-class').value;
+            const period = document.getElementById('edit-student-period').value;
+            
+            const errDiv = document.getElementById('student-edit-error');
+            errDiv.style.display = 'none';
+            
+            if (!name || !email || !password || !studentClass || !period) {
+                errDiv.textContent = 'Por favor, preencha todos os campos.';
+                errDiv.style.display = 'block';
+                return;
+            }
+            
+            fetch('/api/admin/student/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ originalEmail, name, email, password, studentClass, period })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(data => { throw new Error(data.error || 'Erro ao atualizar dados do aluno.') });
+                }
+                return res.json();
+            })
+            .then(() => {
+                document.getElementById('edit-student-modal').style.display = 'none';
+                alert('Dados do aluno atualizados com sucesso!');
+                refreshDashboard();
+            })
+            .catch(err => {
+                errDiv.textContent = err.message;
+                errDiv.style.display = 'block';
+            });
+        });
+
+        // Listener para o Botão de Reiniciar Servidor
+        document.getElementById('btn-restart-server').addEventListener('click', () => {
+            const confirmRestart = confirm('Deseja realmente REINICIAR o servidor local? Isso desconectará temporariamente os alunos por alguns segundos.');
+            if (!confirmRestart) return;
+
+            const overlay = document.getElementById('restart-overlay');
+            const progressBar = document.getElementById('restart-progress-bar');
+            overlay.style.display = 'flex';
+
+            let progress = 0;
+            progressBar.style.width = '0%';
+            const interval = setInterval(() => {
+                progress += 2;
+                progressBar.style.width = `${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                }
+            }, 100);
+
+            fetch('/api/admin/server/restart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                }
+            })
+            .then(() => {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
+            })
+            .catch(() => {
+                // Fallback em caso de erro imediato na requisição
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>

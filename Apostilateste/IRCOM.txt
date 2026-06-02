@@ -1,0 +1,94 @@
+UNIDADE CURRICULAR: Instalação de Recursos Computacionais - 120 horas
+MÓDULO BÁSICO
+
+Objetivo Geral: A unidade curricular Instalação de Recursos Computacionais tem como objetivo proporcionar a aquisição de fundamentos técnicos e científicos voltados à montagem e desmontagem de periféricos e instalação de softwares necessários para o funcionamento de sistemas computacionais, bem como, o desenvolvimento de capacidades sociais, organizativas e metodológicas adequadas a diferentes situações profissionais.
+
+1. Histórico
+2. Terminologia
+3. Sistemas numéricos
+3.1. Decimal
+3.2. Hexadecimal
+3.3. Binário
+3.4. Conversão de bases
+
+4. Meios computacionais
+4.1. Características
+4.2. Tipos
+4.2.1. Desktop
+4.2.2. Notebook
+4.2.3. Servidores
+4.2.4. Dispositivos móveis
+
+5. Arquitetura
+5.1. Dispositivos de entrada de dados
+5.2. Processador
+5.3. Dispositivos de saída de dados
+5.4. Placa mãe
+5.5. Componentes onboard e offboard
+5.6. Unidades de armazenamento
+5.6.1. Magnética
+5.6.2. Óptica
+5.6.3. Solid State Disk – SSD
+5.7. Periféricos
+5.8. Placas de expansão, interfaces e portas
+5.8.1. Vídeo
+5.8.2. Som
+5.8.3. Modens
+5.8.4. Serial
+5.8.5. Paralelo
+5.8.6. USB
+5.8.7. Ethernet
+5.8.8. Firewire
+5.9. Fontes
+5.10. Barramentos
+5.11. Gabinetes
+
+6. Documentação Técnica
+6.1. Manual do equipamento
+6.2. Manual do software
+6.3. Ordem de serviço
+
+7. Montagem e desmontagem
+7.1. Procedimentos
+7.2. Ferramentas
+7.3. Fixação de periféricos
+7.4. Testes
+
+8. Procedimentos para instalação do sistema operacional fechado
+8.1. Particionamento
+8.2. Formatação
+8.3. Instalação do SO
+8.4. Configuração do SO
+8.5. Instalação de drivers e aplicativos dos periféricos
+8.6. Atualização
+8.7. Ativação de licença
+8.8. Testes
+
+9. Procedimentos para instalação do sistema operacional aberto
+9.1. Particionamento
+9.2. Formatação
+9.3. Instalação do SO
+9.4. Configuração do SO
+9.5. Instalação de drivers e aplicativos dos periféricos
+9.6. Atualização
+9.7. Testes
+
+10. Softwares de colaboração e produtividade
+10.1. Suítes de escritório
+10.1.1. Planilhas eletrônicas
+10.1.2. Editores de texto
+10.1.3. Editores de apresentação
+10.1.4. Banco de dados
+10.1.5. Correios eletrônicos
+10.1.6. Agendas
+10.1.7. Calendários
+10.1.8. Projetos
+10.1.9. Planejamentos
+10.2. Antivírus
+10.3. Compactadores
+10.4. Plug-in de multimídia
+10.4.1. Vídeo
+10.4.2. Áudio
+
+11. Normas e regulamentos
+

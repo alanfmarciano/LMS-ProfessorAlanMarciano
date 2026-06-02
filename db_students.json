@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Alan Marciano",
+    "email": "alan@alan.com",
+    "password": "123",
+    "studentClass": "1DES",
+    "period": "Manhã",
+    "loginTime": "2026-06-02T12:06:06.012Z",
+    "recoveryRequested": false
+  },
+  {
+    "name": "Carlos Santos Editado",
+    "email": "carlos.editado@senai.br",
+    "password": "new_carlos_password",
+    "studentClass": "1DES",
+    "period": "Manhã",
+    "loginTime": "2026-06-02T11:02:45.885Z",
+    "recoveryRequested": false
+  }
+]

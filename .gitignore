@@ -1,0 +1,19 @@
+# Dependências do Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Banco de dados e configurações locais (gerados automaticamente pelo initDB)
+db_students.json
+db_submissions.json
+db_admins.json
+db_classes.json
+config.json
+
+# Arquivos de log e temporários do editor/sistema
+*.log
+.DS_Store
+Thumbs.db
+backup/
+.gemini/
