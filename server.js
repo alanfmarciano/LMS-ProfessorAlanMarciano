@@ -10,6 +10,46 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Serve os arquivos de uploads de forma estatica
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Rota dinamica para servir data.js com conteudo atualizado em tempo real
+app.get('/data.js', (req, res) => {
+    res.set('Content-Type', 'application/javascript');
+    const dataObj = {};
+    
+    try {
+        const files = fs.readdirSync(__dirname);
+        const ignoredFiles = [
+            'implementation_plan.md',
+            'task.md',
+            'walkthrough.md',
+            'manual_novas_unidades.md',
+            'readme.md'
+        ];
+        files.forEach((file) => {
+            if (file.endsWith('.md') && !ignoredFiles.includes(file.toLowerCase())) {
+                const filePath = path.join(__dirname, file);
+                const content = fs.readFileSync(filePath, 'utf8');
+                dataObj[file.replace('.md', '')] = content;
+            }
+        });
+    } catch (e) {
+        console.error("Erro ao gerar data.js dinamico:", e);
+    }
+
+    if (db.memory && db.memory.evaluations) {
+        for (const evalKey in db.memory.evaluations) {
+            dataObj[evalKey] = db.memory.evaluations[evalKey];
+        }
+    }
+
+    dataObj["courseStructure"] = db.memory.courseStructure || [];
+
+    const fileContent = `const courseData = ${JSON.stringify(dataObj, null, 2)};`;
+    res.send(fileContent);
+});
+
 // Serve os arquivos estáticos do portal (HTML, CSS, JS, Imagens)
 app.use(express.static(__dirname));
 
@@ -40,143 +80,13 @@ function detectIP() {
 }
 detectIP();
 
-// Inicializa os arquivos se não existirem
-function initDB() {
-    if (!fs.existsSync(DB_STUDENTS_FILE)) {
-        fs.writeFileSync(DB_STUDENTS_FILE, JSON.stringify([], null, 2), 'utf8');
-    }
-    if (!fs.existsSync(DB_SUBMISSIONS_FILE)) {
-        fs.writeFileSync(DB_SUBMISSIONS_FILE, JSON.stringify([], null, 2), 'utf8');
-    }
-    if (!fs.existsSync(DB_ADMINS_FILE)) {
-        const defaultAdmins = [
-            {
-                name: 'Administrador Geral',
-                email: 'admin@senai.br',
-                password: 'admin'
-            }
-        ];
-        fs.writeFileSync(DB_ADMINS_FILE, JSON.stringify(defaultAdmins, null, 2), 'utf8');
-    }
-    if (!fs.existsSync(DB_CLASSES_FILE)) {
-        const defaultReleasedItems = {};
-        const modules = ['FUTEC', 'FECOP', 'IRCOM'];
-        modules.forEach(m => {
-            for (let i = 1; i <= 5; i++) {
-                defaultReleasedItems[`Apostila_${m}_${i}`] = true;
-                defaultReleasedItems[`Avaliacao_${m}_${i}`] = false;
-            }
-        });
-
-        const defaultClasses = [
-            { 
-                name: '1DES', 
-                period: 'Manhã',
-                registrationEnabled: true,
-                activeExamKey: null,
-                activeExamQuestionCount: 20,
-                releasedItems: { ...defaultReleasedItems }
-            },
-            { 
-                name: '2DES', 
-                period: 'Tarde',
-                registrationEnabled: true,
-                activeExamKey: null,
-                activeExamQuestionCount: 20,
-                releasedItems: { ...defaultReleasedItems }
-            }
-        ];
-        fs.writeFileSync(DB_CLASSES_FILE, JSON.stringify(defaultClasses, null, 2), 'utf8');
-    }
-
-    // Garantir migração de período se o arquivo já existir
-    if (fs.existsSync(DB_CLASSES_FILE)) {
-        try {
-            const classes = JSON.parse(fs.readFileSync(DB_CLASSES_FILE, 'utf8'));
-            let updated = false;
-            classes.forEach(c => {
-                if (!c.period) {
-                    c.period = c.name.includes('1') ? 'Manhã' : 'Tarde';
-                    updated = true;
-                }
-            });
-            if (updated) {
-                fs.writeFileSync(DB_CLASSES_FILE, JSON.stringify(classes, null, 2), 'utf8');
-            }
-        } catch (e) {
-            console.error("Erro ao migrar db_classes.json:", e);
-        }
-    }
-    
-    // Configurações padrão de liberação de itens
-    const defaultReleasedItems = {};
-    const modules = ['FUTEC', 'FECOP', 'IRCOM'];
-    modules.forEach(m => {
-        for (let i = 1; i <= 5; i++) {
-            defaultReleasedItems[`Apostila_${m}_${i}`] = true;   // Liberadas por padrão
-            defaultReleasedItems[`Avaliacao_${m}_${i}`] = false; // Trancadas por padrão
-        }
-    });
-
-    if (!fs.existsSync(CONFIG_FILE)) {
-        const defaultConfig = {
-            adminPassword: 'admin', // Senha padrão para o instrutor
-            activeExamKey: null,    // Nenhuma prova liberada por padrão
-            releasedItems: defaultReleasedItems
-        };
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2), 'utf8');
-    } else {
-        // Se já existe, garante que releasedItems está presente
-        try {
-            const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-            if (!config.releasedItems) {
-                config.releasedItems = defaultReleasedItems;
-                fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-            }
-        } catch (e) {
-            console.error("Erro ao migrar config.json:", e);
-        }
-    }
-}
-initDB();
-
-// Garante IDs e e-mails de autor consistentes no fórum (migração automática)
-if (db.memory && db.memory.forum) {
-    let migrated = false;
-    db.memory.forum.forEach(comment => {
-        if (!comment.id) {
-            comment.id = 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            migrated = true;
-        }
-        if (comment.replies) {
-            comment.replies.forEach((reply, idx) => {
-                if (!reply.id) {
-                    reply.id = 'reply_' + (Date.now() + idx) + '_' + Math.random().toString(36).substr(2, 5);
-                    migrated = true;
-                }
-                if (!reply.authorEmail) {
-                    reply.authorEmail = reply.authorRole === 'Instrutor' ? 'admin@senai.br' : (comment.studentEmail || '');
-                    migrated = true;
-                }
-            });
-        }
-    });
-    if (migrated) {
-        db.save();
-    }
-}
-
-
-// Função para ler dados JSON de forma segura
 // Função para ler dados JSON de forma segura via Memory DB
 function readJSON(file) {
     if (file.includes('db_students.json')) return db.memory.students;
     if (file.includes('db_classes.json')) return db.memory.classes;
     if (file.includes('db_submissions.json')) return db.memory.submissions;
     if (file.includes('config.json')) return db.memory.config;
-    if (file.includes('db_admins.json')) {
-        try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return []; }
-    }
+    if (file.includes('db_admins.json')) return db.memory.admins;
     return [];
 }
 
@@ -186,18 +96,25 @@ function writeJSON(file, data) {
     else if (file.includes('db_classes.json')) db.memory.classes = data;
     else if (file.includes('db_submissions.json')) db.memory.submissions = data;
     else if (file.includes('config.json')) db.memory.config = data;
-    else if (file.includes('db_admins.json')) {
-        try { fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8'); } catch(e){}
-        return;
-    }
+    else if (file.includes('db_admins.json')) db.memory.admins = data;
     db.save();
 }
 
 // Parser de Markdown de Avaliações (idêntico ao do frontend para correções no backend)
-function parseEvaluationMarkdown(markdownText) {
+function parseEvaluationMarkdown(markdownText, examKey) {
     if (!markdownText) return null;
 
-    // Extrair gabarito do <details>
+    const titleMatch = markdownText.match(/^#\s+(.+)$/m);
+    const themeMatch = markdownText.match(/\*\*Tema:\*\*\s*(.+)/);
+    const title = titleMatch ? titleMatch[1].replace(/📝\s*/, '').trim() : 'Avaliação';
+    const theme = themeMatch ? themeMatch[1].trim() : '';
+
+    let rubricMarkdown = '';
+    const rubricMatch = markdownText.match(/(## Parte 2[\s\S]*?)(?=<details>)/);
+    if (rubricMatch) {
+        rubricMarkdown = rubricMatch[1].trim();
+    }
+
     const gabarito = {};
     const detailsMatch = markdownText.match(/<details>([\s\S]*?)<\/details>/);
     if (detailsMatch) {
@@ -214,7 +131,6 @@ function parseEvaluationMarkdown(markdownText) {
         }
     }
 
-    // Extrair questões
     const questions = [];
     const questionRegex = /\*\*(\d+)\.\s*(.*?)\*\*\s*\n([\s\S]*?)(?=\*\*\d+\.|## Parte 2|<details>|$)/g;
     let qMatch;
@@ -239,13 +155,20 @@ function parseEvaluationMarkdown(markdownText) {
             questions.push({
                 originalNumber: qNumber,
                 text: qText,
+                weight: 1.0,
                 alternatives: alternatives,
-                correctAnswer: gabarito[qNumber]
+                correctAnswer: gabarito[qNumber] || ""
             });
         }
     }
 
-    return questions;
+    return {
+        key: examKey,
+        title,
+        theme,
+        rubric: rubricMarkdown,
+        questions
+    };
 }
 
 // ----------------------------------------------------
@@ -312,7 +235,7 @@ app.get('/api/status', (req, res) => {
 
     res.json({ 
         examConfigs: cls.examConfigs || {},
-        releasedItems: cls.releasedItems || {}
+        releasedItems: getReleasedItemsForClass(cls)
     });
 });
 
@@ -398,6 +321,23 @@ app.post('/api/student/recover', (req, res) => {
     res.json({ success: true, message: 'Solicitação de recuperação enviada ao instrutor.' });
 });
 
+// Helper para obter itens liberados de forma dinamica, incluindo novos modulos/unidades
+function getReleasedItemsForClass(cls) {
+    const released = cls.releasedItems || {};
+    const courseStructure = db.memory.courseStructure || [];
+    courseStructure.forEach(mod => {
+        mod.units.forEach(u => {
+            if (u.apostilaKey && released[u.apostilaKey] === undefined) {
+                released[u.apostilaKey] = true;
+            }
+            if (u.avaliacaoKey && released[u.avaliacaoKey] === undefined) {
+                released[u.avaliacaoKey] = false;
+            }
+        });
+    });
+    return released;
+}
+
 // Envio de prova pelo aluno (com correção blindada no servidor)
 app.post('/api/student/submit', (req, res) => {
     const { student, examKey, answers } = req.body; // answers = { originalNumber: 'A', ... }
@@ -413,18 +353,29 @@ app.post('/api/student/submit', (req, res) => {
 
     const classes = readJSON(DB_CLASSES_FILE);
     const cls = classes.find(c => c.name === studentClass);
-    if (!cls || !cls.releasedItems || !cls.releasedItems[examKey]) {
+    if (!cls) {
+        return res.status(403).json({ error: 'Turma do estudante não encontrada.' });
+    }
+    
+    const releasedItems = getReleasedItemsForClass(cls);
+    if (!releasedItems[examKey]) {
         return res.status(403).json({ error: 'Esta prova não está liberada para a sua turma.' });
     }
 
-    // Localiza e lê o arquivo da prova
-    const filePath = path.join(__dirname, `${examKey}.md`);
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: 'Prova não encontrada no servidor.' });
+    // Tenta obter questoes estruturadas do banco de dados primeiro
+    let questions;
+    const evaluation = db.memory.evaluations[examKey];
+    if (evaluation) {
+        questions = evaluation.questions;
+    } else {
+        // Fallback: Localiza e lê o arquivo da prova antigo .md
+        const filePath = path.join(__dirname, `${examKey}.md`);
+        if (fs.existsSync(filePath)) {
+            const mdContent = fs.readFileSync(filePath, 'utf8');
+            const parsedObj = parseEvaluationMarkdown(mdContent, examKey);
+            questions = parsedObj ? parsedObj.questions : [];
+        }
     }
-
-    const mdContent = fs.readFileSync(filePath, 'utf8');
-    const questions = parseEvaluationMarkdown(mdContent);
     
     if (!questions || questions.length === 0) {
         return res.status(500).json({ error: 'Falha ao processar avaliação no servidor.' });
@@ -496,6 +447,25 @@ app.post('/api/student/my-submissions', (req, res) => {
     res.json({ success: true, submissions: mySubmissions });
 });
 
+// Obter progresso do aluno (GET)
+app.get('/api/student/progress', (req, res) => {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email não informado.' });
+    
+    const completedUnits = db.memory.progress[email.toLowerCase()] || {};
+    res.json({ success: true, completedUnits });
+});
+
+// Atualizar progresso do aluno (POST)
+app.post('/api/student/progress', (req, res) => {
+    const { email, completedUnits } = req.body;
+    if (!email || !completedUnits) return res.status(400).json({ error: 'Dados incompletos.' });
+
+    db.memory.progress[email.toLowerCase()] = completedUnits;
+    db.save();
+    res.json({ success: true });
+});
+
 // ----------------------------------------------------
 // ROTAS DE API DO INSTRUTOR (ADMINISTRADOR)
 // ----------------------------------------------------
@@ -546,7 +516,7 @@ app.post('/api/admin/config', (req, res) => {
             if (cls) {
                 responseData.activeExamKey = cls.activeExamKey;
                 responseData.activeExamQuestionCount = cls.activeExamQuestionCount || 20;
-                responseData.releasedItems = cls.releasedItems || {};
+                responseData.releasedItems = getReleasedItemsForClass(cls);
             }
         }
         res.json(responseData);
@@ -1385,6 +1355,405 @@ app.post('/api/admin/forum/all', (req, res) => {
     });
 });
 
+// ----------------------------------------------------
+// DYNAMIC COURSE STRUCTURE AND FILES
+// ----------------------------------------------------
+
+// Obter a estrutura dinâmica do curso (módulos e unidades)
+app.get('/api/course-structure', (req, res) => {
+    res.json(db.memory.courseStructure || []);
+});
+
+// Salvar a estrutura do curso (usado para CRUD e drag-and-drop de reordenamento)
+app.post('/api/admin/course/structure', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { structure } = req.body;
+        if (!Array.isArray(structure)) {
+            return res.status(400).json({ error: 'Formato inválido. Esperado array de módulos.' });
+        }
+        db.memory.courseStructure = structure;
+        db.save();
+        res.json({ success: true, structure });
+    });
+});
+
+// ----------------------------------------------------
+// EDITORES DE CONTEÚDO (APOSTILAS E AVALIAÇÕES)
+// ----------------------------------------------------
+
+// Salvar conteúdo da apostila (.md)
+app.put('/api/admin/material/:key', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { key } = req.params;
+        const { markdownText } = req.body;
+        if (markdownText === undefined) {
+            return res.status(400).json({ error: 'Conteúdo vazio.' });
+        }
+
+        // Valida se o nome do arquivo é seguro
+        if (!/^[a-zA-Z0-9_-]+$/.test(key)) {
+            return res.status(400).json({ error: 'Chave de material inválida.' });
+        }
+
+        const filePath = path.join(__dirname, `${key}.md`);
+        
+        try {
+            // Backup antes de salvar
+            if (fs.existsSync(filePath)) {
+                const oldContent = fs.readFileSync(filePath, 'utf8');
+                makeBackup(key, oldContent, false);
+            }
+            
+            fs.writeFileSync(filePath, markdownText, 'utf8');
+            res.json({ success: true });
+        } catch (e) {
+            console.error("Erro ao salvar material:", e);
+            res.status(500).json({ error: 'Falha ao gravar arquivo no disco.' });
+        }
+    });
+});
+
+// Criar nova apostila e unidade
+app.post('/api/admin/material/create', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { moduleId, unitName } = req.body;
+        if (!moduleId || !unitName) {
+            return res.status(400).json({ error: 'Dados incompletos.' });
+        }
+
+        const structure = db.memory.courseStructure || [];
+        const targetModule = structure.find(m => m.id === moduleId);
+        if (!targetModule) {
+            return res.status(404).json({ error: 'Módulo não encontrado.' });
+        }
+
+        // Calcula o próximo index da unidade
+        const nextId = (targetModule.units.length + 1).toString();
+        const cleanModuleId = moduleId.replace(/[^a-zA-Z0-9]/g, '');
+        const keyBase = `${cleanModuleId}_${nextId}`;
+        const apostilaKey = `Apostila_${keyBase}`;
+        const avaliacaoKey = `Avaliacao_${keyBase}`;
+
+        // Cria arquivos em disco e no BD
+        const mdPath = path.join(__dirname, `${apostilaKey}.md`);
+        const defaultMd = `# 📘 ${unitName}\n\nEscreva o conteúdo da sua nova unidade aqui...\n`;
+        
+        try {
+            fs.writeFileSync(mdPath, defaultMd, 'utf8');
+            
+            // Cria avaliação em branco na memória
+            db.memory.evaluations[avaliacaoKey] = {
+                key: avaliacaoKey,
+                title: `Avaliação: ${unitName}`,
+                theme: unitName,
+                rubric: "## Parte 2: Boss Fight\n\nDescreva critérios de avaliação aqui...\n",
+                questions: []
+            };
+
+            // Adiciona na estrutura do curso
+            targetModule.units.push({
+                id: nextId,
+                name: unitName,
+                apostilaKey,
+                avaliacaoKey,
+                files: []
+            });
+
+            db.save();
+            res.json({ success: true, apostilaKey, avaliacaoKey, structure });
+        } catch(e) {
+            console.error("Erro ao criar nova apostila:", e);
+            res.status(500).json({ error: 'Falha ao criar arquivos no servidor.' });
+        }
+    });
+});
+
+// Obter avaliação estruturada
+app.get('/api/admin/evaluation/:key', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { key } = req.params;
+        let evaluation = db.memory.evaluations[key];
+        
+        if (!evaluation) {
+            // Tenta carregar e migrar se houver arquivo .md legando em disco
+            const mdPath = path.join(__dirname, `${key}.md`);
+            if (fs.existsSync(mdPath)) {
+                try {
+                    const mdContent = fs.readFileSync(mdPath, 'utf8');
+                    evaluation = parseEvaluationMarkdown(mdContent, key);
+                    if (evaluation) {
+                        db.memory.evaluations[key] = evaluation;
+                        db.save();
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (!evaluation) {
+            return res.status(404).json({ error: 'Avaliação não encontrada.' });
+        }
+        res.json(evaluation);
+    });
+});
+
+// Salvar avaliação estruturada
+app.put('/api/admin/evaluation/:key', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { key } = req.params;
+        const evaluationData = req.body;
+        if (!evaluationData || !evaluationData.title) {
+            return res.status(400).json({ error: 'Dados da avaliação inválidos.' });
+        }
+
+        // Backup
+        if (db.memory.evaluations[key]) {
+            makeBackup(key, JSON.stringify(db.memory.evaluations[key], null, 2), true);
+        }
+
+        db.memory.evaluations[key] = {
+            key,
+            title: evaluationData.title,
+            theme: evaluationData.theme || '',
+            rubric: evaluationData.rubric || '',
+            questions: Array.isArray(evaluationData.questions) ? evaluationData.questions : []
+        };
+        db.save();
+        res.json({ success: true });
+    });
+});
+
+// Duplicar avaliação (Prova 2 a partir da Prova 1)
+app.post('/api/admin/evaluation/duplicate', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { sourceKey, targetKey, targetTitle } = req.body;
+        if (!sourceKey || !targetKey || !targetTitle) {
+            return res.status(400).json({ error: 'Dados incompletos para duplicação.' });
+        }
+
+        const sourceEval = db.memory.evaluations[sourceKey];
+        if (!sourceEval) {
+            return res.status(404).json({ error: 'Avaliação de origem não encontrada.' });
+        }
+
+        // Deep copy questions
+        const clonedQuestions = JSON.parse(JSON.stringify(sourceEval.questions));
+
+        db.memory.evaluations[targetKey] = {
+            key: targetKey,
+            title: targetTitle,
+            theme: sourceEval.theme,
+            rubric: sourceEval.rubric,
+            questions: clonedQuestions
+        };
+
+        db.save();
+        res.json({ success: true, targetKey });
+    });
+});
+
+// ----------------------------------------------------
+// UPLOADS DE MATERIAIS
+// ----------------------------------------------------
+
+const multer = require('multer');
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
+
+function getFilesForApostila(key) {
+    const structure = db.memory.courseStructure || [];
+    let files = [];
+    structure.forEach(mod => {
+        mod.units.forEach(u => {
+            if (u.apostilaKey === key) {
+                files = u.files || [];
+            }
+        });
+    });
+    return files;
+}
+
+app.post('/api/admin/upload', (req, res) => {
+    validateAdmin(req, res, () => {
+        upload.single('file')(req, res, (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Erro ao fazer upload do arquivo: ' + err.message });
+            }
+            if (!req.file) {
+                return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+            }
+            
+            const { apostilaKey } = req.body;
+            const originalname = req.file.originalname;
+            const filename = req.file.filename;
+            const relativePath = '/uploads/' + filename;
+            const ext = path.extname(originalname).toLowerCase();
+            let fileType = 'other';
+            if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
+                fileType = 'image';
+            } else if (ext === '.pdf') {
+                fileType = 'pdf';
+            }
+            
+            const structure = db.memory.courseStructure || [];
+            let linked = false;
+            structure.forEach(mod => {
+                mod.units.forEach(u => {
+                    if (u.apostilaKey === apostilaKey) {
+                        if (!u.files) u.files = [];
+                        u.files.push({
+                            id: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                            name: originalname,
+                            path: relativePath,
+                            type: fileType,
+                            timestamp: new Date().toISOString()
+                        });
+                        linked = true;
+                    }
+                });
+            });
+            
+            if (linked) {
+                db.save();
+                res.json({ success: true, files: getFilesForApostila(apostilaKey) });
+            } else {
+                res.status(404).json({ error: 'Apostila não encontrada.' });
+            }
+        });
+    });
+});
+
+app.post('/api/admin/upload-image', (req, res) => {
+    validateAdmin(req, res, () => {
+        upload.single('image')(req, res, (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Erro ao fazer upload da imagem: ' + err.message });
+            }
+            if (!req.file) {
+                return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
+            }
+            const filename = req.file.filename;
+            const relativePath = '/uploads/' + filename;
+            
+            // EasyMDE expects JSON with a specific structure or we can just return our standard format
+            res.json({ success: true, url: relativePath });
+        });
+    });
+});
+
+app.post('/api/admin/material/link', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { apostilaKey, name, url } = req.body;
+        if (!apostilaKey || !name || !url) {
+            return res.status(400).json({ error: 'Dados incompletos.' });
+        }
+        
+        const structure = db.memory.courseStructure || [];
+        let linked = false;
+        structure.forEach(mod => {
+            mod.units.forEach(u => {
+                if (u.apostilaKey === apostilaKey) {
+                    if (!u.files) u.files = [];
+                    u.files.push({
+                        id: 'l_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        name,
+                        path: url,
+                        type: 'link',
+                        timestamp: new Date().toISOString()
+                    });
+                    linked = true;
+                }
+            });
+        });
+        
+        if (linked) {
+            db.save();
+            res.json({ success: true, files: getFilesForApostila(apostilaKey) });
+        } else {
+            res.status(404).json({ error: 'Apostila não encontrada.' });
+        }
+    });
+});
+
+app.post('/api/admin/material/delete-file', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { apostilaKey, fileId } = req.body;
+        if (!apostilaKey || !fileId) {
+            return res.status(400).json({ error: 'Dados incompletos.' });
+        }
+        
+        const structure = db.memory.courseStructure || [];
+        let removed = false;
+        structure.forEach(mod => {
+            mod.units.forEach(u => {
+                if (u.apostilaKey === apostilaKey && u.files) {
+                    const beforeLength = u.files.length;
+                    u.files = u.files.filter(f => f.id !== fileId);
+                    if (u.files.length < beforeLength) {
+                        removed = true;
+                    }
+                }
+            });
+        });
+        
+        if (removed) {
+            db.save();
+            res.json({ success: true, files: getFilesForApostila(apostilaKey) });
+        } else {
+            res.status(404).json({ error: 'Recurso não encontrado.' });
+        }
+    });
+});
+
+// ----------------------------------------------------
+// HISTÓRICO E PROGRESSO DO ESTUDANTE
+// ----------------------------------------------------
+
+// Obter progresso de leitura do aluno
+app.get('/api/student/progress', (req, res) => {
+    const { email } = req.query;
+    if (!email) {
+        return res.status(400).json({ error: 'E-mail não informado.' });
+    }
+    const lowerEmail = email.toLowerCase();
+    res.json({ success: true, completedUnits: db.memory.progress[lowerEmail] || {} });
+});
+
+// Salvar progresso de leitura do aluno
+app.post('/api/student/progress', (req, res) => {
+    const { email, completedUnits } = req.body;
+    if (!email || !completedUnits) {
+        return res.status(400).json({ error: 'Dados incompletos.' });
+    }
+    const lowerEmail = email.toLowerCase();
+    db.memory.progress[lowerEmail] = completedUnits;
+    db.save();
+    res.json({ success: true });
+});
+
+// Função de backup automático
+function makeBackup(key, content, isJson = false) {
+    const backupDir = path.join(__dirname, 'backups');
+    if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const ext = isJson ? '.json' : '.md';
+    const backupPath = path.join(backupDir, `${key}_${timestamp}${ext}.bak`);
+    fs.writeFileSync(backupPath, content, 'utf8');
+}
+
 // ==========================================
 // SESSIONS E PING APRIMORADO
 // ==========================================
@@ -1420,26 +1789,59 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Inicia o servidor e informa o endereço IP da rede local
-const serverInstance = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`===========================================`);
-    console.log(`🟢 Servidor LMS iniciado com sucesso!`);
-    console.log(` Porta local: ${PORT}`);
-    console.log(`===========================================`);
-    console.log(`Para acessar deste computador:`);
-    console.log(` -> http://localhost:${PORT}`);
-    console.log(`\nPara os alunos acessarem pelo celular ou outros PCs na mesma rede WiFi:`);
-    
-    localIpAddresses.forEach(ip => {
-        // Highlight commonly used WiFi/Ethernet IPs instead of VirtualBox ones
-        const isVBox = ip.name.toLowerCase().includes('virtualbox') || ip.address.startsWith('192.168.56.');
-        if (isVBox) {
-            console.log(` -> http://${ip.address}:${PORT}  (⚠️ Ignorar: Rede VirtualBox)`);
-        } else {
-            console.log(` -> http://${ip.address}:${PORT}  (✅ Recomendado: ${ip.name})`);
-        }
-    });
+let serverInstance;
 
-    console.log(`===========================================`);
-    console.log(`⚠️ IMPORTANTE: Lembre-se de liberar a porta ${PORT} no Firewall do Windows, se necessário!`);
+db.init().then(() => {
+    // Garante IDs e e-mails de autor consistentes no fórum (migração automática)
+    if (db.memory && db.memory.forum) {
+        let migrated = false;
+        db.memory.forum.forEach(comment => {
+            if (!comment.id) {
+                comment.id = 'comment_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                migrated = true;
+            }
+            if (comment.replies) {
+                comment.replies.forEach((reply, idx) => {
+                    if (!reply.id) {
+                        reply.id = 'reply_' + (Date.now() + idx) + '_' + Math.random().toString(36).substr(2, 5);
+                        migrated = true;
+                    }
+                    if (!reply.authorEmail) {
+                        reply.authorEmail = reply.authorRole === 'Instrutor' ? 'admin@senai.br' : (comment.studentEmail || '');
+                        migrated = true;
+                    }
+                });
+            }
+        });
+        if (migrated) {
+            db.save();
+        }
+    }
+
+    // Inicia o servidor e informa o endereço IP da rede local
+    serverInstance = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`===========================================`);
+        console.log(`🟢 Servidor LMS iniciado com sucesso!`);
+        console.log(` Porta local: ${PORT}`);
+        console.log(`===========================================`);
+        console.log(`Para acessar deste computador:`);
+        console.log(` -> http://localhost:${PORT}`);
+        console.log(`\nPara os alunos acessarem pelo celular ou outros PCs na mesma rede WiFi:`);
+        
+        localIpAddresses.forEach(ip => {
+            // Highlight commonly used WiFi/Ethernet IPs instead of VirtualBox ones
+            const isVBox = ip.name.toLowerCase().includes('virtualbox') || ip.address.startsWith('192.168.56.');
+            if (isVBox) {
+                console.log(` -> http://${ip.address}:${PORT}  (⚠️ Ignorar: Rede VirtualBox)`);
+            } else {
+                console.log(` -> http://${ip.address}:${PORT}  (✅ Recomendado: ${ip.name})`);
+            }
+        });
+
+        console.log(`===========================================`);
+        console.log(`⚠️ IMPORTANTE: Lembre-se de liberar a porta ${PORT} no Firewall do Windows, se necessário!`);
+    });
+}).catch(err => {
+    console.error("Falha ao inicializar o banco de dados SQLite:", err);
+    process.exit(1);
 });

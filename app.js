@@ -1,7 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const navFundamentos = document.getElementById("nav-fundamentos");
-    const navColaboracao = document.getElementById("nav-colaboracao");
-    const navIRCOM = document.getElementById("nav-ircom");
+    const sidebarContainer = document.getElementById("sidebar-navigation-modules");
     const contentViewer = document.getElementById("content-viewer");
     const breadcrumb = document.getElementById("breadcrumb");
     const mobileMenuBtn = document.getElementById("mobile-menu-btn");
@@ -22,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let userAnswers = {};
     let isSimulatorSubmitted = false;
     let examLockPoll = null;
+    let lastReleasedItemsKeys = null;
 
     // Configurar Modo Foco
     const focusModeBtn = document.getElementById("focus-mode-btn");
@@ -58,17 +57,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Estrutura das Nomenclaturas dos Arquivos
-    const m1_apostilas = [1, 2, 3, 4, 5].map(i => `Apostila_FUTEC_${i}`);
-    const m1_avaliacoes = [1, 2, 3, 4, 5].map(i => `Avaliacao_FUTEC_${i}`);
-
-    const m2_apostilas = [1, 2, 3, 4, 5].map(i => `Apostila_FECOP_${i}`);
-    const m2_avaliacoes = [1, 2, 3, 4, 5].map(i => `Avaliacao_FECOP_${i}`);
-
-    const m3_apostilas = [1, 2, 3, 4, 5].map(i => `Apostila_IRCOM_${i}`);
-    const m3_avaliacoes = [1, 2, 3, 4, 5].map(i => `Avaliacao_IRCOM_${i}`);
-
-    // Lista de todas as chaves de avaliação para detectar se é avaliação
-    const allEvaluationKeys = [...m1_avaliacoes, ...m2_avaliacoes, ...m3_avaliacoes];
+    const allEvaluationKeys = [];
+    if (typeof courseData !== 'undefined' && courseData.courseStructure) {
+        courseData.courseStructure.forEach(mod => {
+            mod.units.forEach(u => {
+                allEvaluationKeys.push(u.avaliacaoKey);
+            });
+        });
+    }
 
     function extractTitle(markdownText, defaultTitle) {
         if (!markdownText) return defaultTitle;
@@ -82,36 +78,115 @@ document.addEventListener("DOMContentLoaded", () => {
         return defaultTitle;
     }
 
-    function renderNavItems(apostilas, avaliacoes, parentElement, moduleName) {
-        for (let i = 0; i < 5; i++) {
-            let missionTitle = `Unidade ${i + 1}`;
-            if (typeof courseData !== 'undefined' && courseData[apostilas[i]]) {
-                missionTitle = extractTitle(courseData[apostilas[i]], missionTitle);
-            }
+    function renderDynamicSidebar() {
+        const sidebarContainer = document.getElementById("sidebar-navigation-modules");
+        if (!sidebarContainer) return;
+        sidebarContainer.innerHTML = "";
 
-            // Verifica se a Apostila existe no courseData
-            if (typeof courseData !== 'undefined' && courseData[apostilas[i]]) {
-                const li = document.createElement("li");
-                li.className = "nav-item";
-                li.setAttribute("data-key", apostilas[i]);
-                if (completedUnits[apostilas[i]]) {
-                    li.classList.add("completed");
+        const structure = courseData.courseStructure || [];
+        structure.forEach(mod => {
+            const section = document.createElement("div");
+            section.className = "py-4 border-b border-slate-700/50 group";
+
+            const h3 = document.createElement("h3");
+            h3.className = "cursor-pointer flex items-center justify-between text-xs font-extrabold text-slate-400 uppercase tracking-widest px-6 mb-2 hover:text-white transition-colors select-none";
+            h3.innerHTML = `
+                <span>${mod.name}</span>
+                <span class="text-senaiRed font-bold ml-auto mr-3" id="progress-m-${mod.id}">0%</span>
+                <span class="transform transition-transform duration-300 group-[.collapsed]:-rotate-90">▾</span>
+            `;
+            h3.addEventListener("click", () => {
+                section.classList.toggle("collapsed");
+                ul.classList.toggle("max-h-0");
+                ul.classList.toggle("opacity-0");
+                ul.classList.toggle("overflow-hidden");
+            });
+
+            const ul = document.createElement("ul");
+            ul.id = `nav-${mod.id}`;
+            ul.className = "list-none max-h-[2000px] opacity-100 transition-all duration-300 overflow-hidden";
+
+            mod.units.forEach(u => {
+                // Render Apostila Item
+                let missionTitle = u.name;
+                
+                if (courseData[u.apostilaKey]) {
+                    const li = document.createElement("li");
+                    li.className = "cursor-pointer px-6 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent hover:border-slate-500 transition-all";
+                    li.setAttribute("data-key", u.apostilaKey);
+                    if (completedUnits[u.apostilaKey]) {
+                        li.classList.add("completed", "bg-green-500/10", "border-green-500", "text-green-300");
+                        li.classList.remove("border-transparent", "hover:border-slate-500", "text-slate-300");
+                    }
+                    li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-slate-500 uppercase font-bold mt-1">📘 Apostila Guia</span>`;
+                    li.onclick = () => {
+                        document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-senaiRed/20', 'border-senaiRed', 'text-white'));
+                        li.classList.add('bg-senaiRed/20', 'border-senaiRed', 'text-white');
+                        loadContent(u.apostilaKey, li, `${mod.id} > Unidade ${u.id} > Apostila`);
+                    };
+                    ul.appendChild(li);
                 }
-                li.innerHTML = `<strong>${missionTitle}</strong> <span class="nav-sub">📘 Apostila Guia</span>`;
-                li.onclick = () => loadContent(apostilas[i], li, `${moduleName} > Unidade ${i + 1} > Apostila`);
-                parentElement.appendChild(li);
-            }
 
-            // Verifica se a Avaliação existe no courseData
-            if (typeof courseData !== 'undefined' && courseData[avaliacoes[i]]) {
-                const li = document.createElement("li");
-                li.className = "nav-item";
-                li.setAttribute("data-key", avaliacoes[i]);
-                li.innerHTML = `<strong>${missionTitle}</strong> <span class="nav-sub" style="color: #60a5fa">🎯 Avaliação</span>`;
-                li.onclick = () => loadContent(avaliacoes[i], li, `${moduleName} > Unidade ${i + 1} > Avaliação`);
-                parentElement.appendChild(li);
-            }
+                // Render Avaliação Item
+                if (courseData[u.avaliacaoKey]) {
+                    const li = document.createElement("li");
+                    li.className = "cursor-pointer px-6 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent hover:border-blue-400 transition-all";
+                    li.setAttribute("data-key", u.avaliacaoKey);
+                    li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-blue-400 uppercase font-bold mt-1">🎯 Avaliação</span>`;
+                    li.onclick = () => {
+                        document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-senaiRed/20', 'border-senaiRed', 'text-white'));
+                        li.classList.add('bg-blue-500/20', 'border-blue-500', 'text-white');
+                        loadContent(u.avaliacaoKey, li, `${mod.id} > Unidade ${u.id} > Avaliação`);
+                    };
+                    ul.appendChild(li);
+                }
+            });
+
+            section.appendChild(h3);
+            section.appendChild(ul);
+            sidebarContainer.appendChild(section);
+        });
+    }
+
+    // Toast Notification helper for new content releases
+    function showStudentToastNotification(title, message) {
+        let container = document.getElementById('student-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'student-toast-container';
+            container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 11000; pointer-events: none;';
+            document.body.appendChild(container);
         }
+
+        const toast = document.createElement('div');
+        toast.style.cssText = 'background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(239, 68, 68, 0.3); color: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 4px; pointer-events: auto; min-width: 300px; max-width: 400px; transform: translateY(50px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); animation: toastFadeIn 0.4s forwards;';
+        
+        toast.innerHTML = `
+            <div style="font-weight: 800; color: #ef4444; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between;">
+                <span>${title}</span>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer; padding: 0 5px;">✕</button>
+            </div>
+            <div style="font-size: 0.85rem; color: #cbd5e1; font-weight: 500; line-height: 1.4;">${message}</div>
+        `;
+
+        if (!document.getElementById('toast-styles-el')) {
+            const style = document.createElement('style');
+            style.id = 'toast-styles-el';
+            style.textContent = `
+                @keyframes toastFadeIn {
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.transform = 'translateY(20px)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 400);
+        }, 6000);
     }
 
     // ==========================================
@@ -121,73 +196,26 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateProgressBadges() {
         completedUnits = JSON.parse(localStorage.getItem("completed_units") || "{}");
         
-        const modules = {
-            m1: [1, 2, 3, 4, 5].map(i => `Apostila_FUTEC_${i}`),
-            m2: [1, 2, 3, 4, 5].map(i => `Apostila_FECOP_${i}`),
-            m3: [1, 2, 3, 4, 5].map(i => `Apostila_IRCOM_${i}`)
-        };
+        const structure = (typeof courseData !== 'undefined' && courseData.courseStructure) ? courseData.courseStructure : [];
+        const progressBarsContainer = document.querySelector(".module-progress-bars");
         
-        for (let modKey in modules) {
-            const keys = modules[modKey];
-            let completedCount = 0;
-            let totalAvailable = 0;
-            
-            keys.forEach(k => {
-                if (typeof courseData !== 'undefined' && courseData[k]) {
-                    // Estima o número de tópicos contando as tags <h2> (## em markdown)
-                    let numTopics = (courseData[k].match(/^## /gm) || []).length;
-                    if (numTopics === 0) numTopics = 1;
+        let totalDone = 0, totalAvail = 0;
+        let totalUnitsCount = 0;
+        let completedUnitsCount = 0;
 
-                    totalAvailable += numTopics;
-
-                    const status = completedUnits[k];
-                    if (status === true) {
-                        // Legado: já havia concluído a apostila toda
-                        completedCount += numTopics;
-                    } else if (Array.isArray(status)) {
-                        // Novo modelo: conta quantos tópicos foram concluídos
-                        completedCount += Math.min(status.length, numTopics);
-                    }
-                }
-            });
-            
-            const badge = document.getElementById(`progress-${modKey}`);
-            if (badge) {
-                if (totalAvailable > 0) {
-                    const percent = Math.round((completedCount / totalAvailable) * 100);
-                    badge.textContent = `${percent}%`;
-                    badge.style.display = 'inline-block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        }
-        
-        const statCompleted = document.getElementById('stat-completed');
-        if (statCompleted) {
-            statCompleted.textContent = Object.keys(completedUnits).length;
+        if (progressBarsContainer) {
+            progressBarsContainer.innerHTML = "";
         }
 
-        // --- ATUALIZAR DASHBOARD DE PROGRESSO VISUAL PREMIUM ---
-        const radBar = document.getElementById('radial-progress-bar-el');
-        const radText = document.getElementById('radial-progress-percentage-text');
-        const totalStatusText = document.getElementById('progress-total-status');
-        
-        const futecBar = document.getElementById('progress-bar-futec');
-        const futecVal = document.getElementById('progress-val-futec');
-        const fecopBar = document.getElementById('progress-bar-fecop');
-        const fecopVal = document.getElementById('progress-val-fecop');
-        const ircomBar = document.getElementById('progress-bar-ircom');
-        const ircomVal = document.getElementById('progress-val-ircom');
-
-        let futecDone = 0, futecTotal = 0;
-        let fecopDone = 0, fecopTotal = 0;
-        let ircomDone = 0, ircomTotal = 0;
-
-        function getModuleStats(modPrefix) {
+        structure.forEach(mod => {
             let done = 0, total = 0;
-            for (let i = 1; i <= 5; i++) {
-                const k = `Apostila_${modPrefix}_${i}`;
+            mod.units.forEach(u => {
+                totalUnitsCount++;
+                if (completedUnits[u.apostilaKey]) {
+                    completedUnitsCount++;
+                }
+
+                const k = u.apostilaKey;
                 if (courseData && courseData[k]) {
                     let numTopics = (courseData[k].match(/^## /gm) || []).length;
                     if (numTopics === 0) numTopics = 1;
@@ -197,39 +225,52 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (status === true) done += numTopics;
                     else if (Array.isArray(status)) done += Math.min(status.length, numTopics);
                 }
+            });
+
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            totalDone += done;
+            totalAvail += total;
+
+            // Atualiza percentual no sidebar
+            const badge = document.getElementById(`progress-m-${mod.id}`);
+            if (badge) {
+                badge.textContent = `${pct}%`;
             }
-            return { done, total };
+
+            // Renderiza barra no dashboard
+            if (progressBarsContainer) {
+                const barItem = document.createElement("div");
+                barItem.innerHTML = `
+                    <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
+                        <span>${mod.name}</span>
+                        <span class="text-white">${pct}%</span>
+                    </div>
+                    <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
+                        <div class="h-full bg-gradient-to-r from-senaiRed to-red-500 rounded-full transition-all duration-1000" style="width: ${pct}%;"></div>
+                    </div>
+                `;
+                progressBarsContainer.appendChild(barItem);
+            }
+        });
+
+        const statCompleted = document.getElementById('stat-completed');
+        if (statCompleted) {
+            statCompleted.textContent = completedUnitsCount;
         }
 
-        const statsFutec = getModuleStats('FUTEC');
-        const statsFecop = getModuleStats('FECOP');
-        const statsIrcom = getModuleStats('IRCOM');
+        const radBar = document.getElementById('radial-progress-bar-el');
+        const radText = document.getElementById('radial-progress-percentage-text');
+        const totalStatusText = document.getElementById('progress-total-status');
 
-        const futecPct = statsFutec.total > 0 ? Math.round((statsFutec.done / statsFutec.total) * 100) : 0;
-        const fecopPct = statsFecop.total > 0 ? Math.round((statsFecop.done / statsFecop.total) * 100) : 0;
-        const ircomPct = statsIrcom.total > 0 ? Math.round((statsIrcom.done / statsIrcom.total) * 100) : 0;
-        
-        const totalDone = statsFutec.done + statsFecop.done + statsIrcom.done;
-        const totalAvail = statsFutec.total + statsFecop.total + statsIrcom.total;
         const totalPct = totalAvail > 0 ? Math.round((totalDone / totalAvail) * 100) : 0;
 
-        if (totalStatusText) totalStatusText.textContent = `${totalDone} de 15 Concluídos`;
+        if (totalStatusText) totalStatusText.textContent = `${completedUnitsCount} de ${totalUnitsCount} Unidades Concluídas`;
         if (radText) radText.textContent = `${totalPct}%`;
         if (radBar) {
-            // R = 40, Circunferência = 2 * PI * R = 251.2
             const offset = 251.2 - (251.2 * totalPct / 100);
             radBar.style.strokeDashoffset = offset;
         }
 
-        if (futecBar) futecBar.style.width = `${futecPct}%`;
-        if (futecVal) futecVal.textContent = `${futecPct}%`;
-        
-        if (fecopBar) fecopBar.style.width = `${fecopPct}%`;
-        if (fecopVal) fecopVal.textContent = `${fecopPct}%`;
-        
-        if (ircomBar) ircomBar.style.width = `${ircomPct}%`;
-        if (ircomVal) ircomVal.textContent = `${ircomPct}%`;
-        
         document.querySelectorAll(".nav-item").forEach(item => {
             const key = item.getAttribute("data-key");
             if (key) {
@@ -237,6 +278,105 @@ document.addEventListener("DOMContentLoaded", () => {
                     item.classList.add("completed");
                 } else {
                     item.classList.remove("completed");
+                }
+            }
+        });
+    }
+
+    let studentChartInstance = null;
+    
+    function renderStudentEvolutionChart(submissions) {
+        const canvas = document.getElementById('student-evolution-chart');
+        const container = document.getElementById('student-chart-container');
+        if (!canvas || !container) return;
+
+        if (submissions.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        // Ordenar cronologicamente ascendente
+        const sortedSubs = [...submissions].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        const labels = sortedSubs.map(s => {
+            const label = s.examKey.replace('Avaliacao_', '').replace('_', ' U');
+            return label;
+        });
+        const scores = sortedSubs.map(s => s.score);
+
+        if (studentChartInstance) {
+            studentChartInstance.destroy();
+        }
+
+        studentChartInstance = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pontuação (%)',
+                    data: scores,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#ef4444',
+                    pointBorderColor: '#ffffff',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#ffffff',
+                        bodyColor: '#f8fafc',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Nota: ${context.raw}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                family: 'Inter', size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                family: 'Inter', size: 10
+                            },
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -265,34 +405,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 container.style.display = "block";
                 listEl.innerHTML = "";
                 
+                // Renderizar gráfico de evolução
+                renderStudentEvolutionChart(data.submissions);
+                
                 // Ordenar do mais recente para o mais antigo
                 data.submissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 
                 data.submissions.forEach(sub => {
                     const card = document.createElement("div");
-                    card.className = "stat-card completed-exam-card";
-                    card.style.cssText = "padding: 24px; display: flex; flex-direction: column; gap: 12px; text-align: left; position: relative;";
+                    card.className = "bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col gap-3 text-left relative shadow-lg hover:bg-slate-800/50 transition-colors group";
                     
                     const date = new Date(sub.timestamp).toLocaleDateString('pt-BR') + ' às ' + new Date(sub.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
                     const moduleName = sub.examKey.replace('Avaliacao_', '').replace('_', ' Unidade ');
                     
                     const isApproved = sub.score >= 60;
-                    const badgeClass = isApproved ? 'approved-badge' : 'recovery-badge';
+                    const badgeClass = isApproved ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30';
                     const badgeText = isApproved ? 'Aprovado' : 'Recuperação';
+                    const scoreColor = isApproved ? 'text-white' : 'text-senaiRed';
                     
                     card.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">${moduleName}</span>
-                            <span class="exam-status-badge ${badgeClass}" style="font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px;">${badgeText}</span>
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold text-senaiRed uppercase tracking-wider">${moduleName}</span>
+                            <span class="${badgeClass} text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider">${badgeText}</span>
                         </div>
-                        <h4 style="font-size: 1.8rem; font-weight: 800; color: white; margin: 5px 0 0 0;">${sub.score}%</h4>
-                        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                        <h4 class="text-3xl font-black ${scoreColor} mt-1">${sub.score}%</h4>
+                        <div class="text-sm text-slate-400 font-semibold mt-1">
                             🎯 ${sub.correctCount} de ${sub.totalCount} acertos
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+                        <div class="text-xs text-slate-500 mt-2">
                             📅 ${date}
                         </div>
-                        <button class="btn-view-exam-history" style="width: 100%; margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">🔍 Ver Gabarito Detalhado</button>
+                        <button class="btn-view-exam-history w-full mt-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold text-sm transition-all focus:outline-none focus:ring-1 focus:ring-slate-500">🔍 Ver Gabarito Detalhado</button>
                     `;
                     
                     card.querySelector(".btn-view-exam-history").addEventListener("click", () => {
@@ -327,6 +470,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             Nenhuma avaliação realizada ainda. Suas provas e notas aparecerão aqui quando você responder as avaliações liberadas.
                         </div>
                     `;
+                    const chartContainer = document.getElementById('student-chart-container');
+                    if (chartContainer) chartContainer.style.display = 'none';
                 } else {
                     container.style.display = "none";
                 }
@@ -593,11 +738,8 @@ document.addEventListener("DOMContentLoaded", () => {
         contentViewer.scrollTo(0, 0);
     }
 
-    // Inicializa o Menu Lateral
-    renderNavItems(m1_apostilas, m1_avaliacoes, navFundamentos, "FUTEC — Fund. de TI (80h)");
-    renderNavItems(m2_apostilas, m2_avaliacoes, navColaboracao, "FECOP — Colab. e Prod. (120h)");
-    renderNavItems(m3_apostilas, m3_avaliacoes, navIRCOM, "IRCOM — Inst. Rec. Comp. (120h)");
-
+    // Inicializa o Menu Lateral Dinâmico
+    renderDynamicSidebar();
     updateProgressBadges();
 
     // ==========================================
@@ -612,6 +754,9 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     function parseEvaluation(markdownText) {
         if (!markdownText) return null;
+        if (typeof markdownText === 'object') {
+            return markdownText;
+        }
 
         // Extrair título e tema
         const titleMatch = markdownText.match(/^#\s+(.+)$/m);
@@ -1813,6 +1958,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 
                                 localStorage.setItem("completed_units", JSON.stringify(completedUnits));
                                 updateProgressBadges();
+
+                                // Sincronizar com o servidor
+                                const studentInfoStr = sessionStorage.getItem("student_info");
+                                if (studentInfoStr) {
+                                    try {
+                                        const info = JSON.parse(studentInfoStr);
+                                        fetch('/api/student/progress', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email: info.email, completedUnits })
+                                        }).catch(()=>{});
+                                    } catch(e){}
+                                }
                             });
                         }
                     }
@@ -1828,6 +1986,45 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else {
                         // Se não houver h2, apenas um box no final
                         createTopicBox(1, contentViewer, 'beforeend');
+                    }
+
+                    // Renderizar anexos/materiais complementares
+                    let unitFiles = [];
+                    if (courseData && courseData.courseStructure) {
+                        courseData.courseStructure.forEach(mod => {
+                            mod.units.forEach(u => {
+                                if (u.apostilaKey === key) {
+                                    unitFiles = u.files || [];
+                                }
+                            });
+                        });
+                    }
+
+                    if (unitFiles.length > 0) {
+                        const filesHtml = unitFiles.map(f => {
+                            const isLink = f.type === 'link';
+                            const icon = f.type === 'pdf' ? '📄' : (f.type === 'image' ? '🖼️' : '🔗');
+                            return `
+                                <a href="${f.path}" target="_blank" class="attachment-item-link" style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px 16px; border-radius: 10px; text-decoration: none; color: white; transition: all 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'" onmouseleave="this.style.transform='none'; this.style.borderColor='var(--border)'">
+                                    <span style="font-size: 1.4rem;">${icon}</span>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="font-weight: bold; font-size: 0.9rem; text-wrap: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${f.name}</span>
+                                        <span style="font-size: 0.7rem; color: var(--text-muted);">${f.type.toUpperCase()}</span>
+                                    </div>
+                                </a>
+                            `;
+                        }).join('');
+
+                        const attachmentsContainer = document.createElement("div");
+                        attachmentsContainer.className = "attachments-section-container";
+                        attachmentsContainer.style.cssText = "margin-top: 40px; padding-top: 25px; border-top: 1px dashed var(--border); text-align: left;";
+                        attachmentsContainer.innerHTML = `
+                            <h3 style="color: white; font-weight: 800; font-size: 1.25rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">📎 Materiais Complementares</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
+                                ${filesHtml}
+                            </div>
+                        `;
+                        contentViewer.appendChild(attachmentsContainer);
                     }
 
                     // Fórum integrado no fim
@@ -2176,7 +2373,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!sidebarLocksPoll) {
                     sidebarLocksPoll = setInterval(syncSidebarLocks, 5000);
                 }
-                updateProgressBadges();
+                // Sincronizar progresso com o servidor
+                fetch(`/api/student/progress?email=${encodeURIComponent(info.email)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.completedUnits) {
+                        completedUnits = data.completedUnits;
+                        localStorage.setItem("completed_units", JSON.stringify(completedUnits));
+                    }
+                    updateProgressBadges();
+                })
+                .catch(err => {
+                    console.error("Erro ao sincronizar progresso:", err);
+                    updateProgressBadges();
+                });
+                
                 loadStudentSubmissionsDashboard();
             } catch (e) {
                 sessionStorage.removeItem("student_info");
@@ -2385,6 +2596,36 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .then(data => {
             const releasedItems = data.releasedItems || {};
+            
+            // Check for new releases to notify the student
+            if (lastReleasedItemsKeys !== null) {
+                const newReleases = [];
+                for (const key in releasedItems) {
+                    if (releasedItems[key] === true && !lastReleasedItemsKeys.includes(key)) {
+                        let friendlyName = key;
+                        if (courseData && courseData.courseStructure) {
+                            courseData.courseStructure.forEach(mod => {
+                                mod.units.forEach(u => {
+                                    if (u.apostilaKey === key || u.avaliacaoKey === key) {
+                                        friendlyName = `${mod.id} > Unidade ${u.id}: ${u.name}`;
+                                    }
+                                });
+                            });
+                        }
+                        const typeLabel = key.startsWith("Apostila_") ? "📘 Apostila" : "🎯 Avaliação";
+                        newReleases.push(`${typeLabel} — ${friendlyName}`);
+                    }
+                }
+
+                if (newReleases.length > 0) {
+                    newReleases.forEach(msg => {
+                        showStudentToastNotification("🚀 Novo Conteúdo Liberado!", msg);
+                    });
+                }
+            }
+
+            // Update keys tracker
+            lastReleasedItemsKeys = Object.keys(releasedItems).filter(k => releasedItems[k] === true);
             
             document.querySelectorAll(".nav-item").forEach(item => {
                 const key = item.getAttribute("data-key");

@@ -13,10 +13,30 @@
         rel="stylesheet">
     <!-- Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        senaiRed: '#ef4444',
+                        slateDark: '#0f172a',
+                        slatePanel: '#1e293b',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="bg-slateDark text-slate-100 font-sans h-screen flex overflow-hidden selection:bg-senaiRed/30">
     <div id="protocol-warning-overlay" style="display: none; background: #ef4444; color: white; padding: 12px 20px; font-weight: bold; text-align: center; font-size: 0.9rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-bottom: 2px solid #b91c1c;">
         ⚠️ ATENÇÃO: Você abriu o arquivo HTML diretamente no navegador (protocolo file://). As requisições de rede falharão (Erro: failed to fetch).
         Para que o sistema funcione corretamente, acesse o endereço do servidor local: 
@@ -28,255 +48,204 @@
             document.body.style.paddingTop = '45px';
         }
     </script>
-    <div id="app-container">
+    <div id="app-container" class="flex w-full h-full relative">
+        
         <!-- Sidebar Navigation -->
-        <nav id="sidebar">
-            <div class="logo-area" onclick="window.location.href='index.html'" style="cursor: pointer;">
-                <h1>SENAI<span class="highlight">4.0</span></h1>
-                <p>Portal de Treinamento</p>
+        <nav id="sidebar" class="w-80 min-w-[320px] bg-slatePanel/80 backdrop-blur-xl border-r border-slate-700/50 flex flex-col overflow-y-auto transition-transform duration-300 z-40 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
+            <div class="logo-area sticky top-0 bg-slatePanel/90 backdrop-blur-md px-6 py-8 border-b border-slate-700/50 z-10 cursor-pointer" onclick="window.location.href='index.html'">
+                <h1 class="text-3xl font-extrabold tracking-tight text-white">SENAI<span class="text-senaiRed">4.0</span></h1>
+                <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Portal de Treinamento</p>
             </div>
 
             <!-- Barra de Busca -->
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões...">
+            <div class="px-5 py-4 border-b border-slate-700/50">
+                <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões..." class="w-full px-4 py-3 bg-black/20 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all duration-300 shadow-inner">
             </div>
 
-            <!-- Card do Aluno (Mapeado do Footer para o Topo) -->
-            <div class="instructor-card" id="student-profile-card" style="display: none; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin: 10px 15px 15px 15px; align-items: center; gap: 10px;">
-                <div class="instructor-avatar" id="student-avatar" style="background: var(--primary); font-size: 13px; font-weight: 800; width: 34px; height: 34px;">
-                    AL
+            <!-- Card do Aluno -->
+            <div class="instructor-card flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 mx-4 my-4 backdrop-blur-sm shadow-lg" id="student-profile-card" style="display: none;">
+                <div class="instructor-avatar flex items-center justify-center bg-gradient-to-br from-senaiRed to-red-700 text-white text-xs font-bold w-9 h-9 rounded-full shadow-md" id="student-avatar">AL</div>
+                <div class="instructor-info flex flex-col">
+                    <span class="instructor-name text-sm font-bold text-white" id="student-profile-name">Aluno</span>
+                    <span class="instructor-role text-xs text-slate-400" id="student-profile-class">Turma</span>
                 </div>
-                <div class="instructor-info" style="display: flex; flex-direction: column;">
-                    <span class="instructor-name" id="student-profile-name" style="font-size: 0.8rem; font-weight: 700;">Aluno</span>
-                    <span class="instructor-role" id="student-profile-class" style="font-size: 0.7rem; color: var(--text-muted);">Turma</span>
-                </div>
-                <button id="btn-student-logout" title="Sair da conta" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 1rem; margin-left: auto;">🚪</button>
+                <button id="btn-student-logout" title="Sair da conta" class="ml-auto text-red-400 hover:text-red-300 transition-colors text-lg focus:outline-none">🚪</button>
             </div>
 
-
-            <div class="nav-section">
-                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
-                    <span>FUTEC — Fund. de TI (80h)</span>
-                    <span class="module-progress" id="progress-m1">0%</span>
-                    <span class="toggle-icon">▾</span>
-                </h3>
-                <ul id="nav-fundamentos">
-                    <!-- Injected by JS -->
-                </ul>
-            </div>
-
-            <div class="nav-section">
-                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
-                    <span>FECOP — Colab. e Prod. (120h)</span>
-                    <span class="module-progress" id="progress-m2">0%</span>
-                    <span class="toggle-icon">▾</span>
-                </h3>
-                <ul id="nav-colaboracao">
-                    <!-- Injected by JS -->
-                </ul>
-            </div>
-
-            <div class="nav-section">
-                <h3 class="nav-section-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
-                    <span>IRCOM — Inst. Rec. Comp. (120h)</span>
-                    <span class="module-progress" id="progress-m3">0%</span>
-                    <span class="toggle-icon">▾</span>
-                </h3>
-                <ul id="nav-ircom">
-                    <!-- Injected by JS -->
-                </ul>
+            <!-- Dynamic Sidebar Navigation Modules -->
+            <div id="sidebar-navigation-modules" class="flex flex-col gap-2 p-2">
+                <!-- Injected dynamically by app.js -->
             </div>
 
             <!-- Rodapé da Sidebar -->
-            <div class="sidebar-footer">
-                <div class="sidebar-version">SENAI 4.0 • Portal do Aluno • v2.0 · <span id="diagnostico-link" style="text-decoration: underline; cursor: pointer; color: var(--primary);">🩺 Validador</span></div>
+            <div class="mt-auto px-6 py-4 text-xs text-slate-500 border-t border-slate-700/50 bg-black/10">
+                <div>SENAI 4.0 • Portal do Aluno • v2.0</div>
+                <div class="mt-1"><span id="diagnostico-link" class="underline cursor-pointer text-senaiRed hover:text-red-400 transition-colors">🩺 Validador</span></div>
             </div>
         </nav>
 
         <!-- Main Content Area -->
-        <main id="main-content">
-            <header id="topbar">
-                <button id="mobile-menu-btn">☰ Menu</button>
-                <div id="breadcrumb" class="breadcrumb-home" onclick="window.location.href='index.html'">SENAI 4.0</div>
-                <div class="topbar-actions" style="display: flex; gap: 10px;">
-                    <button id="btn-notebook-toggle" title="Abrir Meu Caderno de Anotações" style="background: var(--bg-panel); color: #fef08a; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                        <span class="btn-icon">📝</span> Caderno
+        <main id="main-content" class="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800/30 via-slateDark to-slateDark">
+            
+            <header id="topbar" class="h-20 px-8 flex items-center justify-between border-b border-slate-700/50 bg-slatePanel/50 backdrop-blur-md z-30">
+                <div class="flex items-center gap-4">
+                    <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none text-2xl">☰</button>
+                    <div id="breadcrumb" class="text-sm font-semibold text-slate-300 hover:text-white cursor-pointer transition-colors" onclick="window.location.href='index.html'">SENAI 4.0</div>
+                </div>
+                <div class="topbar-actions flex gap-3">
+                    <button id="btn-notebook-toggle" title="Abrir Meu Caderno de Anotações" class="flex items-center gap-2 bg-slatePanel border border-slate-600/50 text-yellow-200 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 hover:border-slate-500 transition-all shadow-md focus:outline-none">
+                        <span>📝</span> Caderno
                     </button>
-                    <button id="focus-mode-btn" title="Ativar Modo Foco (Otimizado para leitura)">
-                        <span class="btn-icon">👁️</span> Modo Foco
+                    <button id="focus-mode-btn" title="Ativar Modo Foco (Otimizado para leitura)" class="flex items-center gap-2 bg-slate-800 border border-slate-600/50 text-slate-300 px-4 py-2 rounded-lg font-semibold hover:bg-slate-700 hover:text-white transition-all focus:outline-none">
+                        <span>👁️</span> Foco
                     </button>
-                    <button id="export-pdf-btn" title="Exportar esta apostila como PDF para os alunos" disabled>
-                        <span class="btn-icon">📄</span> Exportar PDF
+                    <button id="export-pdf-btn" title="Exportar esta apostila como PDF para os alunos" disabled class="flex items-center gap-2 bg-slate-800 border border-slate-700 text-slate-500 px-4 py-2 rounded-lg font-semibold opacity-50 cursor-not-allowed">
+                        <span>📄</span> PDF
                     </button>
                 </div>
             </header>
 
-            <div id="content-viewer" class="markdown-body">
+            <div id="content-viewer" class="markdown-body flex-1 overflow-y-auto p-8 lg:p-12 pb-32">
                 <!-- Welcome Screen -->
-                <div class="welcome-screen" style="padding-top: 10px;">
-                    <h2 id="welcome-greeting" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 8px;">Olá, Estudante! 👋</h2>
-                    <p>Selecione uma Unidade ou Avaliação no menu lateral para iniciar seu aprendizado.</p>
+                <div class="welcome-screen max-w-5xl mx-auto pt-4">
+                    <h2 id="welcome-greeting" class="text-4xl font-extrabold text-white mb-2 tracking-tight">Olá, Estudante! 👋</h2>
+                    <p class="text-slate-400 text-lg mb-8">Selecione uma Unidade ou Avaliação no menu lateral para iniciar seu aprendizado.</p>
                     
                     <!-- Painel de Progresso Visual Premium -->
-                    <div class="progress-dashboard">
-                        <div class="progress-dashboard-header">
-                            <div class="progress-dashboard-title">📊 Sua Trilha de Progresso</div>
-                            <span style="font-size: 0.85rem; color: var(--text-muted);" id="progress-total-status">0 de 15 Concluídos</span>
+                    <div class="progress-dashboard bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl mb-10">
+                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700/50">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-2">📊 Sua Trilha de Progresso</h3>
+                            <span class="text-sm font-semibold text-slate-400 bg-black/20 px-3 py-1 rounded-full" id="progress-total-status">0 de 15 Concluídos</span>
                         </div>
-                        <div class="progress-overview-container">
-                            <div class="radial-progress-wrapper">
-                                <svg class="radial-progress-svg">
-                                    <circle class="radial-progress-bg" cx="50" cy="50" r="40"></circle>
-                                    <circle class="radial-progress-bar" id="radial-progress-bar-el" cx="50" cy="50" r="40"></circle>
+                        
+                        <div class="flex flex-col md:flex-row gap-10 items-center">
+                            <!-- Circular Progress -->
+                            <div class="relative w-32 h-32 flex-shrink-0">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="64" cy="64" r="56" class="stroke-slate-700 fill-none" stroke-width="12"></circle>
+                                    <circle id="radial-progress-bar-el" cx="64" cy="64" r="56" class="stroke-senaiRed fill-none transition-all duration-1000 ease-out" stroke-width="12" stroke-dasharray="351" stroke-dashoffset="351" stroke-linecap="round"></circle>
                                 </svg>
-                                <span class="radial-progress-text" id="radial-progress-percentage-text">0%</span>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-2xl font-black text-white" id="radial-progress-percentage-text">0%</span>
+                                </div>
                             </div>
-                            <div class="module-progress-bars">
-                                <div class="module-progress-bar-item">
-                                    <div class="module-bar-header">
-                                        <span class="module-bar-name">FUTEC — Fundamentos de TI</span>
-                                        <span id="progress-val-futec">0%</span>
+                            
+                            <!-- Module Bars -->
+                            <div class="flex-1 w-full flex flex-col gap-5">
+                                <div>
+                                    <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
+                                        <span>FUTEC — Fundamentos de TI</span>
+                                        <span id="progress-val-futec" class="text-senaiRed">0%</span>
                                     </div>
-                                    <div class="module-bar-outer">
-                                        <div class="module-bar-inner futec" id="progress-bar-futec" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <div class="module-progress-bar-item">
-                                    <div class="module-bar-header">
-                                        <span class="module-bar-name">FECOP — Colaboração e Produtividade</span>
-                                        <span id="progress-val-fecop">0%</span>
-                                    </div>
-                                    <div class="module-bar-outer">
-                                        <div class="module-bar-inner fecop" id="progress-bar-fecop" style="width: 0%"></div>
+                                    <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
+                                        <div id="progress-bar-futec" class="h-full bg-gradient-to-r from-senaiRed to-red-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
                                     </div>
                                 </div>
-                                <div class="module-progress-bar-item">
-                                    <div class="module-bar-header">
-                                        <span class="module-bar-name">IRCOM — Instalação de Recursos Computacionais</span>
-                                        <span id="progress-val-ircom">0%</span>
+                                <div>
+                                    <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
+                                        <span>FECOP — Colaboração e Produtividade</span>
+                                        <span id="progress-val-fecop" class="text-blue-400">0%</span>
                                     </div>
-                                    <div class="module-bar-outer">
-                                        <div class="module-bar-inner ircom" id="progress-bar-ircom" style="width: 0%"></div>
+                                    <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
+                                        <div id="progress-bar-fecop" class="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
+                                        <span>IRCOM — Instalação de Recursos</span>
+                                        <span id="progress-val-ircom" class="text-purple-400">0%</span>
+                                    </div>
+                                    <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
+                                        <div id="progress-bar-ircom" class="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h4>320</h4>
-                            <p>Horas de Carga Horária</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-lg hover:bg-slate-800/50 transition-colors">
+                            <h4 class="text-4xl font-black text-white mb-1">320</h4>
+                            <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider">Horas de Carga</p>
                         </div>
-                        <div class="stat-card">
-                            <h4>15</h4>
-                            <p>Unidades</p>
+                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-lg hover:bg-slate-800/50 transition-colors">
+                            <h4 class="text-4xl font-black text-white mb-1">15</h4>
+                            <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider">Unidades</p>
                         </div>
-                        <div class="stat-card">
-                            <h4 id="stat-completed">0</h4>
-                            <p>Itens Concluídos</p>
+                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-lg hover:bg-slate-800/50 transition-colors relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-br from-senaiRed/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <h4 id="stat-completed" class="text-4xl font-black text-senaiRed mb-1 relative z-10">0</h4>
+                            <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider relative z-10">Concluídos</p>
                         </div>
                     </div>
 
-                    <!-- Histórico de Provas Respondidas (LMS Premium) -->
-                    <div class="completed-exams-section" id="student-completed-exams-container" style="display: none; margin-top: 40px; text-align: left; width: 100%;">
-                        <h3 style="color: white; font-weight: 800; font-size: 1.35rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">🎯 Minhas Avaliações Realizadas</h3>
-                        <div id="completed-exams-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                    <!-- Histórico de Provas -->
+                    <div id="student-chart-container" style="display: none;" class="bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl mb-12 w-full text-left">
+                        <h3 class="text-2xl font-extrabold text-white mb-6 flex items-center gap-3"><span>📈</span> Evolução das Notas</h3>
+                        <div class="relative w-full h-[300px]">
+                            <canvas id="student-evolution-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div id="student-completed-exams-container" style="display: none;" class="w-full text-left mb-12">
+                        <h3 class="text-2xl font-extrabold text-white mb-6 flex items-center gap-3"><span>🎯</span> Avaliações Realizadas</h3>
+                        <div id="completed-exams-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <!-- Injetado dinamicamente via JS -->
                         </div>
                     </div>
 
 
                     <!-- Índice do Curso -->
-                    <div class="curriculum-index">
-                        <h3>📚 Índice do Curso</h3>
+                    <div class="curriculum-index bg-slate-800/20 rounded-2xl border border-white/5 p-8">
+                        <h3 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4">📚 Índice do Curso</h3>
                         
-                        <div class="module-index">
-                            <h4><span class="module-tag basics">FUTEC</span> Fundamentos de TI (80h)</h4>
-                            <table class="index-table">
-                                <tr>
-                                    <td><strong>Unidade 1</strong></td>
-                                    <td>📺 Sistemas Operacionais (Código Fechado/Aberto) + 💾 Dispositivos Computacionais</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 2</strong></td>
-                                    <td>🏭 Indústria 4.0 + 🌐 Internet (Segurança, Websites)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 3</strong></td>
-                                    <td>📊 Planilhas Eletrônicas + 📧 Correio Eletrônico + 🎤 Apresentações</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 4</strong></td>
-                                    <td>🗄️ Banco de Dados (SGBD) + 💻 Programação (Lógica)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 5</strong></td>
-                                    <td>☁️ Aplicações Web + 📱 Mídias Sociais + 🎮 Gamificação</td>
-                                </tr>
+                        <div class="mb-8">
+                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-senaiRed text-white text-xs px-2 py-1 rounded-md font-black">FUTEC</span> Fundamentos de TI (80h)</h4>
+                            <table class="w-full text-sm text-left text-slate-400">
+                                <tbody>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 1</td><td class="py-3 px-4">📺 Sistemas Operacionais + 💾 Dispositivos Computacionais</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 2</td><td class="py-3 px-4">🏭 Indústria 4.0 + 🌐 Internet</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 3</td><td class="py-3 px-4">📊 Planilhas + 📧 Correio Eletrônico + 🎤 Apresentações</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 4</td><td class="py-3 px-4">🗄️ Banco de Dados (SGBD) + 💻 Programação (Lógica)</td></tr>
+                                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 5</td><td class="py-3 px-4">☁️ Aplicações Web + 📱 Mídias Sociais + 🎮 Gamificação</td></tr>
+                                </tbody>
                             </table>
                         </div>
 
-                        <div class="module-index">
-                            <h4><span class="module-tag specific">FECOP</span> Colaboração e Produtividade (120h)</h4>
-                            <table class="index-table">
-                                <tr>
-                                    <td><strong>Unidade 1</strong></td>
-                                    <td>📅 Agenda Eletrônica + 👥 Grupos (E-mail, Redes Corporativas)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 2</strong></td>
-                                    <td>☁️ Armazenamento em Nuvem (OneDrive, SharePoint)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 3</strong></td>
-                                    <td>📊 Planilhas Avançadas (Dashboards, Tabelas Dinâmicas, Macros)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 4</strong></td>
-                                    <td>🎬 Apresentações + 📹 Reuniões Online (Teams/Meet)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 5</strong></td>
-                                    <td>📋 Projetos + 📝 Formulários + 🔧 Automação (Planner, Power Automate)</td>
-                                </tr>
+                        <div class="mb-8">
+                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-black">FECOP</span> Colaboração e Produtividade (120h)</h4>
+                            <table class="w-full text-sm text-left text-slate-400">
+                                <tbody>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 1</td><td class="py-3 px-4">📅 Agenda Eletrônica + 👥 Grupos</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 2</td><td class="py-3 px-4">☁️ Armazenamento em Nuvem (OneDrive, SharePoint)</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 3</td><td class="py-3 px-4">📊 Planilhas Avançadas (Dashboards, Macros)</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 4</td><td class="py-3 px-4">🎬 Apresentações + 📹 Reuniões Online (Teams/Meet)</td></tr>
+                                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 5</td><td class="py-3 px-4">📋 Projetos + 📝 Formulários + 🔧 Automação</td></tr>
+                                </tbody>
                             </table>
                         </div>
 
-                        <div class="module-index">
-                            <h4><span class="module-tag" style="background: #8b5cf6;">IRCOM</span> Instalação de Recursos Computacionais (120h)</h4>
-                            <table class="index-table">
-                                <tr>
-                                    <td><strong>Unidade 1</strong></td>
-                                    <td>📚 Histórico + Terminologia + Sistemas Numéricos</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 2</strong></td>
-                                    <td>🖥️ Meios Computacionais (Desktop, Notebook, Servidores)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 3</strong></td>
-                                    <td>⚙️ Arquitetura (Processador, Placa Mãe, Periféricos)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 4</strong></td>
-                                    <td>💾 Armazenamento (HD, SSD) + Fontes + Gabinetes</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Unidade 5</strong></td>
-                                    <td>🔧 Montagem/Desmontagem + Documentação + Instalação SO</td>
-                                </tr>
+                        <div>
+                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-purple-600 text-white text-xs px-2 py-1 rounded-md font-black">IRCOM</span> Instalação de Recursos Computacionais (120h)</h4>
+                            <table class="w-full text-sm text-left text-slate-400">
+                                <tbody>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 1</td><td class="py-3 px-4">📚 Histórico + Terminologia + Sistemas Numéricos</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 2</td><td class="py-3 px-4">🖥️ Meios Computacionais (Desktop, Notebook, Servidores)</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 3</td><td class="py-3 px-4">⚙️ Arquitetura (Processador, Placa Mãe, Periféricos)</td></tr>
+                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 4</td><td class="py-3 px-4">💾 Armazenamento (HD, SSD) + Fontes + Gabinetes</td></tr>
+                                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 5</td><td class="py-3 px-4">🔧 Montagem/Desmontagem + Documentação + Instalação SO</td></tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
 
                     <!-- Card de Autoria -->
-                    <div class="author-card">
-                        <div class="author-avatar">AM</div>
-                        <div class="author-details">
-                            <span class="author-label">Material desenvolvido por</span>
-                            <span class="author-name">Alan Marciano</span>
-                            <span class="author-title">Instrutor • Gestor em T.I. • SENAI Sertãozinho</span>
+                    <div class="mt-12 flex items-center gap-4 bg-slate-800/40 border border-white/5 p-4 rounded-xl max-w-lg">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-slate-700 text-white font-bold text-lg shadow-inner">AM</div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-1">Material desenvolvido por</span>
+                            <span class="text-base font-bold text-white">Alan Marciano</span>
+                            <span class="text-xs text-slate-500">Instrutor • Gestor em T.I. • SENAI Sertãozinho</span>
                         </div>
                     </div>
                 </div>
@@ -285,110 +254,109 @@
     </div>
 
     <!-- Bloco do Caderno do Aluno (Deslizante) -->
-    <div id="notebook-panel" style="position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: var(--bg-panel); border-left: 1px solid var(--border); box-shadow: -5px 0 25px rgba(0,0,0,0.5); z-index: 10000; transition: right 0.3s ease; display: none; flex-direction: column;">
-        <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
-            <h3 style="color: #fef08a; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+    <div id="notebook-panel" class="fixed top-0 -right-[450px] w-[400px] max-w-[90vw] h-screen bg-slatePanel/95 backdrop-blur-2xl border-l border-white/10 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] z-[10000] transition-[right] duration-300 hidden flex-col">
+        <div class="p-5 border-b border-slate-700/50 flex justify-between items-center bg-black/20">
+            <h3 class="text-yellow-200 font-extrabold flex items-center gap-2 text-lg">
                 📝 Meu Caderno
             </h3>
-            <button id="btn-close-notebook" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;">&times;</button>
+            <button id="btn-close-notebook" class="bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors focus:outline-none">&times;</button>
         </div>
-        <div style="padding: 15px; background: rgba(255,255,255,0.02); font-size: 0.85rem; color: var(--text-muted); border-bottom: 1px solid var(--border);">
-            Módulo atual: <strong id="notebook-module-badge" style="color: var(--text-main);">Nenhum</strong><br>
-            <span style="font-size: 0.75rem; opacity: 0.8;">Suas anotações são salvas automaticamente no servidor.</span>
+        <div class="p-4 bg-white/5 text-sm text-slate-400 border-b border-slate-700/50">
+            Módulo atual: <strong id="notebook-module-badge" class="text-white">Nenhum</strong><br>
+            <span class="text-xs opacity-80 mt-1 block">Suas anotações são salvas automaticamente no servidor.</span>
         </div>
-        <div style="flex-grow: 1; padding: 20px; position: relative;">
-            <textarea id="notebook-textarea" placeholder="Digite suas anotações aqui... Elas ficarão salvas no seu cadastro e disponíveis de qualquer dispositivo." style="width: 100%; height: 100%; background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); padding: 15px; font-family: 'Inter', sans-serif; resize: none; outline: none; transition: border-color 0.2s;"></textarea>
+        <div class="flex-grow p-5 relative">
+            <textarea id="notebook-textarea" placeholder="Digite suas anotações aqui... Elas ficarão salvas no seu cadastro e disponíveis de qualquer dispositivo." class="w-full h-full bg-black/20 border border-slate-700/50 rounded-xl text-slate-200 p-4 font-sans resize-none outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all shadow-inner"></textarea>
         </div>
-        <div style="padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
-            <span id="notebook-save-status" style="font-size: 0.8rem; color: var(--text-muted);">Sincronizado.</span>
-            <button id="btn-save-notebook" style="background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; display: none;">Salvar Manual</button>
+        <div class="p-4 border-t border-slate-700/50 flex justify-between items-center bg-black/20">
+            <span id="notebook-save-status" class="text-xs text-slate-500 font-semibold">Sincronizado.</span>
+            <button id="btn-save-notebook" class="hidden bg-senaiRed hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-lg">Salvar Manual</button>
         </div>
     </div>
 
     <!-- Aluno Login Modal Overlay -->
-    <div id="student-login-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-dark); z-index: 9998; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-        <div class="login-card" style="background: var(--bg-panel); border: 1px solid var(--border); padding: 35px; border-radius: 16px; width: 100%; max-width: 440px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); animation: scaleUp 0.3s ease;">
+    <div id="student-login-overlay" class="fixed inset-0 bg-slateDark/80 backdrop-blur-md z-[9998] hidden items-center justify-center p-4">
+        <div class="login-card bg-slatePanel/90 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-2xl w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-all">
             
             <!-- TELA DE LOGIN -->
             <div id="student-login-container">
-                <h2 style="font-weight: 800; margin-bottom: 6px;">🎓 Acesso do Aluno</h2>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Portal de Treinamento SENAI 4.0</p>
+                <h2 class="text-3xl font-extrabold text-white mb-2 tracking-tight">🎓 Acesso do Aluno</h2>
+                <p class="text-slate-400 text-sm mb-6">Portal de Treinamento SENAI 4.0</p>
                 
-                <div id="login-error-msg" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center;"></div>
+                <div id="login-error-msg" class="hidden bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm mb-6 text-center font-medium"></div>
                 
-                <div class="input-group" style="margin-bottom: 16px; text-align: left;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted); font-family: sans-serif;">E-mail</label>
-                    <input type="email" id="login-email" placeholder="Digite seu e-mail..." required style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.95rem; outline: none; transition: border-color 0.2s;">
+                <div class="mb-5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">E-mail</label>
+                    <input type="email" id="login-email" placeholder="Digite seu e-mail..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
                 </div>
 
-                <div class="input-group" style="margin-bottom: 20px; text-align: left;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted); font-family: sans-serif;">Senha</label>
-                    <input type="password" id="login-password" placeholder="Digite sua senha..." required style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.95rem; outline: none; transition: border-color 0.2s;">
+                <div class="mb-6">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Senha</label>
+                    <input type="password" id="login-password" placeholder="Digite sua senha..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
                 </div>
                 
-                <button class="btn-submit" id="btn-student-login" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; margin-bottom: 20px;">Entrar no Portal</button>
+                <button id="btn-student-login" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Entrar no Portal</button>
                 
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span id="link-go-register" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Criar uma Conta</span>
-                    <span id="link-go-recovery" style="color: var(--text-muted); cursor: pointer; text-decoration: underline;">Esqueci minha senha</span>
+                <div class="flex justify-between text-sm font-medium">
+                    <span id="link-go-register" class="text-senaiRed hover:text-red-400 cursor-pointer transition-colors">Criar uma Conta</span>
+                    <span id="link-go-recovery" class="text-slate-500 hover:text-slate-300 cursor-pointer transition-colors">Esqueci minha senha</span>
                 </div>
             </div>
 
             <!-- TELA DE CADASTRO -->
-            <div id="student-register-container" style="display: none;">
-                <h2 style="font-weight: 800; margin-bottom: 6px;">📝 Cadastro de Aluno</h2>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Crie sua conta para acompanhar seu progresso</p>
+            <div id="student-register-container" class="hidden">
+                <h2 class="text-3xl font-extrabold text-white mb-2 tracking-tight">📝 Cadastro</h2>
+                <p class="text-slate-400 text-sm mb-6">Crie sua conta para acompanhar seu progresso</p>
                 
-                <div id="register-error-msg" style="color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center;"></div>
+                <div id="register-error-msg" class="hidden bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm mb-6 text-center font-medium"></div>
                 
-                <div class="input-group" style="margin-bottom: 12px; text-align: left;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">Nome Completo</label>
-                    <input type="text" id="register-name" placeholder="Nome Completo..." required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.9rem; outline: none;">
+                <div class="mb-4">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nome Completo</label>
+                    <input type="text" id="register-name" placeholder="Nome Completo..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
                 </div>
 
-                <div class="input-group" style="margin-bottom: 12px; text-align: left;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">E-mail</label>
-                    <input type="email" id="register-email" placeholder="nome@email.com..." required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.9rem; outline: none;">
+                <div class="mb-4">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">E-mail</label>
+                    <input type="email" id="register-email" placeholder="nome@email.com..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
                 </div>
 
-                <div class="input-group" style="margin-bottom: 12px; text-align: left;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">Senha</label>
-                    <input type="password" id="register-password" placeholder="Criar senha..." required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.9rem; outline: none;">
+                <div class="mb-4">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Senha</label>
+                    <input type="password" id="register-password" placeholder="Criar senha..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
                 </div>
 
-                <div class="input-group" style="text-align: left; margin-bottom: 20px;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; color: var(--text-muted); font-family: sans-serif;">Turma</label>
-                    <select id="register-class" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-panel); color: white; font-size: 0.9rem; outline: none; cursor: pointer; height: 40px;">
+                <div class="mb-6">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Turma</label>
+                    <select id="register-class" required class="w-full px-4 py-3 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all cursor-pointer">
                         <!-- Carregado via API -->
                     </select>
                 </div>
                 
-                <button class="btn-submit" id="btn-student-register" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; margin-bottom: 20px;">Cadastrar e Acessar</button>
+                <button id="btn-student-register" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Cadastrar e Acessar</button>
                 
-                <div style="text-align: center; font-size: 0.8rem;">
-                    <span id="link-go-login" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Voltar para o Login</span>
+                <div class="text-center text-sm font-medium">
+                    <span id="link-go-login" class="text-senaiRed hover:text-red-400 cursor-pointer transition-colors">Voltar para o Login</span>
                 </div>
             </div>
 
             <!-- TELA DE RECUPERAÇÃO -->
-            <div id="student-recovery-container" style="display: none;">
-                <h2 style="font-weight: 800; margin-bottom: 6px;">🔑 Recuperação de Senha</h2>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Solicite o reset da sua senha ao instrutor</p>
+            <div id="student-recovery-container" class="hidden">
+                <h2 class="text-3xl font-extrabold text-white mb-2 tracking-tight">🔑 Recuperação</h2>
+                <p class="text-slate-400 text-sm mb-6">Solicite o reset da sua senha ao instrutor</p>
                 
-                <div id="recovery-status-msg" style="padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; display: none; text-align: center;"></div>
+                <div id="recovery-status-msg" class="hidden p-3 rounded-lg text-sm mb-6 text-center font-medium"></div>
                 
-                <div class="input-group" style="margin-bottom: 20px; text-align: left;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted); font-family: sans-serif;">E-mail Cadastrado</label>
-                    <input type="email" id="recovery-email" placeholder="Digite seu e-mail..." required style="width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white; font-size: 0.95rem; outline: none;">
+                <div class="mb-6">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">E-mail Cadastrado</label>
+                    <input type="email" id="recovery-email" placeholder="Digite seu e-mail..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
                 </div>
                 
-                <button class="btn-submit" id="btn-student-recover" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; margin-bottom: 20px;">Enviar Solicitação</button>
+                <button id="btn-student-recover" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Enviar Solicitação</button>
                 
-                <div style="text-align: center; font-size: 0.8rem;">
-                    <span id="link-go-login-from-recovery" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Voltar para o Login</span>
+                <div class="text-center text-sm font-medium">
+                    <span id="link-go-login-from-recovery" class="text-senaiRed hover:text-red-400 cursor-pointer transition-colors">Voltar para o Login</span>
                 </div>
             </div>
-
         </div>
     </div>
 

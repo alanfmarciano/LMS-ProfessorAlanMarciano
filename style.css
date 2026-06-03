@@ -11,6 +11,13 @@
     --glass-border: rgba(255, 255, 255, 0.1);
 }
 
+/* Fix for white option background in select elements on Windows */
+select option {
+    background-color: var(--bg-panel);
+    color: var(--text-main);
+    font-weight: 600;
+}
+
 * {
     margin: 0;
     padding: 0;

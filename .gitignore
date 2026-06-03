@@ -10,11 +10,34 @@ db_submissions.json
 db_admins.json
 db_classes.json
 db_notes.json
+db_annotations.json
+db_forum.json
+db_course_structure.json
+db_evaluations.json
+db_progress.json
+db_uploads.json
 config.json
+database.db
+
+# Arquivos migrados (gerados na inicialização)
+*.migrated
+
+# Backups e uploads locais
+backups/
+uploads/
+backup/
 
 # Arquivos de log e temporários do editor/sistema
 *.log
 .DS_Store
 Thumbs.db
-backup/
 .gemini/
+
+# Subpasta duplicada legada
+Apostilateste/
+
+# Arquivos ZIP
+*.zip
+
+# Relatórios de bug temporários
+apostilas_bug_report.md
