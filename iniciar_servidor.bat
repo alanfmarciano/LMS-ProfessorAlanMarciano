@@ -23,8 +23,16 @@ if "%opcao%"=="5" goto sair
 goto menu
 
 :iniciar
+cls
+echo ======================================================
+echo INICIANDO O SERVIDOR LMS LOCAL SENAI 4.0...
 echo.
-echo Iniciando servidor...
+echo    Acesso do Aluno: http://localhost:3000
+echo    Painel do Instrutor (Admin): http://localhost:3000/admin.html
+echo.
+echo O painel admin sera aberto automaticamente.
+echo ======================================================
+echo.
 start "" "http://localhost:3000/admin.html"
 node server.js
 if %errorlevel% neq 0 (
@@ -46,12 +54,21 @@ pause
 goto menu
 
 :reiniciar
-echo.
+cls
 echo Parando servidor na porta 3000...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr /r /c:":3000 "') do (
     taskkill /f /pid %%a >nul 2>&1
 )
-echo Iniciando servidor...
+echo.
+echo ======================================================
+echo INICIANDO O SERVIDOR LMS LOCAL SENAI 4.0...
+echo.
+echo    Acesso do Aluno: http://localhost:3000
+echo    Painel do Instrutor (Admin): http://localhost:3000/admin.html
+echo.
+echo O painel admin sera aberto automaticamente.
+echo ======================================================
+echo.
 start "" "http://localhost:3000/admin.html"
 node server.js
 pause
