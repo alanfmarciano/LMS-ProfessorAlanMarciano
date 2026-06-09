@@ -647,6 +647,277 @@
             align-items: center;
             gap: 4px;
         }
+
+        /* === UI/UX IMPROVEMENTS === */
+
+        /* #9 Tab Transition Animations */
+        .tab-content {
+            animation: tabFadeIn 0.35s ease;
+        }
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* #1 Dropdown Menu for Destructive Actions */
+        .advanced-dropdown {
+            position: relative;
+            display: inline-flex;
+        }
+        .advanced-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 220px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            z-index: 100;
+            display: none;
+            animation: dropdownFadeIn 0.2s ease;
+        }
+        .advanced-dropdown-menu.show { display: block; }
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .advanced-dropdown-menu button {
+            width: 100%;
+            text-align: left;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+            color: var(--text-main);
+            background: transparent;
+        }
+        .advanced-dropdown-menu button:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .advanced-dropdown-menu button.danger {
+            color: #f87171;
+        }
+        .advanced-dropdown-menu button.danger:hover {
+            background: rgba(239,68,68,0.1);
+        }
+        .advanced-dropdown-menu .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 4px 0;
+        }
+
+        /* #5 Confirmation Modal */
+        .confirm-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn 0.25s ease;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .confirm-modal-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 32px;
+            max-width: 460px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: scaleUp 0.25s ease;
+        }
+        .confirm-modal-card h3 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .confirm-modal-card p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        .confirm-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .confirm-modal-actions button {
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        /* #3 Module Tab Persistent Colors (inactive state) */
+        .module-tab-btn[data-module="FUTEC"]:not(.active-module) {
+            border: 1px solid rgba(239,68,68,0.25);
+            color: #fca5a5 !important;
+        }
+        .module-tab-btn[data-module="FECOP"]:not(.active-module) {
+            border: 1px solid rgba(59,130,246,0.25);
+            color: #93c5fd !important;
+        }
+        .module-tab-btn[data-module="IRCOM"]:not(.active-module) {
+            border: 1px solid rgba(147,51,234,0.25);
+            color: #c4b5fd !important;
+        }
+
+        /* #10 Hover Effects on Unit Cards */
+        .unit-release-card {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .unit-release-card:hover {
+            transform: scale(1.015);
+            border-color: rgba(255,255,255,0.15) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .unit-release-card[data-module-color="red"]:hover {
+            border-color: rgba(239,68,68,0.3) !important;
+            box-shadow: 0 4px 20px rgba(239,68,68,0.1);
+        }
+        .unit-release-card[data-module-color="blue"]:hover {
+            border-color: rgba(59,130,246,0.3) !important;
+            box-shadow: 0 4px 20px rgba(59,130,246,0.1);
+        }
+        .unit-release-card[data-module-color="purple"]:hover {
+            border-color: rgba(147,51,234,0.3) !important;
+            box-shadow: 0 4px 20px rgba(147,51,234,0.1);
+        }
+
+        /* #13 Tooltip styling */
+        .toggle-tooltip {
+            position: relative;
+        }
+        .toggle-tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            transform: translateX(-50%) translateY(4px);
+            z-index: 50;
+        }
+        .toggle-tooltip:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* #14 Progress indicator in header */
+        .release-progress-bar {
+            height: 3px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            width: 100%;
+        }
+        .release-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+
+        /* #15 Drag and drop feedback */
+        .drag-over {
+            border: 2px dashed rgba(239,68,68,0.5) !important;
+            background: rgba(239,68,68,0.05) !important;
+        }
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+
+        /* #12 Enhanced empty states */
+        .empty-state-enhanced {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .empty-state-enhanced .empty-icon {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            filter: grayscale(0.3);
+            animation: emptyBounce 2s ease-in-out infinite;
+        }
+        @keyframes emptyBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .empty-state-enhanced h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+        .empty-state-enhanced p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            max-width: 320px;
+            line-height: 1.5;
+        }
+
+        /* #4 Search input for students */
+        .search-input-admin {
+            width: 100%;
+            padding: 10px 16px 10px 38px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input-admin:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(239,68,68,0.15);
+        }
+        .search-input-wrapper {
+            position: relative;
+        }
+        .search-input-wrapper::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -708,18 +979,41 @@
                         <!-- Carregado via API -->
                     </select>
                 </div>
-                <button id="btn-restart-server" class="px-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-500 hover:text-yellow-400 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    Reiniciar Servidor
-                </button>
+                <!-- #14 Release Progress Indicator -->
+                <div class="flex flex-col items-end gap-1 mr-2" id="header-release-progress" title="Progresso de liberação do conteúdo">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Conteúdo Liberado</span>
+                    <div class="flex items-center gap-2">
+                        <div class="release-progress-bar w-24">
+                            <div class="release-progress-fill" id="header-release-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400" id="header-release-progress-text">0%</span>
+                    </div>
+                </div>
+
                 <button id="btn-export-csv" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     Exportar (CSV)
                 </button>
-                <button id="btn-reset-room" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    Limpar Sala
-                </button>
+
+                <!-- #1 Dropdown for Destructive Actions -->
+                <div class="advanced-dropdown">
+                    <button id="btn-advanced-toggle" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Avançado
+                    </button>
+                    <div class="advanced-dropdown-menu" id="advanced-dropdown-menu">
+                        <button id="btn-restart-server" class="danger">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Reiniciar Servidor
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button id="btn-reset-room" class="danger">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Limpar Sala
+                        </button>
+                    </div>
+                </div>
+
                 <button id="btn-logout" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white font-bold text-sm rounded-xl transition-colors shadow-sm">
                     Sair
                 </button>
@@ -745,22 +1039,37 @@
 
                 <!-- Dashboard Content: Stats & Table -->
                 <div class="flex flex-col gap-6">
-                    <!-- Stats Summaries -->
+                    <!-- #2 Enhanced Stats Summaries with Icons and Colors -->
                     <div class="grid grid-cols-3 gap-6">
-                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg hover:-translate-y-1 hover:border-senaiRed transition-all cursor-pointer group" onclick="showOnlineStudentsModal()">
-                            <div class="text-4xl font-black text-white mb-2" id="stat-students">0</div>
-                            <div class="flex items-center gap-2 text-sm text-slate-400 font-bold uppercase tracking-wider">
-                                <span>Alunos Online</span>
-                                <span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded text-[10px] uppercase transition-colors group-hover:bg-green-500/20">Ver Lista</span>
+                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-lg hover:-translate-y-1 hover:border-green-500/30 transition-all cursor-pointer group" onclick="showOnlineStudentsModal()">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-green-500/15 border border-green-500/20 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">👥</div>
+                                <div>
+                                    <div class="text-3xl font-black text-white" id="stat-students">0</div>
+                                    <div class="flex items-center gap-2 text-xs text-slate-400 font-bold uppercase tracking-wider">
+                                        <span>Alunos Online</span>
+                                        <span class="bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded text-[9px] uppercase transition-colors group-hover:bg-green-500/20">Ver</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg">
-                            <div class="text-4xl font-black text-green-400 mb-2" id="stat-submissions">0</div>
-                            <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">Provas Entregues</div>
+                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-lg hover:-translate-y-1 hover:border-blue-500/30 transition-all group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">📝</div>
+                                <div>
+                                    <div class="text-3xl font-black text-blue-400" id="stat-submissions">0</div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Provas Entregues</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg">
-                            <div class="text-4xl font-black text-blue-400 mb-2" id="stat-average">0%</div>
-                            <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">Média de Acertos</div>
+                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-lg hover:-translate-y-1 hover:border-yellow-500/30 transition-all group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-yellow-500/15 border border-yellow-500/20 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">🎯</div>
+                                <div>
+                                    <div class="text-3xl font-black text-yellow-400" id="stat-average">0%</div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Média de Acertos</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -793,9 +1102,10 @@
                                     <!-- Injected dynamically by JS -->
                                 </tbody>
                             </table>
-                            <div id="empty-submissions" class="hidden flex-col items-center justify-center py-10 text-slate-500">
-                                <div class="text-4xl mb-3">📭</div>
-                                <p class="font-medium text-sm">Nenhuma prova foi enviada por alunos nesta sessão ainda.</p>
+                            <div id="empty-submissions" class="hidden empty-state-enhanced">
+                                <div class="empty-icon">📭</div>
+                                <h4>Nenhuma prova recebida</h4>
+                                <p>Aguardando entregas dos alunos nesta sessão. As provas enviadas aparecerão aqui em tempo real.</p>
                             </div>
                         </div>
                     </div>
@@ -927,7 +1237,14 @@
 
                 <!-- Right Column: Student Table -->
                 <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col flex-1">
-                    <div class="font-bold text-white text-lg flex items-center gap-2 border-b border-white/10 pb-3 mb-4">👥 Contas de Alunos Cadastradas</div>
+                    <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+                        <div class="font-bold text-white text-lg flex items-center gap-2">👥 Contas de Alunos Cadastradas</div>
+                        <span id="students-counter" class="text-xs font-bold text-slate-500 bg-black/20 px-3 py-1 rounded-full border border-slate-700/50">0 alunos</span>
+                    </div>
+                    <!-- #4 Search Bar -->
+                    <div class="search-input-wrapper mb-4">
+                        <input type="text" id="search-students-input" class="search-input-admin" placeholder="Buscar por nome ou e-mail...">
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
@@ -999,9 +1316,15 @@
                 <!-- Left Column: Dúvidas Recebidas -->
                 <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-4 h-[80vh]">
                     <div class="font-bold text-white text-lg flex items-center gap-2 border-b border-white/10 pb-3 mb-2">💬 Perguntas dos Alunos</div>
-                    <p class="text-xs text-slate-400 mb-2 leading-relaxed">
+                    <p class="text-xs text-slate-400 mb-3 leading-relaxed">
                         Clique em uma dúvida para ver os detalhes da página onde ela foi enviada e escrever uma resposta.
                     </p>
+                    <!-- #7 Forum Status Filters -->
+                    <div class="flex gap-2 mb-3 pb-3 border-b border-slate-700/50">
+                        <button class="forum-filter-btn active bg-white/10 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold border border-white/10 transition-colors focus:outline-none" data-filter="all">Todas</button>
+                        <button class="forum-filter-btn text-yellow-400 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-yellow-500/20 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors focus:outline-none" data-filter="pending">🔴 Pendentes</button>
+                        <button class="forum-filter-btn text-green-400 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-green-500/20 bg-green-500/5 hover:bg-green-500/10 transition-colors focus:outline-none" data-filter="answered">✅ Respondidas</button>
+                    </div>
                     <div id="forum-admin-list" class="flex flex-col gap-3 overflow-y-auto flex-grow pr-1 custom-scrollbar">
                         <div class="text-center text-slate-500 py-10">Carregando...</div>
                     </div>
@@ -1554,6 +1877,109 @@
         let filterUnusedOnly = false; // Toggle para filtrar apenas questões inéditas
         let activeReleaseModule = 'FUTEC';
 
+        // === UI/UX IMPROVEMENT SCRIPTS ===
+
+        // #1 Dropdown toggle for Advanced menu
+        const advToggle = document.getElementById('btn-advanced-toggle');
+        const advMenu = document.getElementById('advanced-dropdown-menu');
+        if (advToggle && advMenu) {
+            advToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                advMenu.classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                advMenu.classList.remove('show');
+            });
+            advMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // #5 Confirmation Modal Helper
+        function showConfirmModal(title, message, confirmText, confirmColor, onConfirm) {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-modal-overlay';
+            overlay.innerHTML = `
+                <div class="confirm-modal-card">
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    <div class="confirm-modal-actions">
+                        <button class="btn-cancel" style="background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">Cancelar</button>
+                        <button class="btn-confirm" style="background: ${confirmColor}; color: white; box-shadow: 0 4px 12px ${confirmColor}33;">${confirmText}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            const btnCancel = overlay.querySelector('.btn-cancel');
+            const btnConfirm = overlay.querySelector('.btn-confirm');
+            
+            btnCancel.addEventListener('click', () => overlay.remove());
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+            
+            // Delay confirm button for safety
+            btnConfirm.disabled = true;
+            btnConfirm.style.opacity = '0.5';
+            btnConfirm.style.cursor = 'not-allowed';
+            let countdown = 2;
+            btnConfirm.textContent = `${confirmText} (${countdown}s)`;
+            const timer = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    btnConfirm.disabled = false;
+                    btnConfirm.style.opacity = '1';
+                    btnConfirm.style.cursor = 'pointer';
+                    btnConfirm.textContent = confirmText;
+                } else {
+                    btnConfirm.textContent = `${confirmText} (${countdown}s)`;
+                }
+            }, 1000);
+            
+            btnConfirm.addEventListener('click', () => {
+                if (!btnConfirm.disabled) {
+                    onConfirm();
+                    overlay.remove();
+                }
+            });
+        }
+
+        // #4 Student Search Filter
+        const searchStudentsInput = document.getElementById('search-students-input');
+        if (searchStudentsInput) {
+            searchStudentsInput.addEventListener('input', () => {
+                const query = searchStudentsInput.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#students-body tr');
+                let visibleCount = 0;
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (query === '' || text.includes(query)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                const counter = document.getElementById('students-counter');
+                if (counter) {
+                    const total = rows.length;
+                    counter.textContent = query ? `${visibleCount} de ${total} alunos` : `${total} alunos`;
+                }
+            });
+        }
+
+        // #14 Update Release Progress in Header
+        function updateReleaseProgress() {
+            const toggles = document.querySelectorAll('.material-toggle');
+            if (toggles.length === 0) return;
+            const checked = Array.from(toggles).filter(t => t.checked).length;
+            const pct = Math.round((checked / toggles.length) * 100);
+            const fill = document.getElementById('header-release-progress-fill');
+            const text = document.getElementById('header-release-progress-text');
+            if (fill) fill.style.width = pct + '%';
+            if (text) text.textContent = pct + '%';
+        }
+
         // Login Handler
         document.getElementById('btn-login').addEventListener('click', attemptLogin);
         document.getElementById('admin-pass').addEventListener('keypress', (e) => {
@@ -1676,15 +2102,18 @@
                 badgeDisplay.className = `text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-md ${moduleBadges[m]}`;
             }
             
-            // Atualizar classes dos botões seletores de abas
+            // #3 Atualizar classes dos botões seletores de abas com cores persistentes
+            const moduleColorMap = { 'FUTEC': 'red', 'FECOP': 'blue', 'IRCOM': 'purple' };
             document.querySelectorAll('.module-tab-btn').forEach(btn => {
                 const mod = btn.getAttribute('data-module');
                 if (mod === m) {
-                    if (mod === 'FUTEC') btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-red-600 text-white shadow-lg shadow-red-500/20';
-                    else if (mod === 'FECOP') btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-blue-600 text-white shadow-lg shadow-blue-500/20';
-                    else if (mod === 'IRCOM') btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-purple-600 text-white shadow-lg shadow-purple-500/20';
+                    btn.classList.add('active-module');
+                    if (mod === 'FUTEC') btn.className = 'module-tab-btn active-module px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-red-600 text-white shadow-lg shadow-red-500/20';
+                    else if (mod === 'FECOP') btn.className = 'module-tab-btn active-module px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-blue-600 text-white shadow-lg shadow-blue-500/20';
+                    else if (mod === 'IRCOM') btn.className = 'module-tab-btn active-module px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-purple-600 text-white shadow-lg shadow-purple-500/20';
                 } else {
-                    btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold text-slate-400 hover:text-white rounded-lg transition-all focus:outline-none';
+                    btn.classList.remove('active-module');
+                    btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none';
                 }
             });
 
@@ -1703,7 +2132,10 @@
                 const avKey = `Avaliacao_${m}_${i}`;
                 
                 const unitCard = document.createElement('div');
-                unitCard.className = 'bg-black/20 border border-white/10 p-3.5 rounded-2xl flex flex-col gap-2 transition-all hover:bg-black/30 hover:border-slate-700/50';
+                // #10 Add unit-release-card class and module color for hover effects
+                const colorKey = moduleColorMap[m] || 'red';
+                unitCard.className = 'unit-release-card bg-black/20 border border-white/10 p-3.5 rounded-2xl flex flex-col gap-2';
+                unitCard.setAttribute('data-module-color', colorKey);
                 unitCard.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] font-extrabold text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded-md border border-white/5">Unidade ${i}</span>
@@ -1713,7 +2145,7 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-1">
                         <!-- Apostila Capsule -->
-                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors">
+                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors toggle-tooltip" data-tooltip="Apostila da Unidade ${i} — Clique para liberar/bloquear">
                             <span class="text-[10px] text-slate-400 font-extrabold tracking-wider uppercase">📘 Apostila</span>
                             <label class="switch scale-90 origin-right">
                                 <input type="checkbox" class="material-toggle" data-key="${apKey}" id="toggle-mat-${apKey}">
@@ -1721,7 +2153,7 @@
                             </label>
                         </div>
                         <!-- Avaliação Capsule -->
-                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors">
+                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors toggle-tooltip" data-tooltip="Prova da Unidade ${i} — Clique para liberar/bloquear">
                             <span class="text-[10px] text-senaiRed font-extrabold tracking-wider uppercase">🎯 Prova</span>
                             <div class="flex items-center gap-1.5">
                                 <button class="btn-preview-exam bg-white/5 hover:bg-white/15 border border-white/10 text-white p-1 rounded-lg text-[10px] font-bold hover:border-white/20 transition-colors" data-key="${avKey}" title="Configurar / Imprimir Prova">
@@ -1761,6 +2193,7 @@
                     .then(res => res.json())
                     .then(data => {
                         console.log(`Status do item ${itemKey} atualizado:`, released);
+                        updateReleaseProgress(); // #14
                     })
                     .catch(err => console.error('Erro ao atualizar liberação do item:', err));
                 });
@@ -1774,17 +2207,25 @@
             });
         }
 
-        // Configurar botões de ação em lote (Liberar / Bloquear tudo)
+        // #5 Configuar botões de ação em lote com modal de confirmação
         document.getElementById('btn-release-all-module').addEventListener('click', () => {
-            if (confirm(`Deseja realmente LIBERAR todas as Apostilas e Provas do módulo ${activeReleaseModule} para a turma ativa?`)) {
-                releaseAllItemsInModule(true);
-            }
+            showConfirmModal(
+                '🔓 Liberar Módulo Completo',
+                `Tem certeza que deseja <strong>liberar</strong> todas as Apostilas e Provas do módulo <strong>${activeReleaseModule}</strong> para a turma ativa? Os alunos terão acesso imediato.`,
+                'Liberar Tudo',
+                '#22c55e',
+                () => releaseAllItemsInModule(true)
+            );
         });
 
         document.getElementById('btn-block-all-module').addEventListener('click', () => {
-            if (confirm(`Deseja realmente BLOQUEAR todas as Apostilas e Provas do módulo ${activeReleaseModule} para a turma ativa?`)) {
-                releaseAllItemsInModule(false);
-            }
+            showConfirmModal(
+                '🔒 Bloquear Módulo Completo',
+                `Tem certeza que deseja <strong>bloquear</strong> todas as Apostilas e Provas do módulo <strong>${activeReleaseModule}</strong>? Os alunos perderão acesso imediatamente.`,
+                'Bloquear Tudo',
+                '#ef4444',
+                () => releaseAllItemsInModule(false)
+            );
         });
 
         async function releaseAllItemsInModule(released) {
@@ -2323,6 +2764,12 @@
                     const key = chk.getAttribute('data-key');
                     chk.checked = !!releasedItems[key];
                 });
+                updateReleaseProgress(); // #14
+
+                // #4 Update student counter
+                const rows = document.querySelectorAll('#students-body tr');
+                const counter = document.getElementById('students-counter');
+                if (counter && rows.length > 0) counter.textContent = `${rows.length} alunos`;
             })
             .catch(e => console.error('Erro ao buscar status do servidor:', e));
 
@@ -2426,12 +2873,16 @@
                 const isApproved = sub.score >= 60;
                 const date = new Date(sub.timestamp).toLocaleTimeString('pt-BR') + ' ' + new Date(sub.timestamp).toLocaleDateString('pt-BR');
                 const evalLabel = sub.examKey.replace('Avaliacao_', '').replace(/_/g, ' ');
+                let evalColorClass = 'text-blue-400';
+                if (sub.examKey.includes('FUTEC')) evalColorClass = 'text-red-400';
+                else if (sub.examKey.includes('FECOP')) evalColorClass = 'text-blue-400';
+                else if (sub.examKey.includes('IRCOM')) evalColorClass = 'text-purple-400';
 
                 html += `
                     <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
                         <td class="p-3 align-middle text-white font-bold">${sub.student.name}</td>
                         <td class="p-3 align-middle text-slate-300 text-sm">${sub.student.studentClass} • ${sub.student.period}</td>
-                        <td class="p-3 align-middle"><span class="font-semibold text-blue-400">${evalLabel}</span></td>
+                        <td class="p-3 align-middle"><span class="font-semibold ${evalColorClass}">${evalLabel}</span></td>
                         <td class="p-3 align-middle"><strong class="${isApproved ? 'text-green-400' : 'text-red-400'}">${sub.score}%</strong></td>
                         <td class="p-3 align-middle text-slate-300">${sub.correctCount} / ${sub.totalCount}</td>
                         <td class="p-3 align-middle text-xs text-slate-400">${date}</td>
@@ -3809,19 +4260,61 @@
             });
         }
 
+        let currentForumFilter = 'all';
+
+        // Set up forum filter buttons
+        document.querySelectorAll('.forum-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.forum-filter-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-white/10', 'text-white', 'border-white/10');
+                    b.classList.remove('bg-yellow-500/10', 'border-yellow-500/40');
+                    b.classList.remove('bg-green-500/10', 'border-green-500/40');
+                    if(b.dataset.filter === 'all') b.className = 'forum-filter-btn text-slate-400 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-transparent hover:bg-white/5 transition-colors focus:outline-none';
+                    if(b.dataset.filter === 'pending') b.className = 'forum-filter-btn text-yellow-400/70 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-transparent hover:bg-yellow-500/5 transition-colors focus:outline-none';
+                    if(b.dataset.filter === 'answered') b.className = 'forum-filter-btn text-green-400/70 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-transparent hover:bg-green-500/5 transition-colors focus:outline-none';
+                });
+                
+                const filter = btn.dataset.filter;
+                if(filter === 'all') btn.className = 'forum-filter-btn active bg-white/10 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold border border-white/10 transition-colors focus:outline-none';
+                if(filter === 'pending') btn.className = 'forum-filter-btn active text-yellow-400 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-yellow-500/40 bg-yellow-500/10 transition-colors focus:outline-none';
+                if(filter === 'answered') btn.className = 'forum-filter-btn active text-green-400 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-green-500/40 bg-green-500/10 transition-colors focus:outline-none';
+                
+                currentForumFilter = filter;
+                renderAdminForumList();
+            });
+        });
+
         function renderAdminForumList() {
             const listContainer = document.getElementById('forum-admin-list');
             if (!listContainer) return;
 
             if (adminForumComments.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-slate-400 p-8">Nenhuma dúvida cadastrada no momento.</div>';
+                listContainer.innerHTML = `
+                    <div class="empty-state-enhanced">
+                        <div class="empty-icon text-4xl mb-3">💬</div>
+                        <h4 class="text-white font-bold mb-1">Fórum Vazio</h4>
+                        <p class="text-slate-400 text-sm max-w-xs mx-auto text-center">Nenhuma dúvida foi enviada pelos alunos até o momento.</p>
+                    </div>`;
                 return;
             }
 
-            adminForumComments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            let filteredComments = [...adminForumComments];
+            filteredComments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (currentForumFilter === 'pending') {
+                filteredComments = filteredComments.filter(c => !c.replies.some(r => r.authorRole === 'Instrutor'));
+            } else if (currentForumFilter === 'answered') {
+                filteredComments = filteredComments.filter(c => c.replies.some(r => r.authorRole === 'Instrutor'));
+            }
 
             listContainer.innerHTML = '';
-            adminForumComments.forEach(comment => {
+            
+            if (filteredComments.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-slate-400 p-8 text-sm">Nenhuma dúvida corresponde ao filtro selecionado.</div>';
+                return;
+            }
+
+            filteredComments.forEach(comment => {
                 const card = document.createElement('div');
                 card.className = `bg-white/5 border border-white/10 p-3 rounded-lg cursor-pointer transition-colors text-left flex flex-col gap-1.5 ${comment.id === selectedCommentId ? 'border-senaiRed bg-red-500/5' : 'hover:border-slate-500 hover:bg-white/10'}`;
 
@@ -4274,21 +4767,23 @@
                         unitEl.addEventListener('dragstart', (e) => {
                             e.stopPropagation();
                             e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'unit', modIdx, unitIdx }));
-                            unitEl.style.opacity = '0.5';
+                            unitEl.classList.add('dragging'); // #15
                         });
-                        unitEl.addEventListener('dragend', () => { unitEl.style.opacity = '1'; });
+                        unitEl.addEventListener('dragend', () => { 
+                            unitEl.classList.remove('dragging'); 
+                        });
                         unitEl.addEventListener('dragover', (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            unitEl.style.background = 'rgba(239, 68, 68, 0.1)';
+                            unitEl.classList.add('drag-over'); // #15
                         });
                         unitEl.addEventListener('dragleave', () => {
-                            unitEl.style.background = 'rgba(0,0,0,0.2)';
+                            unitEl.classList.remove('drag-over');
                         });
                         unitEl.addEventListener('drop', (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            unitEl.style.background = 'rgba(0,0,0,0.2)';
+                            unitEl.classList.remove('drag-over');
                             const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
                             if (dragData.type === 'unit' && dragData.modIdx === modIdx) {
                                 // Reordena unidades no mesmo módulo
@@ -4314,19 +4809,21 @@
                 // Drag events para Módulos
                 modEl.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'module', modIdx }));
-                    modEl.style.opacity = '0.5';
+                    modEl.classList.add('dragging'); // #15
                 });
-                modEl.addEventListener('dragend', () => { modEl.style.opacity = '1'; });
+                modEl.addEventListener('dragend', () => { 
+                    modEl.classList.remove('dragging'); 
+                });
                 modEl.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    modEl.style.background = 'rgba(239, 68, 68, 0.05)';
+                    modEl.classList.add('drag-over'); // #15
                 });
                 modEl.addEventListener('dragleave', () => {
-                    modEl.style.background = 'rgba(255,255,255,0.03)';
+                    modEl.classList.remove('drag-over');
                 });
                 modEl.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    modEl.style.background = 'rgba(255,255,255,0.03)';
+                    modEl.classList.remove('drag-over');
                     const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
                     if (dragData.type === 'module') {
                         const draggedModule = editorCourseStructure.splice(dragData.modIdx, 1)[0];
@@ -4931,19 +5428,21 @@
                 // Question drag events
                 card.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'question', idx }));
-                    card.style.opacity = '0.5';
+                    card.classList.add('dragging');
                 });
-                card.addEventListener('dragend', () => { card.style.opacity = '1'; });
+                card.addEventListener('dragend', () => { 
+                    card.classList.remove('dragging'); 
+                });
                 card.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    card.style.background = 'rgba(239, 68, 68, 0.05)';
+                    card.classList.add('drag-over'); // #15
                 });
                 card.addEventListener('dragleave', () => {
-                    card.style.background = 'rgba(255,255,255,0.03)';
+                    card.classList.remove('drag-over');
                 });
                 card.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    card.style.background = 'rgba(255,255,255,0.03)';
+                    card.classList.remove('drag-over');
                     const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
                     if (dragData.type === 'question') {
                         const draggedQ = currentEditingEvaluation.questions.splice(dragData.idx, 1)[0];

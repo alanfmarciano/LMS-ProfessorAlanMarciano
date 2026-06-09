@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 if (courseData[u.apostilaKey]) {
                     const li = document.createElement("li");
-                    li.className = "cursor-pointer px-6 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent hover:border-slate-500 transition-all";
+                    li.className = "nav-item cursor-pointer px-6 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent hover:border-slate-500 transition-all";
                     li.setAttribute("data-key", u.apostilaKey);
                     if (completedUnits[u.apostilaKey]) {
                         li.classList.add("completed", "bg-green-500/10", "border-green-500", "text-green-300");
@@ -134,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Render Avaliação Item
                 if (courseData[u.avaliacaoKey]) {
                     const li = document.createElement("li");
-                    li.className = "cursor-pointer px-6 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent hover:border-blue-400 transition-all";
+                    li.className = "nav-item cursor-pointer px-6 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent hover:border-blue-400 transition-all";
                     li.setAttribute("data-key", u.avaliacaoKey);
                     li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-blue-400 uppercase font-bold mt-1">🎯 Avaliação</span>`;
                     li.onclick = () => {
