@@ -34,7 +34,7 @@ echo O painel admin sera aberto automaticamente.
 echo ======================================================
 echo.
 start "" "http://localhost:3000/admin.html"
-node server.js
+node backend/server.js
 if %errorlevel% neq 0 (
     echo.
     echo [ERRO] O servidor parou inesperadamente ou ocorreu um erro na porta.

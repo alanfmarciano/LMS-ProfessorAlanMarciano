@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const structure = courseData.courseStructure || [];
         structure.forEach(mod => {
             const section = document.createElement("div");
-            section.className = "py-4 border-b border-slate-700/50 group";
+            section.className = "py-4 border-b border-slate-700/50 group collapsed";
 
             const h3 = document.createElement("h3");
             h3.className = "cursor-pointer flex items-center justify-between text-xs font-extrabold text-slate-400 uppercase tracking-widest px-6 mb-2 hover:text-white transition-colors select-none";
@@ -99,12 +99,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 section.classList.toggle("collapsed");
                 ul.classList.toggle("max-h-0");
                 ul.classList.toggle("opacity-0");
-                ul.classList.toggle("overflow-hidden");
             });
 
             const ul = document.createElement("ul");
             ul.id = `nav-${mod.id}`;
-            ul.className = "list-none max-h-[2000px] opacity-100 transition-all duration-300 overflow-hidden";
+            ul.className = "list-none max-h-[2000px] opacity-100 transition-all duration-300 overflow-hidden max-h-0 opacity-0";
 
             mod.units.forEach(u => {
                 // Render Apostila Item

@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve os arquivos de uploads de forma estatica
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../data/uploads')));
 
 // Rota dinamica para servir data.js com conteudo atualizado em tempo real
 app.get('/data.js', (req, res) => {
@@ -19,7 +19,7 @@ app.get('/data.js', (req, res) => {
     const dataObj = {};
     
     try {
-        const files = fs.readdirSync(__dirname);
+        const files = fs.readdirSync(path.join(__dirname, '../content'));
         const ignoredFiles = [
             'implementation_plan.md',
             'task.md',
@@ -29,7 +29,7 @@ app.get('/data.js', (req, res) => {
         ];
         files.forEach((file) => {
             if (file.endsWith('.md') && !ignoredFiles.includes(file.toLowerCase())) {
-                const filePath = path.join(__dirname, file);
+                const filePath = path.join(__dirname, '../content', file);
                 const content = fs.readFileSync(filePath, 'utf8');
                 dataObj[file.replace('.md', '')] = content;
             }
@@ -51,14 +51,14 @@ app.get('/data.js', (req, res) => {
 });
 
 // Serve os arquivos estáticos do portal (HTML, CSS, JS, Imagens)
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Caminhos dos arquivos de banco de dados locais
-const DB_STUDENTS_FILE = path.join(__dirname, 'db_students.json');
-const DB_SUBMISSIONS_FILE = path.join(__dirname, 'db_submissions.json');
-const CONFIG_FILE = path.join(__dirname, 'config.json');
-const DB_CLASSES_FILE = path.join(__dirname, 'db_classes.json');
-const DB_ADMINS_FILE = path.join(__dirname, 'db_admins.json');
+const DB_STUDENTS_FILE = path.join(__dirname, '../data/db_students.json');
+const DB_SUBMISSIONS_FILE = path.join(__dirname, '../data/db_submissions.json');
+const CONFIG_FILE = path.join(__dirname, '../data/config.json');
+const DB_CLASSES_FILE = path.join(__dirname, '../data/db_classes.json');
+const DB_ADMINS_FILE = path.join(__dirname, '../data/db_admins.json');
 
 // Armazena todos os IPs da rede local
 let localIpAddresses = [];
@@ -369,7 +369,7 @@ app.post('/api/student/submit', (req, res) => {
         questions = evaluation.questions;
     } else {
         // Fallback: Localiza e lê o arquivo da prova antigo .md
-        const filePath = path.join(__dirname, `${examKey}.md`);
+        const filePath = path.join(__dirname, '../content', `${examKey}.md`);
         if (fs.existsSync(filePath)) {
             const mdContent = fs.readFileSync(filePath, 'utf8');
             const parsedObj = parseEvaluationMarkdown(mdContent, examKey);
@@ -1786,7 +1786,7 @@ app.post('/api/student/leave', (req, res) => {
 
 // Rota de fallback para servir index.html
 app.use((req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 let serverInstance;

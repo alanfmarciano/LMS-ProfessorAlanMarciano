@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const directoryPath = __dirname;
-const outputFilePath = path.join(__dirname, 'data.js');
+const directoryPath = path.join(__dirname, '../content');
+const outputFilePath = path.join(__dirname, '../frontend/data.js');
 
 let dataObj = {};
 

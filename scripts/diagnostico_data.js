@@ -1,5 +1,6 @@
 const fs = require('fs');
-const content = fs.readFileSync('data.js', 'utf8');
+const path = require('path');
+const content = fs.readFileSync(path.join(__dirname, '../frontend/data.js'), 'utf8');
 const objMatch = content.match(/const courseData = ({[\s\S]*?});/);
 if (objMatch) {
     try {

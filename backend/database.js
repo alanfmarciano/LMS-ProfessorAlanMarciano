@@ -3,21 +3,21 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
 // Caminhos dos arquivos de banco de dados locais legados
-const DB_STUDENTS_FILE = path.join(__dirname, 'db_students.json');
-const DB_CLASSES_FILE = path.join(__dirname, 'db_classes.json');
-const DB_SUBMISSIONS_FILE = path.join(__dirname, 'db_submissions.json');
-const DB_NOTES_FILE = path.join(__dirname, 'db_notes.json');
-const DB_ANNOTATIONS_FILE = path.join(__dirname, 'db_annotations.json');
-const DB_FORUM_FILE = path.join(__dirname, 'db_forum.json');
-const CONFIG_FILE = path.join(__dirname, 'config.json');
-const DB_COURSE_STRUCTURE_FILE = path.join(__dirname, 'db_course_structure.json');
-const DB_EVALUATIONS_FILE = path.join(__dirname, 'db_evaluations.json');
-const DB_PROGRESS_FILE = path.join(__dirname, 'db_progress.json');
-const DB_UPLOADS_FILE = path.join(__dirname, 'db_uploads.json');
-const DB_ADMINS_FILE = path.join(__dirname, 'db_admins.json');
+const DB_STUDENTS_FILE = path.join(__dirname, '../data/db_students.json');
+const DB_CLASSES_FILE = path.join(__dirname, '../data/db_classes.json');
+const DB_SUBMISSIONS_FILE = path.join(__dirname, '../data/db_submissions.json');
+const DB_NOTES_FILE = path.join(__dirname, '../data/db_notes.json');
+const DB_ANNOTATIONS_FILE = path.join(__dirname, '../data/db_annotations.json');
+const DB_FORUM_FILE = path.join(__dirname, '../data/db_forum.json');
+const CONFIG_FILE = path.join(__dirname, '../data/config.json');
+const DB_COURSE_STRUCTURE_FILE = path.join(__dirname, '../data/db_course_structure.json');
+const DB_EVALUATIONS_FILE = path.join(__dirname, '../data/db_evaluations.json');
+const DB_PROGRESS_FILE = path.join(__dirname, '../data/db_progress.json');
+const DB_UPLOADS_FILE = path.join(__dirname, '../data/db_uploads.json');
+const DB_ADMINS_FILE = path.join(__dirname, '../data/db_admins.json');
 
 // Conexão com SQLite
-const dbPath = path.join(__dirname, 'database.db');
+const dbPath = path.join(__dirname, '../data/database.db');
 const sqliteDb = new sqlite3.Database(dbPath);
 
 let memoryDB = {
@@ -360,7 +360,7 @@ async function init() {
         modulesList.forEach(m => {
             for (let i = 1; i <= 5; i++) {
                 const examKey = `Avaliacao_${m}_${i}`;
-                const mdPath = path.join(__dirname, `${examKey}.md`);
+                const mdPath = path.join(__dirname, '../content', `${examKey}.md`);
                 if (fs.existsSync(mdPath)) {
                     try {
                         const mdContent = fs.readFileSync(mdPath, 'utf8');

@@ -2,8 +2,8 @@
   "name": "portal-senai-4.0",
   "version": "2.0.0",
   "scripts": {
-    "start": "node server.js",
-    "compile": "node generate_data.js"
+    "start": "node backend/server.js",
+    "compile": "node scripts/generate_data.js"
   },
   "dependencies": {
     "cors": "^2.8.6",

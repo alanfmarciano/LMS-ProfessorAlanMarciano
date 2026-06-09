@@ -56,7 +56,7 @@ function parseEvaluationMarkdown(markdownText) {
     return { questions, gabarito };
 }
 
-const directoryPath = __dirname;
+const directoryPath = path.join(__dirname, '../content');
 const files = fs.readdirSync(directoryPath);
 
 console.log("=== DIAGNÓSTICO DOS ARQUIVOS DE CONTEÚDO ===");
