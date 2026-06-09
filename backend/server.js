@@ -44,7 +44,9 @@ app.get('/data.js', (req, res) => {
         }
     }
 
-    dataObj["courseStructure"] = db.memory.courseStructure || [];
+    dataObj["courseStructure"] = db.memory.courseStructure || []; // Legado
+    dataObj["courses"] = db.memory.courses || [];
+    dataObj["branding"] = db.memory.branding || {};
 
     const fileContent = `const courseData = ${JSON.stringify(dataObj, null, 2)};`;
     res.send(fileContent);
@@ -201,13 +203,86 @@ app.get('/api/admin/network-info', (req, res) => {
 });
 
 // ----------------------------------------------------
+// ROTAS DE BRANDING E CURSOS (WHITE-LABEL)
+// ----------------------------------------------------
+
+app.get('/api/branding', (req, res) => {
+    res.json(db.memory.branding || {});
+});
+
+app.post('/api/branding', (req, res) => {
+    const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
+    if (adminPassword !== db.memory.config.adminPassword) {
+        return res.status(401).json({ error: 'Não autorizado.' });
+    }
+    db.memory.branding = { ...db.memory.branding, ...req.body };
+    db.save();
+    res.json({ success: true, branding: db.memory.branding });
+});
+
+app.get('/api/courses', (req, res) => {
+    res.json(db.memory.courses || []);
+});
+
+app.post('/api/courses', (req, res) => {
+    const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
+    if (adminPassword !== db.memory.config.adminPassword) {
+        return res.status(401).json({ error: 'Não autorizado.' });
+    }
+    const newCourse = req.body;
+    if (!newCourse.id || !newCourse.name) {
+        return res.status(400).json({ error: 'ID e Nome são obrigatórios.' });
+    }
+    if (!db.memory.courses) db.memory.courses = [];
+    const existing = db.memory.courses.find(c => c.id === newCourse.id);
+    if (existing) {
+        return res.status(400).json({ error: 'Já existe um curso com esse ID.' });
+    }
+    if (!newCourse.structure) newCourse.structure = [];
+    db.memory.courses.push(newCourse);
+    db.save();
+    res.json({ success: true, course: newCourse });
+});
+
+app.put('/api/courses/:id', (req, res) => {
+    const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
+    if (adminPassword !== db.memory.config.adminPassword) {
+        return res.status(401).json({ error: 'Não autorizado.' });
+    }
+    const courseId = req.params.id;
+    if (!db.memory.courses) db.memory.courses = [];
+    const idx = db.memory.courses.findIndex(c => c.id === courseId);
+    if (idx === -1) {
+        return res.status(404).json({ error: 'Curso não encontrado.' });
+    }
+    db.memory.courses[idx] = { ...db.memory.courses[idx], ...req.body, id: courseId };
+    db.save();
+    res.json({ success: true, course: db.memory.courses[idx] });
+});
+
+app.delete('/api/courses/:id', (req, res) => {
+    const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
+    if (adminPassword !== db.memory.config.adminPassword) {
+        return res.status(401).json({ error: 'Não autorizado.' });
+    }
+    const courseId = req.params.id;
+    if (!db.memory.courses) db.memory.courses = [];
+    db.memory.courses = db.memory.courses.filter(c => c.id !== courseId);
+    db.save();
+    res.json({ success: true });
+});
+
+// ----------------------------------------------------
 // ROTAS DE API DO ALUNO
 // ----------------------------------------------------
 
 // Retorna a lista de turmas liberadas para cadastro de aluno
 app.get('/api/classes', (req, res) => {
     const classes = readJSON(DB_CLASSES_FILE);
-    const activeClasses = classes.filter(c => c.registrationEnabled).map(c => c.name);
+    const activeClasses = classes.filter(c => c.registrationEnabled).map(c => ({
+        name: c.name,
+        courseId: c.courseId
+    }));
     res.json(activeClasses);
 });
 
@@ -297,6 +372,11 @@ app.post('/api/student/login', (req, res) => {
 
     // Retorna dados do estudante sem expor o campo de senha
     const { password: _, ...safeStudent } = student;
+    const classes = readJSON(DB_CLASSES_FILE);
+    const cls = classes.find(c => c.name === student.studentClass);
+    if (cls && cls.courseId) {
+        safeStudent.courseId = cls.courseId;
+    }
     res.json({ success: true, student: safeStudent });
 });
 
@@ -965,9 +1045,9 @@ app.get('/api/admin/classes', (req, res) => {
 // Cadastrar nova turma (administrador)
 app.post('/api/admin/class/create', (req, res) => {
     validateAdmin(req, res, () => {
-        const { name, period } = req.body;
-        if (!name || !period || name.trim() === '') {
-            return res.status(400).json({ error: 'Nome ou período da turma inválido.' });
+        const { name, period, courseId } = req.body;
+        if (!name || !period || name.trim() === '' || !courseId) {
+            return res.status(400).json({ error: 'Nome, período ou curso da turma inválido.' });
         }
         const className = name.trim().toUpperCase();
         const classes = readJSON(DB_CLASSES_FILE);
@@ -976,18 +1056,27 @@ app.post('/api/admin/class/create', (req, res) => {
             return res.status(400).json({ error: 'Esta turma já está cadastrada.' });
         }
         
+        const courses = db.memory.courses || [];
+        const course = courses.find(c => c.id === courseId);
+        if (!course) {
+            return res.status(400).json({ error: 'Curso não encontrado.' });
+        }
+
         const defaultReleasedItems = {};
-        const modules = ['FUTEC', 'FECOP', 'IRCOM'];
-        modules.forEach(m => {
-            for (let i = 1; i <= 5; i++) {
-                defaultReleasedItems[`Apostila_${m}_${i}`] = true;
-                defaultReleasedItems[`Avaliacao_${m}_${i}`] = false;
-            }
-        });
+        if (course.structure) {
+            course.structure.forEach(m => {
+                const numUnits = m.units ? m.units.length : 5;
+                for (let i = 1; i <= numUnits; i++) {
+                    defaultReleasedItems[`Apostila_${m.id}_${i}`] = true;
+                    defaultReleasedItems[`Avaliacao_${m.id}_${i}`] = false;
+                }
+            });
+        }
 
         classes.push({
             name: className,
             period: period,
+            courseId: courseId,
             registrationEnabled: true,
             examConfigs: {},
             releasedItems: defaultReleasedItems
@@ -1360,19 +1449,40 @@ app.post('/api/admin/forum/all', (req, res) => {
 // ----------------------------------------------------
 
 // Obter a estrutura dinâmica do curso (módulos e unidades)
-app.get('/api/course-structure', (req, res) => {
-    res.json(db.memory.courseStructure || []);
+app.get('/api/admin/courses/:id/structure', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { id } = req.params;
+        const courses = db.memory.courses || [];
+        const course = courses.find(c => c.id === id);
+        
+        if (!course) {
+            return res.status(404).json({ error: 'Curso não encontrado.' });
+        }
+        res.json({ success: true, structure: course.structure || [] });
+    });
 });
 
 // Salvar a estrutura do curso (usado para CRUD e drag-and-drop de reordenamento)
-app.post('/api/admin/course/structure', (req, res) => {
+app.post('/api/admin/courses/:id/structure', (req, res) => {
     validateAdmin(req, res, () => {
+        const { id } = req.params;
         const { structure } = req.body;
+        
         if (!Array.isArray(structure)) {
             return res.status(400).json({ error: 'Formato inválido. Esperado array de módulos.' });
         }
-        db.memory.courseStructure = structure;
+
+        const courses = db.memory.courses || [];
+        const courseIndex = courses.findIndex(c => c.id === id);
+
+        if (courseIndex === -1) {
+            return res.status(404).json({ error: 'Curso não encontrado.' });
+        }
+
+        courses[courseIndex].structure = structure;
+        db.memory.courses = courses;
         db.save();
+        
         res.json({ success: true, structure });
     });
 });
@@ -1416,12 +1526,18 @@ app.put('/api/admin/material/:key', (req, res) => {
 // Criar nova apostila e unidade
 app.post('/api/admin/material/create', (req, res) => {
     validateAdmin(req, res, () => {
-        const { moduleId, unitName } = req.body;
-        if (!moduleId || !unitName) {
+        const { courseId, moduleId, unitName } = req.body;
+        if (!courseId || !moduleId || !unitName) {
             return res.status(400).json({ error: 'Dados incompletos.' });
         }
 
-        const structure = db.memory.courseStructure || [];
+        const courses = db.memory.courses || [];
+        const course = courses.find(c => c.id === courseId);
+        if (!course) {
+            return res.status(404).json({ error: 'Curso não encontrado.' });
+        }
+
+        const structure = course.structure || [];
         const targetModule = structure.find(m => m.id === moduleId);
         if (!targetModule) {
             return res.status(404).json({ error: 'Módulo não encontrado.' });
@@ -1459,6 +1575,7 @@ app.post('/api/admin/material/create', (req, res) => {
                 files: []
             });
 
+            db.memory.courses = courses;
             db.save();
             res.json({ success: true, apostilaKey, avaliacaoKey, structure });
         } catch(e) {

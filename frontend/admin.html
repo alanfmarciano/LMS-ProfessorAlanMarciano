@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Instrutor — LMS Local SENAI 4.0</title>
+    <title>Painel do Instrutor — LMS Local Portal LMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <!-- EasyMDE para Editor Markdown -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
@@ -19,7 +19,7 @@
                         display: ['Outfit', 'sans-serif'],
                     },
                     colors: {
-                        senaiRed: '#ef4444',
+                        primary: 'var(--primary-color, #ef4444)',
                         slateDark: '#0b0f19',
                         slatePanel: '#111827',
                     }
@@ -27,13 +27,27 @@
             }
         }
     </script>
+    <script>
+        // Fetch branding early
+        fetch('/api/branding')
+            .then(res => res.json())
+            .then(branding => {
+                if (branding.primaryColor) {
+                    document.documentElement.style.setProperty('--primary-color', branding.primaryColor);
+                }
+                if (branding.institutionName) {
+                    document.title = 'Painel do Instrutor — ' + branding.institutionName;
+                    // Will update titles in DOM on load later
+                }
+            }).catch(e => console.warn('Branding fetch failed', e));
+    </script>
     <style>
         :root {
             --bg-dark: #0f172a;
             --bg-panel: #1e293b;
             --bg-card: rgba(30, 41, 59, 0.7);
-            --primary: #ef4444; /* SENAI Red */
-            --primary-hover: #dc2626;
+            --primary: var(--primary-color, #ef4444);
+            --primary-hover: var(--primary-color, #dc2626); /* Idealmente teríamos hover dinâmico, mas usaremos primary */
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --border: #334155;
@@ -937,19 +951,19 @@
     <div id="login-overlay" class="fixed inset-0 bg-slateDark/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
         <div class="login-card bg-slatePanel/90 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-2xl w-full max-w-md text-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-all">
             <h2 class="text-3xl font-extrabold text-white mb-2 tracking-tight">🔑 Acesso Administrativo</h2>
-            <p class="text-slate-400 text-sm mb-8">Portal do Instrutor — LMS Local SENAI 4.0</p>
+            <p class="text-slate-400 text-sm mb-8">Portal do Instrutor — LMS Local Portal LMS</p>
             
             <div class="mb-5 text-left">
                 <label for="admin-email" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">E-mail do Administrador</label>
-                <input type="email" id="admin-email" placeholder="admin@senai.br..." class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                <input type="email" id="admin-email" placeholder="admin@lms.local..." class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
             </div>
             <div class="mb-6 text-left">
                 <label for="admin-pass" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Senha</label>
-                <input type="password" id="admin-pass" placeholder="Digite a senha..." class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                <input type="password" id="admin-pass" placeholder="Digite a senha..." class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                 <div id="login-error" class="text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg text-sm font-medium mt-3 hidden">E-mail ou senha incorretos.</div>
             </div>
             
-            <button id="btn-login" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all">Entrar no Dashboard</button>
+            <button id="btn-login" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all">Entrar no Dashboard</button>
         </div>
     </div>
 
@@ -957,7 +971,7 @@
     <div id="admin-app" style="display: none; flex-direction: column; flex: 1;">
         <header class="bg-slatePanel border-b border-slate-700/50 py-5 px-10 flex justify-between items-center sticky top-0 z-50 shadow-sm">
             <div class="logo-area">
-                <h1 class="text-2xl font-black tracking-tight text-white">Painel do <span class="text-senaiRed">Instrutor</span></h1>
+                <h1 class="text-2xl font-black tracking-tight text-white">Painel do <span class="text-primary">Instrutor</span></h1>
                 <p class="text-xs uppercase tracking-[0.15em] text-slate-400 mt-1 font-semibold">LMS Local • Gestão de Sala de Aula</p>
             </div>
             
@@ -1022,7 +1036,8 @@
 
         <!-- Barra de Navegação por Abas -->
         <div class="bg-slatePanel/80 backdrop-blur-md border-b border-slate-700/50 px-10 flex gap-2 overflow-x-auto scrollbar-hide">
-            <button class="tab-btn active px-4 py-4 text-sm font-bold text-senaiRed border-b-2 border-senaiRed hover:text-red-400 transition-colors whitespace-nowrap outline-none" data-tab="tab-dashboard">📊 Monitor Geral</button>
+            <button class="tab-btn active px-4 py-4 text-sm font-bold text-primary border-b-2 border-primary hover:text-red-400 transition-colors whitespace-nowrap outline-none" data-tab="tab-dashboard">📊 Monitor Geral</button>
+            <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-courses">🎨 Cursos & White-Label</button>
             <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-materials">🔓 Controle de Liberação</button>
             <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-classes">🏫 Turmas</button>
             <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-students">👥 Contas de Alunos</button>
@@ -1077,11 +1092,19 @@
                     <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex-1 flex flex-col shadow-lg">
                         <div class="flex justify-between items-center w-full mb-6 pb-4 border-b border-white/10">
                             <span class="font-bold text-white flex items-center gap-2">📝 Entregas de Provas (Tempo Real)</span>
-                            <div class="flex items-center gap-2 text-sm text-slate-400 bg-black/20 px-3 py-1.5 rounded-xl border border-slate-700/50">
-                                <label for="filter-class" class="font-bold uppercase tracking-wider text-[11px]">Filtrar por Turma:</label>
-                                <select id="filter-class" class="bg-transparent text-white font-bold outline-none cursor-pointer appearance-none">
-                                    <option value="">Todas as Turmas</option>
-                                </select>
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2 text-sm text-slate-400 bg-black/20 px-3 py-1.5 rounded-xl border border-slate-700/50">
+                                    <label for="filter-submission-course" class="font-bold uppercase tracking-wider text-[11px]">Filtrar por Curso:</label>
+                                    <select id="filter-submission-course" class="bg-transparent text-white font-bold outline-none cursor-pointer">
+                                        <option value="">Todos os Cursos</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-slate-400 bg-black/20 px-3 py-1.5 rounded-xl border border-slate-700/50">
+                                    <label for="filter-class" class="font-bold uppercase tracking-wider text-[11px]">Filtrar por Turma:</label>
+                                    <select id="filter-class" class="bg-transparent text-white font-bold outline-none cursor-pointer appearance-none">
+                                        <option value="">Todas as Turmas</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="overflow-x-auto" id="table-container">
@@ -1106,6 +1129,56 @@
                                 <div class="empty-icon">📭</div>
                                 <h4>Nenhuma prova recebida</h4>
                                 <p>Aguardando entregas dos alunos nesta sessão. As provas enviadas aparecerão aqui em tempo real.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA X: CURSOS E WHITE-LABEL -->
+            <div id="tab-courses" class="tab-content" style="display: none; flex-direction: column; gap: 30px; width: 100%;">
+                
+                <!-- White-Label Branding -->
+                <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg">
+                    <div class="font-bold text-white text-lg flex items-center gap-2 mb-4 pb-3 border-b border-white/10">🎨 Personalização da Marca (White-Label)</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nome da Instituição</label>
+                            <input type="text" id="branding-name" placeholder="Ex: Escola Modelo" class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Cor Principal (HEX)</label>
+                            <div class="flex gap-2">
+                                <input type="color" id="branding-color-picker" class="h-11 w-11 rounded-xl cursor-pointer bg-transparent border-0 p-0">
+                                <input type="text" id="branding-color" placeholder="#ef4444" class="flex-1 px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm uppercase font-mono">
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-save-branding" class="mt-6 px-6 py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg transition-all text-sm">Salvar Identidade Visual</button>
+                </div>
+
+                <!-- Gestão de Cursos -->
+                <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg flex-1 flex flex-col">
+                    <div class="font-bold text-white text-lg flex justify-between items-center mb-6 pb-3 border-b border-white/10">
+                        <span>📚 Gestão de Cursos</span>
+                        <button id="btn-show-create-course" class="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 font-bold text-xs rounded-xl transition-all shadow-sm">
+                            + Novo Curso
+                        </button>
+                    </div>
+                    
+                    <div id="course-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Renderizado por JS -->
+                    </div>
+
+                    <!-- Form de Criar Curso (Oculto por padrão) -->
+                    <div id="create-course-form" class="hidden mt-6 p-4 bg-black/30 border border-slate-700 rounded-xl">
+                        <h4 class="text-white font-bold mb-4 text-sm" id="course-form-title">Criar Curso</h4>
+                        <div class="flex flex-col gap-4">
+                            <input type="text" id="course-id" placeholder="Identificador Único (ex: dev_web_01) - sem espaços" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none text-sm font-mono">
+                            <input type="text" id="course-name" placeholder="Nome Completo (ex: Formação em Desenvolvedor Web)" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none text-sm">
+                            <div class="flex gap-2 justify-end mt-2">
+                                <button id="btn-cancel-course" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg text-xs transition-colors">Cancelar</button>
+                                <button id="btn-save-course" class="px-4 py-2 bg-primary hover:bg-red-600 text-white font-bold rounded-lg text-xs transition-colors shadow-md">Salvar Curso</button>
                             </div>
                         </div>
                     </div>
@@ -1167,17 +1240,23 @@
                     
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Identificador da Turma</label>
-                        <input type="text" id="create-class-name" placeholder="Ex: 1DES, 2FECOP, 2DES..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                        <input type="text" id="create-class-name" placeholder="Ex: 1DES, 2FECOP, 2DES..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
+                    </div>
+                    <div class="flex flex-col gap-1.5 text-left mb-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Curso Vinculado</label>
+                        <select id="create-class-course" class="w-full px-4 py-2.5 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
+                            <option value="">Selecione um curso...</option>
+                        </select>
                     </div>
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Período</label>
-                        <select id="create-class-period" class="w-full px-4 py-2.5 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all cursor-pointer text-sm">
+                        <select id="create-class-period" class="w-full px-4 py-2.5 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
                             <option value="Manhã">Manhã</option>
                             <option value="Tarde" selected>Tarde</option>
                             <option value="Noite">Noite</option>
                         </select>
                     </div>
-                    <button id="btn-create-class" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mt-2 text-sm">Salvar Turma</button>
+                    <button id="btn-create-class" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mt-2 text-sm">Salvar Turma</button>
                 </div>
 
                 <!-- Right Column: Classes Table -->
@@ -1188,6 +1267,7 @@
                             <thead>
                                 <tr class="text-slate-400 border-b border-slate-700/50 uppercase tracking-wider text-[11px]">
                                     <th class="py-3 px-4 font-bold">Identificador da Turma</th>
+                                    <th class="py-3 px-4 font-bold">Curso</th>
                                     <th class="py-3 px-4 font-bold">Período</th>
                                     <th class="py-3 px-4 font-bold">Liberação para Cadastro</th>
                                     <th class="py-3 px-4 font-bold">Alunos</th>
@@ -1216,23 +1296,23 @@
                     
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nome Completo</label>
-                        <input type="text" id="create-student-name" placeholder="Ex: Maria Souza..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                        <input type="text" id="create-student-name" placeholder="Ex: Maria Souza..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">E-mail (Login)</label>
-                        <input type="email" id="create-student-email" placeholder="mariasouza@senai.br..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                        <input type="email" id="create-student-email" placeholder="mariasouza@lms.local..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Senha Provisória</label>
-                        <input type="text" id="create-student-password" placeholder="Definir senha provisória..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                        <input type="text" id="create-student-password" placeholder="Definir senha provisória..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Turma</label>
-                        <select id="create-student-class" class="w-full px-4 py-2.5 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all cursor-pointer text-sm">
+                        <select id="create-student-class" class="w-full px-4 py-2.5 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
                             <!-- Carregado via API -->
                         </select>
                     </div>
-                    <button id="btn-create-student" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mt-2 text-sm">Salvar Conta do Aluno</button>
+                    <button id="btn-create-student" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mt-2 text-sm">Salvar Conta do Aluno</button>
                 </div>
 
                 <!-- Right Column: Student Table -->
@@ -1241,9 +1321,14 @@
                         <div class="font-bold text-white text-lg flex items-center gap-2">👥 Contas de Alunos Cadastradas</div>
                         <span id="students-counter" class="text-xs font-bold text-slate-500 bg-black/20 px-3 py-1 rounded-full border border-slate-700/50">0 alunos</span>
                     </div>
-                    <!-- #4 Search Bar -->
-                    <div class="search-input-wrapper mb-4">
-                        <input type="text" id="search-students-input" class="search-input-admin" placeholder="Buscar por nome ou e-mail...">
+                    <!-- #4 Search & Filter Bar -->
+                    <div class="flex gap-4 mb-4">
+                        <div class="search-input-wrapper flex-1">
+                            <input type="text" id="search-students-input" class="search-input-admin" placeholder="Buscar por nome ou e-mail...">
+                        </div>
+                        <select id="filter-students-course" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer font-bold w-[250px]">
+                            <option value="">Todos os Cursos</option>
+                        </select>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-sm">
@@ -1279,17 +1364,17 @@
                     
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nome Completo</label>
-                        <input type="text" id="create-admin-name" placeholder="Ex: Prof. Carlos..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                        <input type="text" id="create-admin-name" placeholder="Ex: Prof. Carlos..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">E-mail (Login)</label>
-                        <input type="email" id="create-admin-email" placeholder="carlos@senai.br..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                        <input type="email" id="create-admin-email" placeholder="carlos@lms.local..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
                     <div class="flex flex-col gap-1.5 text-left mb-2">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Senha</label>
-                        <input type="password" id="create-admin-password" placeholder="Definir senha de acesso..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                        <input type="password" id="create-admin-password" placeholder="Definir senha de acesso..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
-                    <button id="btn-create-admin" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mt-2 text-sm">Salvar Administrador</button>
+                    <button id="btn-create-admin" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mt-2 text-sm">Salvar Administrador</button>
                 </div>
 
                 <!-- Right Column: Admins Table -->
@@ -1364,8 +1449,8 @@
                     <div class="flex flex-col gap-3 border-t border-white/10 pt-4 mt-auto">
                         <h4 class="text-white font-bold text-sm text-left">Enviar Resposta (como Instrutor)</h4>
                         <div class="flex gap-3">
-                            <textarea id="forum-reply-admin-text" placeholder="Digite a resposta que o aluno verá na página..." class="flex-grow bg-black/20 border border-slate-700/50 text-white p-3 rounded-xl font-sans text-sm outline-none h-20 resize-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all shadow-inner"></textarea>
-                            <button id="btn-forum-admin-reply" class="bg-senaiRed hover:bg-red-600 text-white font-bold rounded-xl px-5 h-20 w-32 transition-colors shadow-lg flex items-center justify-center">Enviar</button>
+                            <textarea id="forum-reply-admin-text" placeholder="Digite a resposta que o aluno verá na página..." class="flex-grow bg-black/20 border border-slate-700/50 text-white p-3 rounded-xl font-sans text-sm outline-none h-20 resize-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-inner"></textarea>
+                            <button id="btn-forum-admin-reply" class="bg-primary hover:bg-red-600 text-white font-bold rounded-xl px-5 h-20 w-32 transition-colors shadow-lg flex items-center justify-center">Enviar</button>
                         </div>
                     </div>
                 </div>
@@ -1383,12 +1468,21 @@
             <!-- ABA 6: EDITOR DE CONTEÚDO -->
             <div id="tab-editor" class="tab-content" style="display: none; flex-direction: column; gap: 30px; width: 100%;">
                 
-                <!-- Sub-menu navigation -->
-                <div class="bg-black/20 p-2 rounded-xl border border-slate-700/50 flex gap-2 w-full overflow-x-auto scrollbar-hide">
-                    <button class="editor-subtab-btn active bg-senaiRed text-white px-5 py-2.5 font-bold text-sm rounded-lg transition-colors whitespace-nowrap shadow-md focus:outline-none" data-subtab="subtab-course-structure">⚙️ Estrutura do Curso (CRUD)</button>
-                    <button class="editor-subtab-btn hover:bg-white/5 text-slate-400 hover:text-white px-5 py-2.5 font-bold text-sm rounded-lg transition-colors whitespace-nowrap focus:outline-none" data-subtab="subtab-apostilas">📖 Apostilas (Markdown)</button>
-                    <button class="editor-subtab-btn hover:bg-white/5 text-slate-400 hover:text-white px-5 py-2.5 font-bold text-sm rounded-lg transition-colors whitespace-nowrap focus:outline-none" data-subtab="subtab-evaluations">📝 Avaliações (Questões)</button>
+                <!-- Selecionar Curso para Editor -->
+                <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-lg flex items-center gap-4">
+                    <label class="font-bold text-white whitespace-nowrap">📚 Selecione o Curso para Editar:</label>
+                    <select id="editor-course-select" class="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm font-bold">
+                        <option value="">-- Escolha um curso --</option>
+                    </select>
                 </div>
+
+                <div id="editor-workspace" style="display: none; flex-direction: column; gap: 30px; width: 100%;">
+                    <!-- Sub-menu navigation -->
+                    <div class="bg-black/20 p-2 rounded-xl border border-slate-700/50 flex gap-2 w-full overflow-x-auto scrollbar-hide">
+                        <button class="editor-subtab-btn active bg-primary text-white px-5 py-2.5 font-bold text-sm rounded-lg transition-colors whitespace-nowrap shadow-md focus:outline-none" data-subtab="subtab-course-structure">⚙️ Estrutura do Curso (CRUD)</button>
+                        <button class="editor-subtab-btn hover:bg-white/5 text-slate-400 hover:text-white px-5 py-2.5 font-bold text-sm rounded-lg transition-colors whitespace-nowrap focus:outline-none" data-subtab="subtab-apostilas">📖 Apostilas (Markdown)</button>
+                        <button class="editor-subtab-btn hover:bg-white/5 text-slate-400 hover:text-white px-5 py-2.5 font-bold text-sm rounded-lg transition-colors whitespace-nowrap focus:outline-none" data-subtab="subtab-evaluations">📝 Avaliações (Questões)</button>
+                    </div>
 
                 <!-- SUB-ABA 1: CRUD DA ESTRUTURA DO CURSO -->
                 <div id="subtab-course-structure" class="editor-subtab-content flex gap-8 w-full">
@@ -1418,14 +1512,14 @@
                             <div class="grid grid-cols-[120px_1fr] gap-4">
                                 <div class="flex flex-col gap-1.5 text-left">
                                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">ID do Módulo</label>
-                                    <input type="text" id="new-module-id" placeholder="Ex: FUTEC" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                                    <input type="text" id="new-module-id" placeholder="Ex: FUTEC" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                                 </div>
                                 <div class="flex flex-col gap-1.5 text-left">
                                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nome Completo do Módulo</label>
-                                    <input type="text" id="new-module-name" placeholder="Ex: Fundamentos de TI" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                                    <input type="text" id="new-module-name" placeholder="Ex: Fundamentos de TI" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                                 </div>
                             </div>
-                            <button id="btn-create-module" class="self-end py-2 px-5 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all text-sm">Salvar Módulo</button>
+                            <button id="btn-create-module" class="self-end py-2 px-5 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all text-sm">Salvar Módulo</button>
                         </div>
 
                         <!-- Criar Unidade -->
@@ -1434,16 +1528,16 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="flex flex-col gap-1.5 text-left">
                                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Módulo Relacionado</label>
-                                    <select id="new-unit-module-select" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all cursor-pointer text-sm">
+                                    <select id="new-unit-module-select" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
                                         <!-- Carregado dinamicamente -->
                                     </select>
                                 </div>
                                 <div class="flex flex-col gap-1.5 text-left">
                                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nome da Unidade</label>
-                                    <input type="text" id="new-unit-name" placeholder="Ex: Introdução a Redes" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                                    <input type="text" id="new-unit-name" placeholder="Ex: Introdução a Redes" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                                 </div>
                             </div>
-                            <button id="btn-create-unit" class="self-end py-2 px-5 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all text-sm">Salvar Unidade</button>
+                            <button id="btn-create-unit" class="self-end py-2 px-5 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all text-sm">Salvar Unidade</button>
                         </div>
                     </div>
                 </div>
@@ -1461,10 +1555,10 @@
                                     </select>
                                 </div>
                             </div>
-                            <textarea id="editor-markdown-text" class="flex-grow bg-black/20 border border-slate-700/50 text-white p-4 rounded-xl font-mono text-[13px] leading-relaxed resize-none outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all custom-scrollbar" placeholder="Escreva o conteúdo da sua apostila aqui usando Markdown..."></textarea>
+                            <textarea id="editor-markdown-text" class="flex-grow bg-black/20 border border-slate-700/50 text-white p-4 rounded-xl font-mono text-[13px] leading-relaxed resize-none outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all custom-scrollbar" placeholder="Escreva o conteúdo da sua apostila aqui usando Markdown..."></textarea>
                             <div class="flex justify-between items-center mt-2">
                                 <span class="text-xs text-slate-400">A apostila é atualizada e salva diretamente no arquivo .md correspondente no servidor.</span>
-                                <button id="btn-save-apostila" class="bg-senaiRed hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-lg shadow-red-500/20 text-sm">Salvar Apostila</button>
+                                <button id="btn-save-apostila" class="bg-primary hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-lg shadow-red-500/20 text-sm">Salvar Apostila</button>
                             </div>
                         </div>
 
@@ -1531,17 +1625,17 @@
                             <div class="grid grid-cols-[2fr_1.2fr] gap-4">
                                 <div class="flex flex-col gap-1.5 text-left">
                                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Título da Avaliação</label>
-                                    <input type="text" id="editor-eval-title-input" placeholder="Ex: Avaliação: Unidade 1" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                                    <input type="text" id="editor-eval-title-input" placeholder="Ex: Avaliação: Unidade 1" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                                 </div>
                                 <div class="flex flex-col gap-1.5 text-left">
                                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tema</label>
-                                    <input type="text" id="editor-eval-theme-input" placeholder="Ex: Sistemas Operacionais" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                                    <input type="text" id="editor-eval-theme-input" placeholder="Ex: Sistemas Operacionais" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                                 </div>
                             </div>
                             
                             <div class="flex flex-col gap-1.5 text-left">
                                 <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Instruções / Boss Fight Rubric (Markdown)</label>
-                                <textarea id="editor-eval-rubric-input" class="h-20 bg-black/20 border border-slate-700/50 text-white p-3 rounded-lg font-sans text-sm outline-none resize-y focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all"></textarea>
+                                <textarea id="editor-eval-rubric-input" class="h-20 bg-black/20 border border-slate-700/50 text-white p-3 rounded-lg font-sans text-sm outline-none resize-y focus:border-primary focus:ring-1 focus:ring-primary transition-all"></textarea>
                             </div>
 
                             <div class="flex justify-between items-center mt-3">
@@ -1587,12 +1681,12 @@
                             
                             <div class="flex flex-col gap-1.5 text-left">
                                 <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Enunciado da Questão</label>
-                                <textarea id="question-text-input" class="h-28 bg-black/20 border border-slate-700/50 text-white p-3 rounded-lg font-sans text-sm outline-none resize-y focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all"></textarea>
+                                <textarea id="question-text-input" class="h-28 bg-black/20 border border-slate-700/50 text-white p-3 rounded-lg font-sans text-sm outline-none resize-y focus:border-primary focus:ring-1 focus:ring-primary transition-all"></textarea>
                             </div>
 
                             <div class="flex flex-col gap-1.5 text-left">
                                 <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Peso da Questão (Pontos)</label>
-                                <input type="number" id="question-weight-input" min="0.1" step="0.1" value="1.0" class="w-24 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm text-center">
+                                <input type="number" id="question-weight-input" min="0.1" step="0.1" value="1.0" class="w-24 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm text-center">
                             </div>
 
                             <div class="flex flex-col gap-3 mt-2">
@@ -1600,34 +1694,35 @@
                                 
                                 <div class="flex items-center gap-3">
                                     <span class="font-black text-white w-5 text-center">A)</span>
-                                    <input type="text" id="alt-a-input" placeholder="Texto da alternativa A" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
-                                    <input type="radio" name="correct-alt-radio" value="A" checked class="w-5 h-5 text-senaiRed bg-slate-900 border-slate-700 focus:ring-senaiRed focus:ring-2 cursor-pointer accent-senaiRed">
+                                    <input type="text" id="alt-a-input" placeholder="Texto da alternativa A" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                                    <input type="radio" name="correct-alt-radio" value="A" checked class="w-5 h-5 text-primary bg-slate-900 border-slate-700 focus:ring-primary focus:ring-2 cursor-pointer accent-primary">
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="font-black text-white w-5 text-center">B)</span>
-                                    <input type="text" id="alt-b-input" placeholder="Texto da alternativa B" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
-                                    <input type="radio" name="correct-alt-radio" value="B" class="w-5 h-5 text-senaiRed bg-slate-900 border-slate-700 focus:ring-senaiRed focus:ring-2 cursor-pointer accent-senaiRed">
+                                    <input type="text" id="alt-b-input" placeholder="Texto da alternativa B" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                                    <input type="radio" name="correct-alt-radio" value="B" class="w-5 h-5 text-primary bg-slate-900 border-slate-700 focus:ring-primary focus:ring-2 cursor-pointer accent-primary">
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="font-black text-white w-5 text-center">C)</span>
-                                    <input type="text" id="alt-c-input" placeholder="Texto da alternativa C" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
-                                    <input type="radio" name="correct-alt-radio" value="C" class="w-5 h-5 text-senaiRed bg-slate-900 border-slate-700 focus:ring-senaiRed focus:ring-2 cursor-pointer accent-senaiRed">
+                                    <input type="text" id="alt-c-input" placeholder="Texto da alternativa C" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                                    <input type="radio" name="correct-alt-radio" value="C" class="w-5 h-5 text-primary bg-slate-900 border-slate-700 focus:ring-primary focus:ring-2 cursor-pointer accent-primary">
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="font-black text-white w-5 text-center">D)</span>
-                                    <input type="text" id="alt-d-input" placeholder="Texto da alternativa D" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
-                                    <input type="radio" name="correct-alt-radio" value="D" class="w-5 h-5 text-senaiRed bg-slate-900 border-slate-700 focus:ring-senaiRed focus:ring-2 cursor-pointer accent-senaiRed">
+                                    <input type="text" id="alt-d-input" placeholder="Texto da alternativa D" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                                    <input type="radio" name="correct-alt-radio" value="D" class="w-5 h-5 text-primary bg-slate-900 border-slate-700 focus:ring-primary focus:ring-2 cursor-pointer accent-primary">
                                 </div>
                             </div>
 
                             <div class="flex gap-3 mt-4">
                                 <button id="btn-cancel-question-edit" class="hidden flex-1 bg-white/5 hover:bg-white/10 border border-slate-600 text-white font-bold py-2.5 rounded-xl transition-colors">Cancelar</button>
-                                <button id="btn-save-question-to-list" class="flex-[2] bg-senaiRed hover:bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-red-500/20 transition-colors">Adicionar à Lista</button>
+                                <button id="btn-save-question-to-list" class="flex-[2] bg-primary hover:bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-red-500/20 transition-colors">Adicionar à Lista</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                </div>
             </div>
                 </div>
             </div>
@@ -1679,7 +1774,7 @@
                     <div class="flex flex-col gap-1.5 text-left">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Questões na Prova</label>
                         <div class="flex items-center gap-3">
-                            <input type="range" id="modal-question-slider" min="1" max="20" value="20" class="flex-1 accent-senaiRed">
+                            <input type="range" id="modal-question-slider" min="1" max="20" value="20" class="flex-1 accent-primary">
                             <span class="font-bold bg-slate-900 px-2 py-1 rounded-md border border-slate-700 text-sm whitespace-nowrap text-white"><span id="modal-question-count-badge">20</span> / <span id="modal-question-total-badge">20</span></span>
                         </div>
                     </div>
@@ -1688,17 +1783,17 @@
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Embaralhamento</label>
                         <div class="flex flex-col gap-1">
                             <label class="flex items-center gap-2 text-[13px] cursor-pointer text-white">
-                                <input type="checkbox" id="modal-shuffle-questions" checked class="w-4 h-4 text-senaiRed bg-slate-900 border-slate-700 rounded focus:ring-senaiRed focus:ring-2 accent-senaiRed"> Embaralhar Questões
+                                <input type="checkbox" id="modal-shuffle-questions" checked class="w-4 h-4 text-primary bg-slate-900 border-slate-700 rounded focus:ring-primary focus:ring-2 accent-primary"> Embaralhar Questões
                             </label>
                             <label class="flex items-center gap-2 text-[13px] cursor-pointer text-white">
-                                <input type="checkbox" id="modal-shuffle-answers" checked class="w-4 h-4 text-senaiRed bg-slate-900 border-slate-700 rounded focus:ring-senaiRed focus:ring-2 accent-senaiRed"> Embaralhar Respostas
+                                <input type="checkbox" id="modal-shuffle-answers" checked class="w-4 h-4 text-primary bg-slate-900 border-slate-700 rounded focus:ring-primary focus:ring-2 accent-primary"> Embaralhar Respostas
                             </label>
                         </div>
                     </div>
 
                     <div class="flex flex-col gap-1.5 text-left">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Quantidade de Versões</label>
-                        <input type="number" id="modal-versions-count" min="1" max="10" value="1" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold outline-none focus:border-senaiRed transition-all">
+                        <input type="number" id="modal-versions-count" min="1" max="10" value="1" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold outline-none focus:border-primary transition-all">
                         <span class="text-[11px] text-slate-400">Gera versões com códigos únicos (Ex: A4F2).</span>
                     </div>
 
@@ -1723,7 +1818,7 @@
                         <button id="modal-btn-shuffle" class="bg-white/5 hover:bg-white/10 border border-slate-600 text-white font-bold py-2 rounded-xl transition-colors text-sm shadow-none">
                             🔄 Embaralhar Preview
                         </button>
-                        <button id="modal-btn-print-exam" class="bg-gradient-to-r from-senaiRed to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-2 rounded-xl transition-colors text-sm shadow-lg shadow-red-500/20">
+                        <button id="modal-btn-print-exam" class="bg-gradient-to-r from-primary to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold py-2 rounded-xl transition-colors text-sm shadow-lg shadow-red-500/20">
                             🖨️ Gerar Provas (PDF)
                         </button>
                         <button id="modal-btn-print-answer" class="bg-gradient-to-r from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 text-white font-bold py-2 rounded-xl transition-colors text-sm shadow-lg shadow-green-500/20">
@@ -1734,7 +1829,7 @@
                     <div class="mt-auto p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-left">
                         <span class="text-xs text-red-400 font-bold block mb-1">⚠️ Salvar Configurações</span>
                         <span class="text-[11px] text-slate-400 block mb-2 leading-tight">Ao alterar as questões, clique para atualizar a prova da turma.</span>
-                        <button id="modal-btn-save-config" class="w-full py-2 bg-senaiRed hover:bg-red-600 text-white border-none rounded-lg text-xs font-bold cursor-pointer transition-colors">
+                        <button id="modal-btn-save-config" class="w-full py-2 bg-primary hover:bg-red-600 text-white border-none rounded-lg text-xs font-bold cursor-pointer transition-colors">
                             Salvar p/ Turma Ativa
                         </button>
                     </div>
@@ -1772,27 +1867,27 @@
                 
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nome Completo</label>
-                    <input type="text" id="edit-student-name" placeholder="Nome Completo..." required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                    <input type="text" id="edit-student-name" placeholder="Nome Completo..." required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">E-mail (Login)</label>
-                    <input type="email" id="edit-student-email" placeholder="mariasouza@senai.br..." required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                    <input type="email" id="edit-student-email" placeholder="mariasouza@lms.local..." required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Senha</label>
-                    <input type="text" id="edit-student-password" placeholder="Definir nova senha..." required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all text-sm">
+                    <input type="text" id="edit-student-password" placeholder="Definir nova senha..." required class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Turma</label>
-                        <select id="edit-student-class" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all cursor-pointer text-sm">
+                        <select id="edit-student-class" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
                             <!-- Carregado via API -->
                         </select>
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Período</label>
-                        <select id="edit-student-period" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all cursor-pointer text-sm">
+                        <select id="edit-student-period" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
                             <option value="Manhã">Manhã</option>
                             <option value="Tarde">Tarde</option>
                             <option value="Noite">Noite</option>
@@ -1802,7 +1897,7 @@
                 
                 <div id="student-edit-error" class="text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg text-xs hidden text-center mt-1"></div>
                 
-                <button id="btn-save-student-edit" class="mt-4 py-3 w-full bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all text-sm">Salvar Alterações</button>
+                <button id="btn-save-student-edit" class="mt-4 py-3 w-full bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all text-sm">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -1827,13 +1922,13 @@
 
     <!-- OVERLAY DE REINICIALIZAÇÃO DO SERVIDOR -->
     <div id="restart-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[10001] hidden flex-col items-center justify-center gap-5">
-        <div class="text-[4rem] animate-[spin_2s_infinite_linear] text-senaiRed">🔄</div>
+        <div class="text-[4rem] animate-[spin_2s_infinite_linear] text-primary">🔄</div>
         <h2 class="text-2xl font-black text-white m-0">Reiniciando o Servidor LMS...</h2>
         <p class="text-slate-400 text-center max-w-[400px] leading-relaxed">
             Aguarde alguns segundos enquanto o Express fecha a porta e reinicia o processo. A página recarregará automaticamente.
         </p>
         <div class="w-[200px] h-1.5 bg-white/10 rounded-full overflow-hidden relative">
-            <div id="restart-progress-bar" class="w-0 h-full bg-senaiRed transition-[width] duration-200 ease-linear rounded-full"></div>
+            <div id="restart-progress-bar" class="w-0 h-full bg-primary transition-[width] duration-200 ease-linear rounded-full"></div>
         </div>
     </div>
     
@@ -1944,28 +2039,46 @@
             });
         }
 
-        // #4 Student Search Filter
-        const searchStudentsInput = document.getElementById('search-students-input');
-        if (searchStudentsInput) {
-            searchStudentsInput.addEventListener('input', () => {
-                const query = searchStudentsInput.value.toLowerCase().trim();
-                const rows = document.querySelectorAll('#students-body tr');
-                let visibleCount = 0;
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    if (query === '' || text.includes(query)) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-                const counter = document.getElementById('students-counter');
-                if (counter) {
-                    const total = rows.length;
-                    counter.textContent = query ? `${visibleCount} de ${total} alunos` : `${total} alunos`;
+        // #4 Student Search & Course Filter
+        function filterStudents() {
+            const searchStudentsInput = document.getElementById('search-students-input');
+            const filterStudentsCourse = document.getElementById('filter-students-course');
+            const query = searchStudentsInput ? searchStudentsInput.value.toLowerCase().trim() : '';
+            const courseFilter = filterStudentsCourse ? filterStudentsCourse.value : '';
+            
+            const rows = document.querySelectorAll('#students-body tr');
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const studentClass = row.getAttribute('data-student-class');
+                const classObj = allClassesCache.find(c => c.name === studentClass);
+                const courseId = classObj ? classObj.courseId : '';
+                
+                const matchesSearch = query === '' || text.includes(query);
+                const matchesCourse = courseFilter === '' || courseId === courseFilter;
+                
+                if (matchesSearch && matchesCourse) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
                 }
             });
+            const counter = document.getElementById('students-counter');
+            if (counter) {
+                const total = rows.length;
+                counter.textContent = (query || courseFilter) ? `${visibleCount} de ${total} alunos` : `${total} alunos`;
+            }
+        }
+
+        const searchStudentsInput = document.getElementById('search-students-input');
+        if (searchStudentsInput) {
+            searchStudentsInput.addEventListener('input', filterStudents);
+        }
+        
+        const filterStudentsCourse = document.getElementById('filter-students-course');
+        if (filterStudentsCourse) {
+            filterStudentsCourse.addEventListener('change', filterStudents);
         }
 
         // #14 Update Release Progress in Header
@@ -2065,6 +2178,11 @@
             refreshDashboard();
             pollInterval = setInterval(refreshDashboard, 3000);
 
+            // Fetch Branding & Courses for the new tab
+            if (typeof loadBrandingAndCourses === 'function') {
+                loadBrandingAndCourses();
+            }
+
             // Recarrega dados ao trocar a turma ativa no dropdown
             document.getElementById('admin-active-class').addEventListener('change', () => {
                 refreshDashboard();
@@ -2154,7 +2272,7 @@
                         </div>
                         <!-- Avaliação Capsule -->
                         <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors toggle-tooltip" data-tooltip="Prova da Unidade ${i} — Clique para liberar/bloquear">
-                            <span class="text-[10px] text-senaiRed font-extrabold tracking-wider uppercase">🎯 Prova</span>
+                            <span class="text-[10px] text-primary font-extrabold tracking-wider uppercase">🎯 Prova</span>
                             <div class="flex items-center gap-1.5">
                                 <button class="btn-preview-exam bg-white/5 hover:bg-white/15 border border-white/10 text-white p-1 rounded-lg text-[10px] font-bold hover:border-white/20 transition-colors" data-key="${avKey}" title="Configurar / Imprimir Prova">
                                     🖨️
@@ -2303,9 +2421,9 @@
                 }
                 
                 html += `
-                    <tr data-student-email="${student.email}" class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                    <tr data-student-email="${student.email}" data-student-class="${student.studentClass}" class="border-b border-white/5 hover:bg-white/5 transition-colors group">
                         <td class="p-3 align-middle">
-                            <strong class="text-white group-hover:text-senaiRed transition-colors">${student.name}</strong><br>
+                            <strong class="text-white group-hover:text-primary transition-colors">${student.name}</strong><br>
                             <span class="text-xs text-slate-400">${student.email}</span>
                         </td>
                         <td class="p-3 align-middle">
@@ -2593,7 +2711,7 @@
             if (classes.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center text-slate-400 p-8">
+                        <td colspan="6" class="text-center text-slate-400 p-8">
                             Nenhuma turma cadastrada no momento.
                         </td>
                     </tr>
@@ -2610,6 +2728,7 @@
                 html += `
                     <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
                         <td class="p-3 align-middle"><strong class="text-blue-400 text-base">${c.name}</strong></td>
+                        <td class="p-3 align-middle"><span class="font-semibold text-purple-400 text-xs uppercase tracking-wider">${c.courseId || 'SENAI 4.0'}</span></td>
                         <td class="p-3 align-middle"><span class="font-semibold text-white">${c.period || 'Não definido'}</span></td>
                         <td class="p-3 align-middle">
                             <div class="flex items-center gap-2">
@@ -2696,6 +2815,13 @@
                 errDiv.style.display = 'block';
                 return;
             }
+
+            const courseId = document.getElementById('create-class-course').value;
+            if (!courseId) {
+                errDiv.textContent = 'Por favor, selecione um curso vinculado.';
+                errDiv.style.display = 'block';
+                return;
+            }
             
             fetch('/api/admin/class/create', {
                 method: 'POST',
@@ -2703,7 +2829,7 @@
                     'Content-Type': 'application/json',
                     'Authorization': adminPassword
                 },
-                body: JSON.stringify({ name, period: document.getElementById('create-class-period').value })
+                body: JSON.stringify({ name, period: document.getElementById('create-class-period').value, courseId })
             })
             .then(res => {
                 if (!res.ok) {
@@ -2842,6 +2968,31 @@
             }
         }
 
+        // #14 Update Release Progress in Header
+        function updateReleaseProgress() {
+            // ... (rest remains unchanged, this is just to anchor)
+        }
+
+        // --- Filtros de Entregas ---
+        const filterClassSel = document.getElementById('filter-class');
+        if (filterClassSel) {
+            filterClassSel.addEventListener('change', (e) => {
+                selectedFilterClass = e.target.value;
+                if (typeof updateSubmissionsTable === 'function') {
+                    updateSubmissionsTable(allSubmissionsCache);
+                }
+            });
+        }
+        
+        const filterSubmissionCourse = document.getElementById('filter-submission-course');
+        if (filterSubmissionCourse) {
+            filterSubmissionCourse.addEventListener('change', () => {
+                if (typeof updateSubmissionsTable === 'function') {
+                    updateSubmissionsTable(allSubmissionsCache);
+                }
+            });
+        }
+
         let allSubmissionsCache = [];
         // Atualiza a tabela live e as estatísticas
         function updateSubmissionsTable(submissions) {
@@ -2849,9 +3000,18 @@
             const tbody = document.getElementById('submissions-body');
             const emptyDiv = document.getElementById('empty-submissions');
             
-            const filteredSubmissions = selectedFilterClass 
-                ? submissions.filter(sub => sub.student.studentClass === selectedFilterClass)
-                : submissions;
+            const filterSubmissionCourse = document.getElementById('filter-submission-course');
+            const selectedFilterCourse = filterSubmissionCourse ? filterSubmissionCourse.value : '';
+
+            const filteredSubmissions = submissions.filter(sub => {
+                const matchClass = selectedFilterClass ? sub.student.studentClass === selectedFilterClass : true;
+                
+                const studentClassObj = allClassesCache.find(c => c.name === sub.student.studentClass);
+                const courseId = studentClassObj ? studentClassObj.courseId : '';
+                const matchCourse = selectedFilterCourse ? courseId === selectedFilterCourse : true;
+                
+                return matchClass && matchCourse;
+            });
 
             document.getElementById('stat-submissions').textContent = filteredSubmissions.length;
 
@@ -2971,7 +3131,7 @@
                     html += `
                         <div class="bg-black/10 border border-white/10 p-5 rounded-xl shadow-lg">
                             <div class="font-bold mb-4 text-white flex gap-3">
-                                <span class="shrink-0 w-7 h-7 bg-senaiRed text-white rounded-full text-center leading-7 text-sm font-bold shadow-lg shadow-red-500/20">${idx + 1}</span>
+                                <span class="shrink-0 w-7 h-7 bg-primary text-white rounded-full text-center leading-7 text-sm font-bold shadow-lg shadow-red-500/20">${idx + 1}</span>
                                 <div class="mt-0.5">${originalQ.text}</div>
                             </div>
                             <div class="flex flex-col gap-2 ml-[38px]">
@@ -3397,7 +3557,7 @@
                             <label class="absolute top-3 right-3 flex items-center gap-1.5 cursor-pointer text-xs text-red-400">
                                 <input type="checkbox" checked onchange="toggleExamQuestion(${q.originalNumber}, false)" class="accent-red-400 scale-125"> Remover
                             </label>
-                            <div class="exam-question-number absolute top-3 left-3 bg-senaiRed text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg shadow-red-500/20">${idx + 1}</div>
+                            <div class="exam-question-number absolute top-3 left-3 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg shadow-red-500/20">${idx + 1}</div>
                             <div class="exam-question-body pl-8 mt-1">
                                 <p class="exam-question-text font-bold mb-2.5 pr-20 text-white text-sm">${q.text}</p>
                                 ${usageBadgeHTML}
@@ -3701,7 +3861,7 @@
                 <div class="pdf-page" style="page-break-after: ${v < versionsCount - 1 ? 'always' : 'auto'}; min-height: 98vh; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <div class="pdf-header" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 22px 40px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="logo" style="font-size: 24pt; font-weight: 800; letter-spacing: -1px;">SENAI<span style="color:#e94560">4.0</span></div>
+                            <div class="logo" style="font-size: 24pt; font-weight: 800; letter-spacing: -1px;">LMS<span style="color:#e94560">4.0</span></div>
                             <div class="meta" style="text-align: right; font-size: 8.5pt; opacity: 0.85; line-height: 1.5;">
                                 <span style="font-size:11pt;font-weight:800;color:#e9c46a;display:block;margin-bottom:2px">
                                     ${isAnswerKey ? '🔑 GABARITO DO PROFESSOR' : '📝 AVALIAÇÃO'}${versionTitleText}
@@ -3732,7 +3892,7 @@
                     <div class="pdf-footer" style="padding: 10px 40px 30px; margin-top: auto;">
                         <hr style="border: none; border-top: 2px solid #e0e6f0; margin-bottom: 10px;">
                         <div style="display: flex; justify-content: space-between; font-size: 8.5pt; color: #888;">
-                            <span>SENAI Sertãozinho — Portal SENAI 4.0 · ${dateStr}</span>
+                            <span>Escola Modelo — Portal Portal LMS · ${dateStr}</span>
                             <span style="color:#0f3460;font-weight:700">✍️ Instrutor Alan Marciano — Gestor em T.I.</span>
                         </div>
                     </div>
@@ -4316,7 +4476,7 @@
 
             filteredComments.forEach(comment => {
                 const card = document.createElement('div');
-                card.className = `bg-white/5 border border-white/10 p-3 rounded-lg cursor-pointer transition-colors text-left flex flex-col gap-1.5 ${comment.id === selectedCommentId ? 'border-senaiRed bg-red-500/5' : 'hover:border-slate-500 hover:bg-white/10'}`;
+                card.className = `bg-white/5 border border-white/10 p-3 rounded-lg cursor-pointer transition-colors text-left flex flex-col gap-1.5 ${comment.id === selectedCommentId ? 'border-primary bg-red-500/5' : 'hover:border-slate-500 hover:bg-white/10'}`;
 
                 const dateStr = new Date(comment.timestamp).toLocaleDateString('pt-BR');
                 const moduleName = comment.key.replace('Apostila_', '').replace('_', ' Unidade ');
@@ -4393,10 +4553,10 @@
                     replyCard.innerHTML = `
                         <div class="reply-card-header flex items-center justify-between w-full gap-2">
                             <div class="flex items-center gap-2">
-                                <div class="reply-avatar w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] text-white ${isInstructor ? 'bg-gradient-to-br from-senaiRed to-purple-600' : 'bg-slate-600'} shadow-lg">${replyInitials}</div>
+                                <div class="reply-avatar w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] text-white ${isInstructor ? 'bg-gradient-to-br from-primary to-purple-600' : 'bg-slate-600'} shadow-lg">${replyInitials}</div>
                                 <span class="reply-author-name text-xs font-bold text-white flex items-center gap-1.5">
                                     ${reply.authorName}
-                                    ${isInstructor ? '<span class="reply-badge bg-senaiRed text-white text-[10px] font-black px-1.5 py-px rounded uppercase tracking-wider shadow-lg shadow-red-500/20">Instrutor</span>' : ''}
+                                    ${isInstructor ? '<span class="reply-badge bg-primary text-white text-[10px] font-black px-1.5 py-px rounded uppercase tracking-wider shadow-lg shadow-red-500/20">Instrutor</span>' : ''}
                                     <span class="text-[11px] text-slate-400 font-normal ml-1">${replyDateStr}</span>
                                 </span>
                             </div>
@@ -4429,7 +4589,7 @@
                     commentId: selectedCommentId,
                     authorName: 'Alan Marciano',
                     authorRole: 'Instrutor',
-                    authorEmail: 'admin@senai.br',
+                    authorEmail: 'admin@lms.local',
                     text
                 })
             })
@@ -4699,16 +4859,39 @@
         const btnEditorNavbar = document.querySelector('[data-tab="tab-editor"]');
         if (btnEditorNavbar) {
             btnEditorNavbar.addEventListener('click', () => {
-                loadEditorCourseStructure();
+                // Ao abrir a aba, não carrega automaticamente se não houver curso selecionado
+                const select = document.getElementById('editor-course-select');
+                if (select && select.value) {
+                    document.getElementById('editor-workspace').style.display = 'flex';
+                    loadEditorCourseStructure(select.value);
+                } else {
+                    document.getElementById('editor-workspace').style.display = 'none';
+                }
+            });
+        }
+
+        const editorCourseSelect = document.getElementById('editor-course-select');
+        if (editorCourseSelect) {
+            editorCourseSelect.addEventListener('change', (e) => {
+                const courseId = e.target.value;
+                if (!courseId) {
+                    document.getElementById('editor-workspace').style.display = 'none';
+                    return;
+                }
+                document.getElementById('editor-workspace').style.display = 'flex';
+                loadEditorCourseStructure(courseId);
             });
         }
 
         // 1. CARREGAR ESTRUTURA DO CURSO
-        function loadEditorCourseStructure() {
-            fetch('/api/course-structure')
+        function loadEditorCourseStructure(courseId) {
+            if (!courseId) return;
+            fetch(`/api/admin/courses/${courseId}/structure`, {
+                headers: { 'Authorization': adminPassword }
+            })
             .then(res => res.json())
-            .then(structure => {
-                editorCourseStructure = structure;
+            .then(data => {
+                editorCourseStructure = data.structure || [];
                 renderEditorCourseTree();
                 populateCourseStructureSelectors();
             })
@@ -4838,7 +5021,10 @@
 
         // Salvar a Estrutura Geral no Servidor
         function saveEditorCourseStructureToServer() {
-            fetch('/api/admin/course/structure', {
+            const courseId = document.getElementById('editor-course-select').value;
+            if (!courseId) return;
+
+            fetch(`/api/admin/courses/${courseId}/structure`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -4849,7 +5035,7 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    loadEditorCourseStructure();
+                    loadEditorCourseStructure(courseId);
                 } else {
                     alert("Erro ao salvar estrutura: " + data.error);
                 }
@@ -4992,11 +5178,12 @@
 
         // CRUD de Unidades (Apostila + Avaliação)
         document.getElementById('btn-create-unit').addEventListener('click', () => {
+            const courseId = document.getElementById('editor-course-select').value;
             const moduleId = document.getElementById('new-unit-module-select').value;
             const unitName = document.getElementById('new-unit-name').value.trim();
 
-            if (!moduleId || !unitName) {
-                alert("Selecione o módulo e digite o nome da unidade!");
+            if (!courseId || !moduleId || !unitName) {
+                alert("Selecione o curso, o módulo e digite o nome da unidade!");
                 return;
             }
 
@@ -5006,14 +5193,14 @@
                     'Content-Type': 'application/json',
                     'Authorization': adminPassword
                 },
-                body: JSON.stringify({ moduleId, unitName })
+                body: JSON.stringify({ courseId, moduleId, unitName })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     document.getElementById('new-unit-name').value = '';
                     alert("Nova unidade e prova criadas com sucesso!");
-                    loadEditorCourseStructure();
+                    loadEditorCourseStructure(courseId);
                 } else {
                     alert("Erro ao criar unidade: " + data.error);
                 }
@@ -5645,6 +5832,164 @@
             })
             .catch(err => alert("Erro ao duplicar prova: " + err));
         });
+
+        // --- CURSOS & BRANDING ---
+
+        function loadBrandingAndCourses() {
+            // Fetch Branding
+            fetch('/api/branding')
+                .then(res => res.json())
+                .then(branding => {
+                    document.getElementById('branding-name').value = branding.institutionName || '';
+                    document.getElementById('branding-color').value = branding.primaryColor || '#ef4444';
+                    document.getElementById('branding-color-picker').value = branding.primaryColor || '#ef4444';
+                });
+
+            // Fetch Courses
+            fetch('/api/courses')
+                .then(res => res.json())
+                .then(courses => {
+                    const container = document.getElementById('course-list-container');
+                    container.innerHTML = '';
+                    
+                    const select = document.getElementById('create-class-course');
+                    if (select) {
+                        select.innerHTML = '<option value="">Selecione um curso...</option>';
+                    }
+                    
+                    const editorSelect = document.getElementById('editor-course-select');
+                    if (editorSelect) {
+                        editorSelect.innerHTML = '<option value="">-- Escolha um curso --</option>';
+                    }
+
+                    courses.forEach(c => {
+                        const div = document.createElement('div');
+                        div.className = 'bg-black/30 border border-slate-700 p-4 rounded-xl flex flex-col gap-2 hover:border-primary transition-all';
+                        div.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-xs text-slate-400 font-mono">${c.id}</div>
+                                    <div class="text-sm font-bold text-white mt-1">${c.name}</div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="editCourse('${c.id}', '${c.name.replace(/'/g, "\\'")}')" class="text-blue-400 hover:text-blue-300 text-xs font-bold">Editar</button>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-500 mt-2">${c.structure ? c.structure.length : 0} Módulos</div>
+                        `;
+                        container.appendChild(div);
+
+                        if (select) {
+                            const option = document.createElement('option');
+                            option.value = c.id;
+                            option.textContent = c.name;
+                            select.appendChild(option);
+                        }
+                        
+                        if (editorSelect) {
+                            const option = document.createElement('option');
+                            option.value = c.id;
+                            option.textContent = c.name;
+                            editorSelect.appendChild(option);
+                        }
+
+                        const filterStudentSelect = document.getElementById('filter-students-course');
+                        if (filterStudentSelect && select) { // select is used to check if it's the first time
+                            const option = document.createElement('option');
+                            option.value = c.id;
+                            option.textContent = c.name;
+                            filterStudentSelect.appendChild(option);
+                        }
+
+                        const filterSubmissionSelect = document.getElementById('filter-submission-course');
+                        if (filterSubmissionSelect && select) {
+                            const option = document.createElement('option');
+                            option.value = c.id;
+                            option.textContent = c.name;
+                            filterSubmissionSelect.appendChild(option);
+                        }
+                    });
+                });
+        }
+
+        document.getElementById('branding-color-picker').addEventListener('input', (e) => {
+            document.getElementById('branding-color').value = e.target.value.toUpperCase();
+        });
+
+        document.getElementById('btn-save-branding').addEventListener('click', () => {
+            const institutionName = document.getElementById('branding-name').value.trim();
+            const primaryColor = document.getElementById('branding-color').value.trim();
+            
+            fetch('/api/branding', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ institutionName, primaryColor })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    alert('Branding atualizado com sucesso!');
+                    document.documentElement.style.setProperty('--primary-color', primaryColor);
+                } else {
+                    alert('Erro ao salvar branding.');
+                }
+            });
+        });
+
+        document.getElementById('btn-show-create-course').addEventListener('click', () => {
+            document.getElementById('create-course-form').classList.remove('hidden');
+            document.getElementById('course-id').value = '';
+            document.getElementById('course-name').value = '';
+            document.getElementById('course-id').readOnly = false;
+        });
+
+        document.getElementById('btn-cancel-course').addEventListener('click', () => {
+            document.getElementById('create-course-form').classList.add('hidden');
+        });
+
+        window.editCourse = function(id, name) {
+            document.getElementById('create-course-form').classList.remove('hidden');
+            document.getElementById('course-id').value = id;
+            document.getElementById('course-name').value = name;
+            document.getElementById('course-id').readOnly = true; // Não permite editar ID
+        };
+
+        document.getElementById('btn-save-course').addEventListener('click', () => {
+            const id = document.getElementById('course-id').value.trim();
+            const name = document.getElementById('course-name').value.trim();
+            const isEdit = document.getElementById('course-id').readOnly;
+
+            if (!id || !name) return alert('Preencha ID e Nome');
+
+            const method = isEdit ? 'PUT' : 'POST';
+            const url = isEdit ? `/api/courses/${id}` : `/api/courses`;
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': adminPassword
+                },
+                body: JSON.stringify({ id, name })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    alert('Curso salvo com sucesso!');
+                    document.getElementById('create-course-form').classList.add('hidden');
+                    loadBrandingAndCourses();
+                    loadClassesData(); // recarrega turmas
+                } else {
+                    alert('Erro: ' + data.error);
+                }
+            });
+        });
+
+        // Call it when admin logs in
+        const originalAdminLoginSuccess = window.onAdminLoginSuccess || function(){};
+        window.onAdminLoginSuccess = function() {
+            originalAdminLoginSuccess();
+            loadBrandingAndCourses();
+        };
 
     </script>
 </body>

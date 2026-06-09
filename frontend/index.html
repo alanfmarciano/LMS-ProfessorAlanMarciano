@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Portal de Treinamento e Avaliação do SENAI 4.0 - Módulos de Fundamentos de TI e Ferramentas de Colaboração.">
-    <title>SENAI 4.0 - Portal do Aluno</title>
+        content="Portal de Treinamento e Avaliação do Portal LMS - Módulos de Fundamentos de TI e Ferramentas de Colaboração.">
+    <title>Portal LMS - Portal do Aluno</title>
     <!-- Google Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400&display=swap"
@@ -21,7 +21,7 @@
             theme: {
                 extend: {
                     colors: {
-                        senaiRed: '#ef4444',
+                        primary: 'var(--primary-color, #ef4444)',
                         slateDark: '#0f172a',
                         slatePanel: '#1e293b',
                     },
@@ -36,7 +36,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg-slateDark text-slate-100 font-sans h-screen flex overflow-hidden selection:bg-senaiRed/30">
+<body class="bg-slateDark text-slate-100 font-sans h-screen flex overflow-hidden selection:bg-primary/30">
     <div id="protocol-warning-overlay" style="display: none; background: #ef4444; color: white; padding: 12px 20px; font-weight: bold; text-align: center; font-size: 0.9rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-bottom: 2px solid #b91c1c;">
         ⚠️ ATENÇÃO: Você abriu o arquivo HTML diretamente no navegador (protocolo file://). As requisições de rede falharão (Erro: failed to fetch).
         Para que o sistema funcione corretamente, acesse o endereço do servidor local: 
@@ -53,18 +53,18 @@
         <!-- Sidebar Navigation -->
         <nav id="sidebar" class="w-80 min-w-[320px] bg-slatePanel/80 backdrop-blur-xl border-r border-slate-700/50 flex flex-col overflow-y-auto transition-transform duration-300 z-40 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
             <div class="logo-area sticky top-0 bg-slatePanel/90 backdrop-blur-md px-6 py-8 border-b border-slate-700/50 z-10 cursor-pointer" onclick="window.location.href='index.html'">
-                <h1 class="text-3xl font-extrabold tracking-tight text-white">SENAI<span class="text-senaiRed">4.0</span></h1>
+                <h1 class="text-3xl font-extrabold tracking-tight text-white">LMS<span class="text-primary">4.0</span></h1>
                 <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Portal de Treinamento</p>
             </div>
 
             <!-- Barra de Busca -->
             <div class="px-5 py-4 border-b border-slate-700/50">
-                <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões..." class="w-full px-4 py-3 bg-black/20 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all duration-300 shadow-inner">
+                <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões..." class="w-full px-4 py-3 bg-black/20 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 shadow-inner">
             </div>
 
             <!-- Card do Aluno -->
             <div class="instructor-card flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 mx-4 my-4 backdrop-blur-sm shadow-lg" id="student-profile-card" style="display: none;">
-                <div class="instructor-avatar flex items-center justify-center bg-gradient-to-br from-senaiRed to-red-700 text-white text-xs font-bold w-9 h-9 rounded-full shadow-md" id="student-avatar">AL</div>
+                <div class="instructor-avatar flex items-center justify-center bg-gradient-to-br from-primary to-red-700 text-white text-xs font-bold w-9 h-9 rounded-full shadow-md" id="student-avatar">AL</div>
                 <div class="instructor-info flex flex-col">
                     <span class="instructor-name text-sm font-bold text-white" id="student-profile-name">Aluno</span>
                     <span class="instructor-role text-xs text-slate-400" id="student-profile-class">Turma</span>
@@ -79,8 +79,8 @@
 
             <!-- Rodapé da Sidebar -->
             <div class="mt-auto px-6 py-4 text-xs text-slate-500 border-t border-slate-700/50 bg-black/10">
-                <div>SENAI 4.0 • Portal do Aluno • v2.0</div>
-                <div class="mt-1"><span id="diagnostico-link" class="underline cursor-pointer text-senaiRed hover:text-red-400 transition-colors">🩺 Validador</span></div>
+                <div>Portal LMS • Portal do Aluno • v2.0</div>
+                <div class="mt-1"><span id="diagnostico-link" class="underline cursor-pointer text-primary hover:text-red-400 transition-colors">🩺 Validador</span></div>
             </div>
         </nav>
 
@@ -90,7 +90,7 @@
             <header id="topbar" class="h-20 px-8 flex items-center justify-between border-b border-slate-700/50 bg-slatePanel/50 backdrop-blur-md z-30">
                 <div class="flex items-center gap-4">
                     <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none text-2xl">☰</button>
-                    <div id="breadcrumb" class="text-sm font-semibold text-slate-300 hover:text-white cursor-pointer transition-colors" onclick="window.location.href='index.html'">SENAI 4.0</div>
+                    <div id="breadcrumb" class="text-sm font-semibold text-slate-300 hover:text-white cursor-pointer transition-colors" onclick="window.location.href='index.html'">Portal LMS</div>
                 </div>
                 <div class="topbar-actions flex gap-3">
                     <button id="btn-notebook-toggle" title="Abrir Meu Caderno de Anotações" class="flex items-center gap-2 bg-slatePanel border border-slate-600/50 text-yellow-200 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 hover:border-slate-500 hover:-translate-y-1 hover:shadow-[0_4px_12px_rgba(234,179,8,0.15)] active:translate-y-0 transition-all duration-200 shadow-md focus:outline-none">
@@ -123,7 +123,7 @@
                             <div class="relative w-32 h-32 flex-shrink-0">
                                 <svg class="w-full h-full transform -rotate-90">
                                     <circle cx="64" cy="64" r="56" class="stroke-slate-700 fill-none" stroke-width="12"></circle>
-                                    <circle id="radial-progress-bar-el" cx="64" cy="64" r="56" class="stroke-senaiRed fill-none transition-all duration-1000 ease-out" stroke-width="12" stroke-dasharray="351" stroke-dashoffset="351" stroke-linecap="round"></circle>
+                                    <circle id="radial-progress-bar-el" cx="64" cy="64" r="56" class="stroke-primary fill-none transition-all duration-1000 ease-out" stroke-width="12" stroke-dasharray="351" stroke-dashoffset="351" stroke-linecap="round"></circle>
                                 </svg>
                                 <div class="absolute inset-0 flex items-center justify-center">
                                     <span class="text-2xl font-black text-white" id="radial-progress-percentage-text">0%</span>
@@ -135,10 +135,10 @@
                                 <div>
                                     <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
                                         <span>FUTEC — Fundamentos de TI</span>
-                                        <span id="progress-val-futec" class="text-senaiRed">0%</span>
+                                        <span id="progress-val-futec" class="text-primary">0%</span>
                                     </div>
                                     <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
-                                        <div id="progress-bar-futec" class="h-full bg-gradient-to-r from-senaiRed to-red-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                                        <div id="progress-bar-futec" class="h-full bg-gradient-to-r from-primary to-red-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
                                     </div>
                                 </div>
                                 <div>
@@ -173,8 +173,8 @@
                             <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider">Unidades</p>
                         </div>
                         <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-lg hover:bg-slate-800/50 transition-colors relative overflow-hidden group">
-                            <div class="absolute inset-0 bg-gradient-to-br from-senaiRed/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <h4 id="stat-completed" class="text-4xl font-black text-senaiRed mb-1 relative z-10">0</h4>
+                            <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <h4 id="stat-completed" class="text-4xl font-black text-primary mb-1 relative z-10">0</h4>
                             <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider relative z-10">Concluídos</p>
                         </div>
                     </div>
@@ -200,7 +200,7 @@
                         <h3 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4">📚 Índice do Curso</h3>
                         
                         <div class="mb-8">
-                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-senaiRed text-white text-xs px-2 py-1 rounded-md font-black">FUTEC</span> Fundamentos de TI (80h)</h4>
+                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-primary text-white text-xs px-2 py-1 rounded-md font-black">FUTEC</span> Fundamentos de TI (80h)</h4>
                             <table class="w-full text-sm text-left text-slate-400">
                                 <tbody>
                                     <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 1</td><td class="py-3 px-4">📺 Sistemas Operacionais + 💾 Dispositivos Computacionais</td></tr>
@@ -245,7 +245,7 @@
                         <div class="flex flex-col">
                             <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-1">Material desenvolvido por</span>
                             <span class="text-base font-bold text-white">Alan Marciano</span>
-                            <span class="text-xs text-slate-500">Instrutor • Gestor em T.I. • SENAI Sertãozinho</span>
+                            <span class="text-xs text-slate-500">Instrutor • Gestor em T.I. • Escola Modelo</span>
                         </div>
                     </div>
                 </div>
@@ -270,7 +270,7 @@
         </div>
         <div class="p-4 border-t border-slate-700/50 flex justify-between items-center bg-black/20">
             <span id="notebook-save-status" class="text-xs text-slate-500 font-semibold">Sincronizado.</span>
-            <button id="btn-save-notebook" class="hidden bg-senaiRed hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-lg">Salvar Manual</button>
+            <button id="btn-save-notebook" class="hidden bg-primary hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-lg">Salvar Manual</button>
         </div>
     </div>
 
@@ -281,24 +281,24 @@
             <!-- TELA DE LOGIN -->
             <div id="student-login-container">
                 <h2 class="text-3xl font-extrabold text-white mb-2 tracking-tight">🎓 Acesso do Aluno</h2>
-                <p class="text-slate-400 text-sm mb-6">Portal de Treinamento SENAI 4.0</p>
+                <p class="text-slate-400 text-sm mb-6">Portal de Treinamento Portal LMS</p>
                 
                 <div id="login-error-msg" class="hidden bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm mb-6 text-center font-medium"></div>
                 
                 <div class="mb-5">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">E-mail</label>
-                    <input type="email" id="login-email" placeholder="Digite seu e-mail..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                    <input type="email" id="login-email" placeholder="Digite seu e-mail..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                 </div>
 
                 <div class="mb-6">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Senha</label>
-                    <input type="password" id="login-password" placeholder="Digite sua senha..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                    <input type="password" id="login-password" placeholder="Digite sua senha..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                 </div>
                 
-                <button id="btn-student-login" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Entrar no Portal</button>
+                <button id="btn-student-login" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Entrar no Portal</button>
                 
                 <div class="flex justify-between text-sm font-medium">
-                    <span id="link-go-register" class="text-senaiRed hover:text-red-400 cursor-pointer transition-colors">Criar uma Conta</span>
+                    <span id="link-go-register" class="text-primary hover:text-red-400 cursor-pointer transition-colors">Criar uma Conta</span>
                     <span id="link-go-recovery" class="text-slate-500 hover:text-slate-300 cursor-pointer transition-colors">Esqueci minha senha</span>
                 </div>
             </div>
@@ -312,30 +312,30 @@
                 
                 <div class="mb-4">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nome Completo</label>
-                    <input type="text" id="register-name" placeholder="Nome Completo..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                    <input type="text" id="register-name" placeholder="Nome Completo..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">E-mail</label>
-                    <input type="email" id="register-email" placeholder="nome@email.com..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                    <input type="email" id="register-email" placeholder="nome@email.com..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Senha</label>
-                    <input type="password" id="register-password" placeholder="Criar senha..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                    <input type="password" id="register-password" placeholder="Criar senha..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                 </div>
 
                 <div class="mb-6">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Turma</label>
-                    <select id="register-class" required class="w-full px-4 py-3 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all cursor-pointer">
+                    <select id="register-class" required class="w-full px-4 py-3 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer">
                         <!-- Carregado via API -->
                     </select>
                 </div>
                 
-                <button id="btn-student-register" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Cadastrar e Acessar</button>
+                <button id="btn-student-register" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Cadastrar e Acessar</button>
                 
                 <div class="text-center text-sm font-medium">
-                    <span id="link-go-login" class="text-senaiRed hover:text-red-400 cursor-pointer transition-colors">Voltar para o Login</span>
+                    <span id="link-go-login" class="text-primary hover:text-red-400 cursor-pointer transition-colors">Voltar para o Login</span>
                 </div>
             </div>
 
@@ -348,20 +348,36 @@
                 
                 <div class="mb-6">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">E-mail Cadastrado</label>
-                    <input type="email" id="recovery-email" placeholder="Digite seu e-mail..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-senaiRed focus:ring-1 focus:ring-senaiRed transition-all">
+                    <input type="email" id="recovery-email" placeholder="Digite seu e-mail..." required class="w-full px-4 py-3 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
                 </div>
                 
-                <button id="btn-student-recover" class="w-full py-3 bg-gradient-to-r from-senaiRed to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Enviar Solicitação</button>
+                <button id="btn-student-recover" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mb-6">Enviar Solicitação</button>
                 
                 <div class="text-center text-sm font-medium">
-                    <span id="link-go-login-from-recovery" class="text-senaiRed hover:text-red-400 cursor-pointer transition-colors">Voltar para o Login</span>
+                    <span id="link-go-login-from-recovery" class="text-primary hover:text-red-400 cursor-pointer transition-colors">Voltar para o Login</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Load the data and application logic -->
+    <!-- Script que carrega dados em tempo real -->
     <script src="data.js"></script>
+    <!-- Script de Injeção de Branding -->
+    <script>
+        if (typeof courseData !== 'undefined' && courseData.branding) {
+            if (courseData.branding.primaryColor) {
+                document.documentElement.style.setProperty('--primary-color', courseData.branding.primaryColor);
+            }
+            if (courseData.branding.institutionName) {
+                document.title = courseData.branding.institutionName + ' - Portal do Aluno';
+                // Wait for DOM to load to update breadcrumb
+                document.addEventListener('DOMContentLoaded', () => {
+                    const bc = document.getElementById('breadcrumb');
+                    if(bc) bc.textContent = courseData.branding.institutionName;
+                });
+            }
+        }
+    </script>
     <script src="app.js"></script>
 </body>
 

@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Estado atual carregado
     let currentKey = null;
-    let currentBreadcrumb = "SENAI 4.0";
+    let currentBreadcrumb = "Portal LMS";
     let breadcrumbHistory = []; // Histórico de navegação
     
     // Estado do sistema de avaliações
@@ -56,10 +56,34 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Marked.js não carregou.");
     }
 
+    function getActiveStructure() {
+        let structure = [];
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        let courseId = null;
+        if (studentInfoStr) {
+            try {
+                const info = JSON.parse(studentInfoStr);
+                courseId = info.courseId;
+            } catch (e) {}
+        }
+
+        if (courseId && typeof courseData !== 'undefined' && courseData.courses) {
+            const course = courseData.courses.find(c => c.id === courseId);
+            if (course && course.structure) {
+                structure = course.structure;
+            }
+        }
+        if (structure.length === 0 && typeof courseData !== 'undefined' && courseData.courseStructure) {
+            structure = courseData.courseStructure;
+        }
+        return structure;
+    }
+
     // Estrutura das Nomenclaturas dos Arquivos
     const allEvaluationKeys = [];
-    if (typeof courseData !== 'undefined' && courseData.courseStructure) {
-        courseData.courseStructure.forEach(mod => {
+    if (typeof courseData !== 'undefined') {
+        const structure = getActiveStructure();
+        structure.forEach(mod => {
             mod.units.forEach(u => {
                 allEvaluationKeys.push(u.avaliacaoKey);
             });
@@ -83,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!sidebarContainer) return;
         sidebarContainer.innerHTML = "";
 
-        const structure = courseData.courseStructure || [];
+        const structure = getActiveStructure();
         structure.forEach(mod => {
             const section = document.createElement("div");
             section.className = "py-4 border-b border-slate-700/50 group collapsed";
@@ -92,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
             h3.className = "cursor-pointer flex items-center justify-between text-xs font-extrabold text-slate-400 uppercase tracking-widest px-6 mb-2 hover:text-white transition-colors select-none";
             h3.innerHTML = `
                 <span>${mod.name}</span>
-                <span class="text-senaiRed font-bold ml-auto mr-3" id="progress-m-${mod.id}">0%</span>
+                <span class="text-primary font-bold ml-auto mr-3" id="progress-m-${mod.id}">0%</span>
                 <span class="transform transition-transform duration-300 group-[.collapsed]:-rotate-90">▾</span>
             `;
             h3.addEventListener("click", () => {
@@ -124,8 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-slate-500 uppercase font-bold mt-1">📘 Apostila Guia</span>`;
                     li.onclick = () => {
-                        document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-senaiRed/20', 'border-senaiRed', 'text-white'));
-                        li.classList.add('bg-senaiRed/20', 'border-senaiRed', 'text-white');
+                        document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-primary/20', 'border-primary', 'text-white'));
+                        li.classList.add('bg-primary/20', 'border-primary', 'text-white');
                         loadContent(u.apostilaKey, li, `${mod.id} > Unidade ${u.id} > Apostila`);
                     };
                     ul.appendChild(li);
@@ -138,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     li.setAttribute("data-key", u.avaliacaoKey);
                     li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-blue-400 uppercase font-bold mt-1">🎯 Avaliação</span>`;
                     li.onclick = () => {
-                        document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-senaiRed/20', 'border-senaiRed', 'text-white'));
+                        document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-primary/20', 'border-primary', 'text-white'));
                         li.classList.add('bg-blue-500/20', 'border-blue-500', 'text-white');
                         loadContent(u.avaliacaoKey, li, `${mod.id} > Unidade ${u.id} > Avaliação`);
                     };
@@ -250,7 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="text-white">${pct}%</span>
                     </div>
                     <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
-                        <div class="h-full bg-gradient-to-r from-senaiRed to-red-500 rounded-full transition-all duration-1000" style="width: ${pct}%;"></div>
+                        <div class="h-full bg-gradient-to-r from-primary to-red-500 rounded-full transition-all duration-1000" style="width: ${pct}%;"></div>
                     </div>
                 `;
                 progressBarsContainer.appendChild(barItem);
@@ -425,11 +449,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     const isApproved = sub.score >= 60;
                     const badgeClass = isApproved ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30';
                     const badgeText = isApproved ? 'Aprovado' : 'Recuperação';
-                    const scoreColor = isApproved ? 'text-white' : 'text-senaiRed';
+                    const scoreColor = isApproved ? 'text-white' : 'text-primary';
                     
                     card.innerHTML = `
                         <div class="flex justify-between items-start">
-                            <span class="text-xs font-bold text-senaiRed uppercase tracking-wider">${moduleName}</span>
+                            <span class="text-xs font-bold text-primary uppercase tracking-wider">${moduleName}</span>
                             <span class="${badgeClass} text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider">${badgeText}</span>
                         </div>
                         <h4 class="text-3xl font-black ${scoreColor} mt-1">${sub.score}%</h4>
@@ -554,9 +578,9 @@ document.addEventListener("DOMContentLoaded", () => {
             "SSD": "Solid State Drive — Disco eletrônico sem partes móveis, muito mais rápido, durável e eficiente que os discos rígidos (HDs) tradicionais.",
             "NVMe": "Non-Volatile Memory Express — Protocolo de alto desempenho projetado especificamente para acessar armazenamento de estado sólido rápido via slots PCIe.",
             "HD": "Hard Disk — Disco Rígido tradicional. Dispositivo de armazenamento mecânico e magnético de alta capacidade mas velocidades lentas devido às agulhas de leitura.",
-            "FUTEC": "Módulo de Fundamentos de TI do Portal SENAI 4.0 (80h de carga horária).",
-            "FECOP": "Módulo de Colaboração e Produtividade do Portal SENAI 4.0 (120h de carga horária).",
-            "IRCOM": "Módulo de Instalação de Recursos Computacionais do Portal SENAI 4.0 (120h de carga horária)."
+            "FUTEC": "Módulo de Fundamentos de TI do Portal Portal LMS (80h de carga horária).",
+            "FECOP": "Módulo de Colaboração e Produtividade do Portal Portal LMS (120h de carga horária).",
+            "IRCOM": "Módulo de Instalação de Recursos Computacionais do Portal Portal LMS (120h de carga horária)."
         };
 
         const sortedKeys = Object.keys(glossary).sort((a, b) => b.length - a.length);
@@ -641,7 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         let reportHTML = `
             <div class="diagnostico-panel">
-                <h2>🩺 Validador e Saúde de Conteúdo (SENAI 4.0)</h2>
+                <h2>🩺 Validador e Saúde de Conteúdo (Portal LMS)</h2>
                 <p style="color: var(--text-muted); margin-bottom: 20px;">
                     Esta ferramenta analisa automaticamente o tamanho das apostilas, a presença de imagens e a integridade de todas as avaliações no sistema.
                 </p>
@@ -1364,7 +1388,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="pdf-page" style="page-break-after: ${v < versionsCount - 1 ? 'always' : 'auto'}; min-height: 98vh; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <div class="pdf-header">
-                        <div class="logo">SENAI<span>4.0</span></div>
+                        <div class="logo">LMS<span>4.0</span></div>
                         <div class="meta">
                             <span style="font-size:11pt;font-weight:800;color:#e9c46a;display:block;margin-bottom:2px">
                                 ${isAnswerKey ? '🔑 GABARITO DO PROFESSOR' : '📝 AVALIAÇÃO'}${versionTitleText}
@@ -1395,7 +1419,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="pdf-footer" style="padding: 10px 40px 30px; margin-top: auto;">
                     <hr style="border: none; border-top: 2px solid #e0e6f0; margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between; font-size: 8.5pt; color: #888;">
-                        <span>SENAI Sertãozinho — Portal SENAI 4.0 · ${dateStr}</span>
+                        <span>Escola Modelo — Portal Portal LMS · ${dateStr}</span>
                         <span style="color:#0f3460;font-weight:700">✍️ Instrutor Alan Marciano — Gestor em T.I.</span>
                     </div>
                 </div>
@@ -2064,12 +2088,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Formata o breadcrumb com links clicáveis
     function formatBreadcrumb(text) {
-        if (!text || text === "SENAI 4.0") {
-            return `<span class="breadcrumb-home" onclick="window.location.href='index.html'">SENAI 4.0</span>`;
+        if (!text || text === "Portal LMS") {
+            return `<span class="breadcrumb-home" onclick="window.location.href='index.html'">Portal LMS</span>`;
         }
         
         const parts = text.split(" > ");
-        let html = `<span class="breadcrumb-home" onclick="window.location.href='index.html'">SENAI 4.0</span>`;
+        let html = `<span class="breadcrumb-home" onclick="window.location.href='index.html'">Portal LMS</span>`;
         
         parts.forEach((part, index) => {
             if (index > 0) {
@@ -2142,7 +2166,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const rawMarkdown = courseData[currentKey];
         const htmlContent = marked.parse(rawMarkdown);
-        const title = currentBreadcrumb || "SENAI 4.0 - Apostila";
+        const title = currentBreadcrumb || "Portal LMS - Apostila";
         const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
         const printWindow = window.open("", "_blank");
@@ -2224,10 +2248,10 @@ document.addEventListener("DOMContentLoaded", () => {
 </head>
 <body>
     <div class="pdf-header">
-        <div class="logo">SENAI<span>4.0</span></div>
+        <div class="logo">LMS<span>4.0</span></div>
         <div class="meta">
             <span style="font-size:11pt;font-weight:800;color:#e9c46a;display:block;margin-bottom:3px">Instrutor Alan Marciano</span>
-            <span style="color:#a8d8ff;font-size:9pt">Gestor em T.I. — SENAI Sertãozinho</span><br>
+            <span style="color:#a8d8ff;font-size:9pt">Gestor em T.I. — Escola Modelo</span><br>
             Documento gerado em ${dateStr}<br>
             <strong style="color:#e9c46a">USO RESTRITO — MATERIAL DIDÁTICO</strong>
         </div>
@@ -2236,7 +2260,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="pdf-body">
         ${htmlContent}
         <div class="pdf-footer" style="display:flex;justify-content:space-between;align-items:center">
-            <span>SENAI Sertãozinho — Portal SENAI 4.0 · ${dateStr}</span>
+            <span>Escola Modelo — Portal Portal LMS · ${dateStr}</span>
             <span style="color:#0f3460;font-weight:700">✍️ Instrutor Alan Marciano — Gestor em T.I.</span>
         </div>
     </div>
@@ -2299,8 +2323,10 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 classes.forEach(c => {
                     const opt = document.createElement('option');
-                    opt.value = c;
-                    opt.textContent = c;
+                    opt.value = c.name;
+                    opt.textContent = c.name;
+                    // Opcionalmente podemos salvar o courseId num dataset caso necessário depois
+                    opt.dataset.courseId = c.courseId;
                     selectEl.appendChild(opt);
                 });
             }
@@ -2428,7 +2454,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     name: data.student.name,
                     email: data.student.email,
                     studentClass: data.student.studentClass,
-                    period: data.student.period
+                    period: data.student.period,
+                    courseId: data.student.courseId
                 }));
                 checkStudentSession();
             })

@@ -23,12 +23,14 @@ const sqliteDb = new sqlite3.Database(dbPath);
 let memoryDB = {
     students: [],
     classes: [],
+    courses: [], // Novo: multi-cursos
+    branding: {}, // Novo: white-label
     submissions: [],
     notes: {},
     annotations: {},
     forum: [],
     config: { releasedItems: {} },
-    courseStructure: [],
+    courseStructure: [], // Em breve obsoleto, migrado para courses
     evaluations: {},
     progress: {},
     uploads: {},
@@ -115,6 +117,8 @@ function createTables() {
         sqliteDb.serialize(() => {
             sqliteDb.run("CREATE TABLE IF NOT EXISTS students (key TEXT PRIMARY KEY, value TEXT)");
             sqliteDb.run("CREATE TABLE IF NOT EXISTS classes (key TEXT PRIMARY KEY, value TEXT)");
+            sqliteDb.run("CREATE TABLE IF NOT EXISTS courses (key TEXT PRIMARY KEY, value TEXT)");
+            sqliteDb.run("CREATE TABLE IF NOT EXISTS branding (key TEXT PRIMARY KEY, value TEXT)");
             sqliteDb.run("CREATE TABLE IF NOT EXISTS submissions (key TEXT PRIMARY KEY, value TEXT)");
             sqliteDb.run("CREATE TABLE IF NOT EXISTS notes (key TEXT PRIMARY KEY, value TEXT)");
             sqliteDb.run("CREATE TABLE IF NOT EXISTS annotations (key TEXT PRIMARY KEY, value TEXT)");
@@ -225,6 +229,7 @@ function populateDefaultsIfEmpty() {
             { 
                 name: '1DES', 
                 period: 'Manhã',
+                courseId: 'curso_legacy_01',
                 registrationEnabled: true,
                 activeExamKey: null,
                 activeExamQuestionCount: 20,
@@ -233,6 +238,7 @@ function populateDefaultsIfEmpty() {
             { 
                 name: '2DES', 
                 period: 'Tarde',
+                courseId: 'curso_legacy_01',
                 registrationEnabled: true,
                 activeExamKey: null,
                 activeExamQuestionCount: 20,
@@ -241,39 +247,56 @@ function populateDefaultsIfEmpty() {
         ];
     }
 
-    if (memoryDB.courseStructure.length === 0) {
-        memoryDB.courseStructure = [
+    if (Object.keys(memoryDB.branding).length === 0) {
+        memoryDB.branding = {
+            id: 'default',
+            institutionName: 'SENAI 4.0',
+            primaryColor: '#ef4444',
+            logoUrl: ''
+        };
+    }
+
+    if (memoryDB.courses.length === 0) {
+        // Migration will populate structure if it comes from legacy courseStructure
+        memoryDB.courses = [
             {
-                id: 'FUTEC',
-                name: 'FUTEC — Fund. de TI (80h)',
-                units: [
-                    { id: "1", name: "Sistemas Operacionais + Dispositivos", apostilaKey: "Apostila_FUTEC_1", avaliacaoKey: "Avaliacao_FUTEC_1", files: [] },
-                    { id: "2", name: "Indústria 4.0 + Internet", apostilaKey: "Apostila_FUTEC_2", avaliacaoKey: "Avaliacao_FUTEC_2", files: [] },
-                    { id: "3", name: "Hardware + BIOS/UEFI + Periféricos", apostilaKey: "Apostila_FUTEC_3", avaliacaoKey: "Avaliacao_FUTEC_3", files: [] },
-                    { id: "4", name: "Instalação de Windows Server + KMS", apostilaKey: "Apostila_FUTEC_4", avaliacaoKey: "Avaliacao_FUTEC_4", files: [] },
-                    { id: "5", name: "CLI de Linux + Permissões + FHS", apostilaKey: "Apostila_FUTEC_5", avaliacaoKey: "Avaliacao_FUTEC_5", files: [] }
-                ]
-            },
-            {
-                id: 'FECOP',
-                name: 'FECOP — Colab. e Prod. (120h)',
-                units: [
-                    { id: "1", name: "Produtividade + Office 365", apostilaKey: "Apostila_FECOP_1", avaliacaoKey: "Avaliacao_FECOP_1", files: [] },
-                    { id: "2", name: "Active Directory + LDAP + Grupos/GPO", apostilaKey: "Apostila_FECOP_2", avaliacaoKey: "Avaliacao_FECOP_2", files: [] },
-                    { id: "3", name: "Serviços em Nuvem + AWS/Azure", apostilaKey: "Apostila_FECOP_3", avaliacaoKey: "Avaliacao_FECOP_3", files: [] },
-                    { id: "4", name: "Políticas Corporativas + Auditoria/Logs", apostilaKey: "Apostila_FECOP_4", avaliacaoKey: "Avaliacao_FECOP_4", files: [] },
-                    { id: "5", name: "Trabalho Remoto + VPN + Segurança", apostilaKey: "Apostila_FECOP_5", avaliacaoKey: "Avaliacao_FECOP_5", files: [] }
-                ]
-            },
-            {
-                id: 'IRCOM',
-                name: 'IRCOM — Inst. Rec. Comp. (120h)',
-                units: [
-                    { id: "1", name: "Planejamento de Instalação + Requisitos", apostilaKey: "Apostila_IRCOM_1", avaliacaoKey: "Avaliacao_IRCOM_1", files: [] },
-                    { id: "2", name: "CLP (PLC) + Redes Industriais", apostilaKey: "Apostila_IRCOM_2", avaliacaoKey: "Avaliacao_IRCOM_2", files: [] },
-                    { id: "3", name: "Protocolos Industriais + Modbus/OPC-UA", apostilaKey: "Apostila_IRCOM_3", avaliacaoKey: "Avaliacao_IRCOM_3", files: [] },
-                    { id: "4", name: "Comissionamento de Sistemas + Testes", apostilaKey: "Apostila_IRCOM_4", avaliacaoKey: "Avaliacao_IRCOM_4", files: [] },
-                    { id: "5", name: "Manutenção Preventiva e Corretiva", apostilaKey: "Apostila_IRCOM_5", avaliacaoKey: "Avaliacao_IRCOM_5", files: [] }
+                id: 'curso_legacy_01',
+                name: 'Curso Técnico em TI (Legado)',
+                description: 'Curso original contendo os módulos FUTEC, FECOP e IRCOM.',
+                structure: memoryDB.courseStructure && memoryDB.courseStructure.length > 0 ? [...memoryDB.courseStructure] : [
+                    {
+                        id: 'FUTEC',
+                        name: 'FUTEC — Fund. de TI (80h)',
+                        units: [
+                            { id: "1", name: "Sistemas Operacionais + Dispositivos", apostilaKey: "Apostila_FUTEC_1", avaliacaoKey: "Avaliacao_FUTEC_1", files: [] },
+                            { id: "2", name: "Indústria 4.0 + Internet", apostilaKey: "Apostila_FUTEC_2", avaliacaoKey: "Avaliacao_FUTEC_2", files: [] },
+                            { id: "3", name: "Hardware + BIOS/UEFI + Periféricos", apostilaKey: "Apostila_FUTEC_3", avaliacaoKey: "Avaliacao_FUTEC_3", files: [] },
+                            { id: "4", name: "Instalação de Windows Server + KMS", apostilaKey: "Apostila_FUTEC_4", avaliacaoKey: "Avaliacao_FUTEC_4", files: [] },
+                            { id: "5", name: "CLI de Linux + Permissões + FHS", apostilaKey: "Apostila_FUTEC_5", avaliacaoKey: "Avaliacao_FUTEC_5", files: [] }
+                        ]
+                    },
+                    {
+                        id: 'FECOP',
+                        name: 'FECOP — Colab. e Prod. (120h)',
+                        units: [
+                            { id: "1", name: "Produtividade + Office 365", apostilaKey: "Apostila_FECOP_1", avaliacaoKey: "Avaliacao_FECOP_1", files: [] },
+                            { id: "2", name: "Active Directory + LDAP + Grupos/GPO", apostilaKey: "Apostila_FECOP_2", avaliacaoKey: "Avaliacao_FECOP_2", files: [] },
+                            { id: "3", name: "Serviços em Nuvem + AWS/Azure", apostilaKey: "Apostila_FECOP_3", avaliacaoKey: "Avaliacao_FECOP_3", files: [] },
+                            { id: "4", name: "Políticas Corporativas + Auditoria/Logs", apostilaKey: "Apostila_FECOP_4", avaliacaoKey: "Avaliacao_FECOP_4", files: [] },
+                            { id: "5", name: "Trabalho Remoto + VPN + Segurança", apostilaKey: "Apostila_FECOP_5", avaliacaoKey: "Avaliacao_FECOP_5", files: [] }
+                        ]
+                    },
+                    {
+                        id: 'IRCOM',
+                        name: 'IRCOM — Inst. Rec. Comp. (120h)',
+                        units: [
+                            { id: "1", name: "Planejamento de Instalação + Requisitos", apostilaKey: "Apostila_IRCOM_1", avaliacaoKey: "Avaliacao_IRCOM_1", files: [] },
+                            { id: "2", name: "CLP (PLC) + Redes Industriais", apostilaKey: "Apostila_IRCOM_2", avaliacaoKey: "Avaliacao_IRCOM_2", files: [] },
+                            { id: "3", name: "Protocolos Industriais + Modbus/OPC-UA", apostilaKey: "Apostila_IRCOM_3", avaliacaoKey: "Avaliacao_IRCOM_3", files: [] },
+                            { id: "4", name: "Comissionamento de Sistemas + Testes", apostilaKey: "Apostila_IRCOM_4", avaliacaoKey: "Avaliacao_IRCOM_4", files: [] },
+                            { id: "5", name: "Manutenção Preventiva e Corretiva", apostilaKey: "Apostila_IRCOM_5", avaliacaoKey: "Avaliacao_IRCOM_5", files: [] }
+                        ]
+                    }
                 ]
             }
         ];
@@ -329,9 +352,9 @@ async function init() {
         } catch(e){}
     }
 
-    // 2. Carrega todos os dados do SQLite para memoryDB
     memoryDB.students = await loadTable('students', true);
     memoryDB.classes = await loadTable('classes', true);
+    memoryDB.courses = await loadTable('courses', true);
     memoryDB.submissions = await loadTable('submissions', true);
     memoryDB.forum = await loadTable('forum', true);
     memoryDB.admins = await loadTable('admins', true);
@@ -345,6 +368,11 @@ async function init() {
     // Carrega Singletons
     const loadedConfig = await loadTable('config', false);
     memoryDB.config = loadedConfig['app_config'] || { releasedItems: {} };
+
+    const loadedBranding = await loadTable('branding', false);
+    if (loadedBranding['default']) {
+        memoryDB.branding = loadedBranding['default'];
+    }
 
     const loadedStructure = await loadTable('course_structure', false);
     memoryDB.courseStructure = loadedStructure['structure'] || [];
@@ -424,6 +452,7 @@ function saveToDisk() {
             try {
                 syncArrayTable('students', memoryDB.students, 'email');
                 syncArrayTable('classes', memoryDB.classes, 'name');
+                syncArrayTable('courses', memoryDB.courses, 'id');
                 syncArrayTable('submissions', memoryDB.submissions, 'id');
                 syncArrayTable('forum', memoryDB.forum, 'id');
                 syncArrayTable('admins', memoryDB.admins, 'email');
@@ -436,6 +465,9 @@ function saveToDisk() {
 
                 sqliteDb.run("DELETE FROM config");
                 sqliteDb.run("INSERT INTO config (key, value) VALUES (?, ?)", 'app_config', JSON.stringify(memoryDB.config));
+
+                sqliteDb.run("DELETE FROM branding");
+                sqliteDb.run("INSERT INTO branding (key, value) VALUES (?, ?)", 'default', JSON.stringify(memoryDB.branding));
 
                 sqliteDb.run("DELETE FROM course_structure");
                 sqliteDb.run("INSERT INTO course_structure (key, value) VALUES (?, ?)", 'structure', JSON.stringify(memoryDB.courseStructure));
