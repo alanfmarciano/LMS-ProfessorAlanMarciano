@@ -803,34 +803,42 @@
             </div>
 
             <!-- ABA 2: CONTROLE DE LIBERAÇÃO -->
-            <div id="tab-materials" class="tab-content" style="display: none; flex-direction: column; gap: 25px; width: 100%;">
-                <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg mb-4">
+            <div id="tab-materials" class="tab-content" style="display: none; flex-direction: column; gap: 20px; width: 100%;">
+                <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg">
                     <div class="font-bold text-white text-lg flex items-center gap-2 mb-2 pb-3 border-b border-white/10">🔓 Controle Geral de Liberação de Materiais e Avaliações</div>
                     <p class="text-sm text-slate-400 leading-relaxed">
                         Aqui você decide quais apostilas e provas estão acessíveis para leitura e estudo no portal dos alunos. Toggles desativados bloqueiam o acesso e exibem um cadeado vermelho na barra lateral deles.
                     </p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- FUTEC -->
-                    <div class="bg-slate-800/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-4">
-                        <div class="text-senaiRed font-black text-lg border-b-2 border-senaiRed pb-2">FUTEC — Fundamentos de TI</div>
-                        <div class="flex flex-col gap-3" id="materials-list-FUTEC">
-                            <!-- Injected dynamically -->
-                        </div>
+                
+                <!-- Barra de Seleção de Módulo e Ações em Lote -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-800/30 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-lg">
+                    <!-- Abas de Módulos -->
+                    <div class="flex gap-2 p-1.5 bg-black/30 rounded-xl border border-slate-700/50 w-fit" id="module-selector-tabs">
+                        <button class="module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none" data-module="FUTEC">FUTEC</button>
+                        <button class="module-tab-btn px-4 py-2 text-xs font-extrabold text-slate-400 hover:text-white rounded-lg transition-all focus:outline-none" data-module="FECOP">FECOP</button>
+                        <button class="module-tab-btn px-4 py-2 text-xs font-extrabold text-slate-400 hover:text-white rounded-lg transition-all focus:outline-none" data-module="IRCOM">IRCOM</button>
                     </div>
-                    <!-- FECOP -->
-                    <div class="bg-slate-800/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-4">
-                        <div class="text-blue-400 font-black text-lg border-b-2 border-blue-400 pb-2">FECOP — Colaboração e Prod.</div>
-                        <div class="flex flex-col gap-3" id="materials-list-FECOP">
-                            <!-- Injected dynamically -->
-                        </div>
+                    
+                    <!-- Botões de Ação em Lote -->
+                    <div class="flex gap-3">
+                        <button id="btn-release-all-module" class="px-4 py-2.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-sm focus:outline-none">
+                            🔓 Liberar Módulo Completo
+                        </button>
+                        <button id="btn-block-all-module" class="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-sm focus:outline-none">
+                            🔒 Bloquear Módulo Completo
+                        </button>
                     </div>
-                    <!-- IRCOM -->
-                    <div class="bg-slate-800/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-4">
-                        <div class="text-purple-400 font-black text-lg border-b-2 border-purple-400 pb-2">IRCOM — Instalação de Recursos</div>
-                        <div class="flex flex-col gap-3" id="materials-list-IRCOM">
-                            <!-- Injected dynamically -->
-                        </div>
+                </div>
+
+                <!-- Painel do Módulo Ativo -->
+                <div class="bg-slate-800/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-5">
+                    <div class="flex justify-between items-center pb-3 border-b border-slate-700/50">
+                        <h3 id="current-module-title-display" class="font-black text-lg text-white">Módulo</h3>
+                        <span id="current-module-badge-display" class="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-md">MÓDULO</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="active-module-materials-list">
+                        <!-- Injetado dinamicamente via JS -->
                     </div>
                 </div>
             </div>
@@ -1544,11 +1552,21 @@
         let currentModalExamState = null;
         let examHistoryCache = []; // Histórico de provas geradas para a avaliação atual
         let filterUnusedOnly = false; // Toggle para filtrar apenas questões inéditas
+        let activeReleaseModule = 'FUTEC';
 
         // Login Handler
         document.getElementById('btn-login').addEventListener('click', attemptLogin);
         document.getElementById('admin-pass').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') attemptLogin();
+        });
+
+        // Configurar seletores de abas do módulo
+        document.querySelectorAll('.module-tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                activeReleaseModule = btn.getAttribute('data-module');
+                renderMaterialsList();
+                refreshDashboard();
+            });
         });
 
         function attemptLogin() {
@@ -1631,50 +1649,94 @@
 
         // Renderiza switches de controle de liberação (Aba Controle de Liberação)
         function renderMaterialsList() {
-            const modulesList = ['FUTEC', 'FECOP', 'IRCOM'];
+            const m = activeReleaseModule;
+            const container = document.getElementById('active-module-materials-list');
+            if (!container) return;
             
-            modulesList.forEach(m => {
-                const container = document.getElementById(`materials-list-${m}`);
-                if (!container) return;
+            // Atualizar o título e o badge do módulo selecionado no header
+            const titleDisplay = document.getElementById('current-module-title-display');
+            const badgeDisplay = document.getElementById('current-module-badge-display');
+            
+            const moduleNames = {
+                'FUTEC': 'Fundamentos de TI',
+                'FECOP': 'Colaboração e Produtividade',
+                'IRCOM': 'Instalação de Recursos'
+            };
+            const moduleBadges = {
+                'FUTEC': 'bg-red-500/20 text-red-400 border border-red-500/30',
+                'FECOP': 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+                'IRCOM': 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+            };
+            
+            if (titleDisplay) {
+                titleDisplay.textContent = `${m} — ${moduleNames[m]}`;
+            }
+            if (badgeDisplay) {
+                badgeDisplay.textContent = m;
+                badgeDisplay.className = `text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-md ${moduleBadges[m]}`;
+            }
+            
+            // Atualizar classes dos botões seletores de abas
+            document.querySelectorAll('.module-tab-btn').forEach(btn => {
+                const mod = btn.getAttribute('data-module');
+                if (mod === m) {
+                    if (mod === 'FUTEC') btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-red-600 text-white shadow-lg shadow-red-500/20';
+                    else if (mod === 'FECOP') btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-blue-600 text-white shadow-lg shadow-blue-500/20';
+                    else if (mod === 'IRCOM') btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-purple-600 text-white shadow-lg shadow-purple-500/20';
+                } else {
+                    btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold text-slate-400 hover:text-white rounded-lg transition-all focus:outline-none';
+                }
+            });
+
+            container.innerHTML = '';
+            
+            // Encontrar o módulo correspondente na estrutura do curso para pegar nomes reais
+            const modData = (typeof courseData !== 'undefined' && courseData.courseStructure) 
+                ? courseData.courseStructure.find(mod => mod.id === m) 
+                : null;
+
+            for (let i = 1; i <= 5; i++) {
+                const unitData = modData ? modData.units.find(u => u.id === i) : null;
+                const unitName = unitData ? unitData.name : `Unidade ${i}`;
                 
-                container.innerHTML = '';
-                for (let i = 1; i <= 5; i++) {
-                    const apKey = `Apostila_${m}_${i}`;
-                    const apDiv = document.createElement('div');
-                    apDiv.className = 'material-release-item bg-black/15 border border-white/10 px-4 py-3 rounded-xl flex justify-between items-center transition-all hover:bg-black/25';
-                    apDiv.innerHTML = `
-                        <div class="flex flex-col gap-0.5">
-                            <span class="text-sm font-bold text-white">Apostila - Unidade ${i}</span>
-                            <span class="text-[11px] text-slate-400 uppercase tracking-wider font-bold">📘 Apostila</span>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" class="material-toggle" data-key="${apKey}" id="toggle-mat-${apKey}">
-                            <span class="slider"></span>
-                        </label>
-                    `;
-                    container.appendChild(apDiv);
-                    
-                    const avKey = `Avaliacao_${m}_${i}`;
-                    const avDiv = document.createElement('div');
-                    avDiv.className = 'material-release-item bg-black/15 border border-white/10 px-4 py-3 rounded-xl flex justify-between items-center transition-all hover:bg-black/25';
-                    avDiv.innerHTML = `
-                        <div class="flex flex-col gap-0.5">
-                            <span class="text-sm font-bold text-white">Avaliação - Unidade ${i}</span>
-                            <span class="text-[11px] text-senaiRed uppercase tracking-wider font-bold">🎯 Avaliação</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button class="btn-preview-exam bg-white/5 border border-white/10 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors hover:bg-white/10" data-key="${avKey}">
-                                🖨️ Config/Imp
-                            </button>
-                            <label class="switch">
-                                <input type="checkbox" class="material-toggle" data-key="${avKey}" id="toggle-mat-${avKey}">
+                const apKey = `Apostila_${m}_${i}`;
+                const avKey = `Avaliacao_${m}_${i}`;
+                
+                const unitCard = document.createElement('div');
+                unitCard.className = 'bg-black/20 border border-white/10 p-3.5 rounded-2xl flex flex-col gap-2 transition-all hover:bg-black/30 hover:border-slate-700/50';
+                unitCard.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-extrabold text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded-md border border-white/5">Unidade ${i}</span>
+                    </div>
+                    <div class="text-xs font-bold text-slate-200 truncate pr-1" title="${unitName}">
+                        ${unitName}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-1">
+                        <!-- Apostila Capsule -->
+                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors">
+                            <span class="text-[10px] text-slate-400 font-extrabold tracking-wider uppercase">📘 Apostila</span>
+                            <label class="switch scale-90 origin-right">
+                                <input type="checkbox" class="material-toggle" data-key="${apKey}" id="toggle-mat-${apKey}">
                                 <span class="slider"></span>
                             </label>
                         </div>
-                    `;
-                    container.appendChild(avDiv);
-                }
-            });
+                        <!-- Avaliação Capsule -->
+                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors">
+                            <span class="text-[10px] text-senaiRed font-extrabold tracking-wider uppercase">🎯 Prova</span>
+                            <div class="flex items-center gap-1.5">
+                                <button class="btn-preview-exam bg-white/5 hover:bg-white/15 border border-white/10 text-white p-1 rounded-lg text-[10px] font-bold hover:border-white/20 transition-colors" data-key="${avKey}" title="Configurar / Imprimir Prova">
+                                    🖨️
+                                </button>
+                                <label class="switch scale-90 origin-right">
+                                    <input type="checkbox" class="material-toggle" data-key="${avKey}" id="toggle-mat-${avKey}">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(unitCard);
+            }
             
             document.querySelectorAll('.material-toggle').forEach(chk => {
                 chk.addEventListener('change', (e) => {
@@ -1710,6 +1772,57 @@
                     openExamPreviewModal(key);
                 });
             });
+        }
+
+        // Configurar botões de ação em lote (Liberar / Bloquear tudo)
+        document.getElementById('btn-release-all-module').addEventListener('click', () => {
+            if (confirm(`Deseja realmente LIBERAR todas as Apostilas e Provas do módulo ${activeReleaseModule} para a turma ativa?`)) {
+                releaseAllItemsInModule(true);
+            }
+        });
+
+        document.getElementById('btn-block-all-module').addEventListener('click', () => {
+            if (confirm(`Deseja realmente BLOQUEAR todas as Apostilas e Provas do módulo ${activeReleaseModule} para a turma ativa?`)) {
+                releaseAllItemsInModule(false);
+            }
+        });
+
+        async function releaseAllItemsInModule(released) {
+            const activeClassSel = document.getElementById('admin-active-class');
+            const currentActiveClass = activeClassSel ? activeClassSel.value : '';
+            if (!currentActiveClass) {
+                alert('Selecione uma turma ativa primeiro!');
+                return;
+            }
+
+            const m = activeReleaseModule;
+            const keys = [];
+            for (let i = 1; i <= 5; i++) {
+                keys.push(`Apostila_${m}_${i}`);
+                keys.push(`Avaliacao_${m}_${i}`);
+            }
+
+            document.body.style.cursor = 'wait';
+
+            try {
+                for (const itemKey of keys) {
+                    await fetch('/api/admin/release-item', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': adminPassword
+                        },
+                        body: JSON.stringify({ studentClass: currentActiveClass, itemKey, released })
+                    });
+                }
+                console.log(`Todos os itens de ${m} foram ${released ? 'liberados' : 'bloqueados'}.`);
+            } catch (err) {
+                console.error("Erro ao alterar liberações em lote:", err);
+                alert("Erro ao aplicar alteração em lote.");
+            } finally {
+                document.body.style.cursor = 'default';
+                refreshDashboard();
+            }
         }
         function updateStudentsTable(students) {
             const tbody = document.getElementById('students-body');

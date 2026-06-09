@@ -97,13 +97,18 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             h3.addEventListener("click", () => {
                 section.classList.toggle("collapsed");
-                ul.classList.toggle("max-h-0");
-                ul.classList.toggle("opacity-0");
+                if (ul.classList.contains("max-h-0")) {
+                    ul.classList.remove("max-h-0", "opacity-0");
+                    ul.classList.add("max-h-[2000px]", "opacity-100");
+                } else {
+                    ul.classList.remove("max-h-[2000px]", "opacity-100");
+                    ul.classList.add("max-h-0", "opacity-0");
+                }
             });
 
             const ul = document.createElement("ul");
             ul.id = `nav-${mod.id}`;
-            ul.className = "list-none max-h-[2000px] opacity-100 transition-all duration-300 overflow-hidden max-h-0 opacity-0";
+            ul.className = "list-none transition-all duration-300 overflow-hidden max-h-0 opacity-0";
 
             mod.units.forEach(u => {
                 // Render Apostila Item
