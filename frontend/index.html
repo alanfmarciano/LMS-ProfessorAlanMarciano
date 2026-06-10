@@ -48,7 +48,24 @@
             document.body.style.paddingTop = '45px';
         }
     </script>
-    <div id="app-container" class="flex w-full h-full relative">
+    
+    <!-- HUB DO ALUNO (Cursos) -->
+    <div id="student-hub" class="w-full h-full bg-slateDark flex-col items-center pt-20" style="display: none; position: absolute; z-index: 50; overflow-y: auto;">
+        <div class="max-w-5xl mx-auto w-full px-8">
+            <h2 class="text-4xl font-black text-white mb-2 tracking-tight">🎓 Seus Cursos</h2>
+            <p class="text-slate-400 text-lg mb-12 font-medium">Selecione o curso que deseja acessar hoje.</p>
+            
+            <div id="student-hub-courses" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cursos injetados dinamicamente via JS -->
+            </div>
+            
+            <div class="mt-16 flex justify-center">
+                <button id="btn-student-hub-logout" class="px-6 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 font-bold rounded-xl transition-colors">🚪 Sair da Conta</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="flex w-full h-full relative" style="display: flex;">
         
         <!-- Sidebar Navigation -->
         <nav id="sidebar" class="w-80 min-w-[320px] bg-slatePanel/80 backdrop-blur-xl border-r border-slate-700/50 flex flex-col overflow-y-auto transition-transform duration-300 z-40 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
@@ -93,6 +110,9 @@
                     <div id="breadcrumb" class="text-sm font-semibold text-slate-300 hover:text-white cursor-pointer transition-colors" onclick="window.location.href='index.html'">Portal LMS</div>
                 </div>
                 <div class="topbar-actions flex gap-3">
+                    <button id="btn-change-course" title="Trocar de Curso" class="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-lg font-bold hover:bg-blue-500/20 hover:text-blue-300 hover:-translate-y-1 transition-all duration-200 focus:outline-none">
+                        <span>🏢</span> Trocar Curso
+                    </button>
                     <button id="btn-notebook-toggle" title="Abrir Meu Caderno de Anotações" class="flex items-center gap-2 bg-slatePanel border border-slate-600/50 text-yellow-200 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 hover:border-slate-500 hover:-translate-y-1 hover:shadow-[0_4px_12px_rgba(234,179,8,0.15)] active:translate-y-0 transition-all duration-200 shadow-md focus:outline-none">
                         <span>📝</span> Caderno
                     </button>
@@ -361,23 +381,8 @@
     </div>
 
     <!-- Script que carrega dados em tempo real -->
-    <script src="data.js"></script>
-    <!-- Script de Injeção de Branding -->
-    <script>
-        if (typeof courseData !== 'undefined' && courseData.branding) {
-            if (courseData.branding.primaryColor) {
-                document.documentElement.style.setProperty('--primary-color', courseData.branding.primaryColor);
-            }
-            if (courseData.branding.institutionName) {
-                document.title = courseData.branding.institutionName + ' - Portal do Aluno';
-                // Wait for DOM to load to update breadcrumb
-                document.addEventListener('DOMContentLoaded', () => {
-                    const bc = document.getElementById('breadcrumb');
-                    if(bc) bc.textContent = courseData.branding.institutionName;
-                });
-            }
-        }
-    </script>
+    <!-- Data.js é carregado dinamicamente -->
+    <!-- Branding é gerido pelo app.js agora -->
     <script src="app.js"></script>
 </body>
 

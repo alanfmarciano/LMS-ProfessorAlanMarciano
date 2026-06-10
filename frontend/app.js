@@ -12,7 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let breadcrumbHistory = []; // Histórico de navegação
     
     // Estado do sistema de avaliações
-    let currentExamState = null; // { questions, rubric, title, theme, shuffledQuestions, questionCount }
+    let currentExamState = null;
+    let currentStudentCourseId = null;
+    let currentStudentClassName = null; // { questions, rubric, title, theme, shuffledQuestions, questionCount }
 
     // Estado de Progresso e Simulador
     let completedUnits = JSON.parse(localStorage.getItem("completed_units") || "{}");
@@ -20,7 +22,53 @@ document.addEventListener("DOMContentLoaded", () => {
     let userAnswers = {};
     let isSimulatorSubmitted = false;
     let examLockPoll = null;
-    let lastReleasedItemsKeys = null;
+    let lastReleasedItemsKeys = null; 
+
+    // Function to dynamically load data.js for the selected course and render the sidebar
+    window.fetchDataAndRender = function() {
+        if (!currentStudentCourseId) return;
+
+        const scriptUrl = `/api/data.js?courseId=${currentStudentCourseId}`;
+        const existingScript = document.getElementById('dynamic-data-script');
+        if (existingScript) existingScript.remove();
+
+        const script = document.createElement('script');
+        script.id = 'dynamic-data-script';
+        script.src = scriptUrl;
+        script.onload = () => {
+            // Recalcula chaves se necessário
+            if (typeof courseData !== 'undefined') {
+                allEvaluationKeys.length = 0;
+                const structure = getActiveStructure();
+                structure.forEach(mod => {
+                    mod.units.forEach(u => {
+                        allEvaluationKeys.push(u.avaliacaoKey);
+                    });
+                });
+                
+                // Aplicar branding
+                if (courseData.branding) {
+                    if (courseData.branding.primaryColor) {
+                        document.documentElement.style.setProperty('--primary-color', courseData.branding.primaryColor);
+                    }
+                    if (courseData.branding.institutionName) {
+                        document.title = courseData.branding.institutionName + ' - Portal do Aluno';
+                        const bc = document.getElementById('breadcrumb');
+                        if(bc) bc.textContent = courseData.branding.institutionName;
+                    }
+                }
+            }
+            renderDynamicSidebar();
+            syncSidebarLocks();
+            
+            // Auto-selecionar o primeiro item disponível
+            const firstItem = document.querySelector(".nav-item");
+            if (firstItem && !currentKey) {
+                firstItem.click();
+            }
+        };
+        document.body.appendChild(script);
+    };
 
     // Configurar Modo Foco
     const focusModeBtn = document.getElementById("focus-mode-btn");
@@ -1616,9 +1664,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getStudentClass() {
+        if (currentStudentClassName) {
+            return currentStudentClassName;
+        }
         try {
             const info = JSON.parse(sessionStorage.getItem("student_info") || "{}");
-            return info.studentClass || "";
+            if (info.studentClass) {
+                if (typeof info.studentClass === 'object' && info.studentClass.name) {
+                    return info.studentClass.name;
+                }
+                return info.studentClass;
+            }
+            if (info.classes && info.classes.length > 0) {
+                const first = info.classes[0];
+                return typeof first === 'object' ? first.name : first;
+            }
+            return "";
         } catch (e) {
             return "";
         }
@@ -2323,8 +2384,8 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 classes.forEach(c => {
                     const opt = document.createElement('option');
-                    opt.value = c.name;
-                    opt.textContent = c.name;
+                    opt.value = c.courseId + '|' + c.name;
+                    opt.textContent = `${c.name} - ${c.courseName}`;
                     // Opcionalmente podemos salvar o courseId num dataset caso necessário depois
                     opt.dataset.courseId = c.courseId;
                     selectEl.appendChild(opt);
@@ -2366,11 +2427,64 @@ document.addEventListener("DOMContentLoaded", () => {
     if (linkGoLogin) linkGoLogin.addEventListener('click', showLoginPanel);
     if (linkGoLoginFromRecovery) linkGoLoginFromRecovery.addEventListener('click', showLoginPanel);
 
+    function showStudentHub(info) {
+        document.getElementById('app-container').style.display = 'none';
+        document.getElementById('student-hub').style.display = 'flex';
+        
+        const hubContainer = document.getElementById('student-hub-courses');
+        hubContainer.innerHTML = '';
+        
+        if (!info.classes || info.classes.length === 0) {
+            hubContainer.innerHTML = `
+                <div class="col-span-full text-center text-slate-400 p-8 bg-white/5 rounded-2xl border border-white/10">
+                    <span class="text-4xl mb-4 block">😢</span>
+                    Você ainda não está matriculado em nenhum curso.
+                </div>
+            `;
+            return;
+        }
+
+        info.classes.forEach(cls => {
+            const courseObj = info.courses ? info.courses.find(c => c.id === cls.courseId) : null;
+            const courseName = courseObj ? courseObj.name : (cls.courseId || 'Curso');
+            
+            const card = document.createElement('div');
+            card.className = 'bg-slate-800/50 backdrop-blur-md border border-white/10 p-6 rounded-2xl cursor-pointer hover:-translate-y-2 hover:shadow-[0_8px_30px_rgba(233,69,96,0.2)] hover:border-primary transition-all group flex flex-col items-center text-center';
+            card.innerHTML = `
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white text-2xl font-black shadow-lg mb-4 group-hover:scale-110 transition-transform">
+                    ${(cls.name || '').substring(0,2).toUpperCase()}
+                </div>
+                <h3 class="text-xl font-bold text-white mb-1 group-hover:text-primary transition-colors">${courseName}</h3>
+                <p class="text-slate-400 text-sm font-medium">Turma ${cls.name || ''} • ${cls.period || ''}</p>
+                <div class="mt-6 px-6 py-2 bg-white/5 group-hover:bg-primary/20 text-slate-300 group-hover:text-primary rounded-xl font-bold text-sm transition-colors border border-white/5 group-hover:border-primary/30 w-full">
+                    Acessar Portal
+                </div>
+            `;
+            card.addEventListener('click', () => {
+                currentStudentCourseId = cls.courseId;
+                currentStudentClassName = cls.name;
+                
+                document.getElementById('student-hub').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                
+                if (studentProfileClass) {
+                    studentProfileClass.textContent = `${cls.name || ''} • ${cls.period || ''}`;
+                }
+                
+                // Agora carrega os dados
+                fetchDataAndRender();
+            });
+            hubContainer.appendChild(card);
+        });
+    }
+
     function checkStudentSession() {
         const studentInfoStr = sessionStorage.getItem("student_info");
         if (!studentInfoStr) {
             if (studentOverlay) studentOverlay.style.display = 'flex';
             if (studentProfileCard) studentProfileCard.style.display = 'none';
+            document.getElementById('student-hub').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
             
             // Para as atualizações do sidebar se não estiver logado
             if (sidebarLocksPoll) {
@@ -2383,7 +2497,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (studentOverlay) studentOverlay.style.display = 'none';
                 if (studentProfileCard) studentProfileCard.style.display = 'flex';
                 if (studentProfileName) studentProfileName.textContent = info.name;
-                if (studentProfileClass) studentProfileClass.textContent = `${info.studentClass} • ${info.period}`;
+                
+                if (!currentStudentCourseId) {
+                    showStudentHub(info);
+                    return; // Retorna e não sincroniza os dados do app ainda
+                }
+                
+                if (studentProfileClass && currentStudentClassName) {
+                    const activeClassObj = info.classes ? info.classes.find(c => c.name === currentStudentClassName) : null;
+                    if (activeClassObj) {
+                        studentProfileClass.textContent = `${activeClassObj.name} • ${activeClassObj.period}`;
+                    }
+                }
                 
                 if (studentAvatar && info.name) {
                     const names = info.name.trim().split(" ");
@@ -2420,6 +2545,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 loadStudentSubmissionsDashboard();
             } catch (e) {
+                console.error("Erro ao verificar sessão do aluno:", e);
                 sessionStorage.removeItem("student_info");
                 if (studentOverlay) studentOverlay.style.display = 'flex';
                 if (studentProfileCard) studentProfileCard.style.display = 'none';
@@ -2453,9 +2579,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 sessionStorage.setItem("student_info", JSON.stringify({
                     name: data.student.name,
                     email: data.student.email,
-                    studentClass: data.student.studentClass,
-                    period: data.student.period,
-                    courseId: data.student.courseId
+                    classes: data.student.classes,
+                    courses: data.student.courses
                 }));
                 checkStudentSession();
             })
@@ -2483,9 +2608,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const name = document.getElementById('register-name').value.trim();
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value.trim();
-            const studentClass = document.getElementById('register-class').value.trim();
+            const classValue = document.getElementById('register-class').value.trim();
+            const [courseId, studentClass] = classValue.includes('|') ? classValue.split('|') : [null, classValue];
 
-            if (!name || !email || !password || !studentClass) {
+            if (!name || !email || !password || !studentClass || !courseId) {
                 showRegisterError('Por favor, preencha todos os campos do cadastro.');
                 return;
             }
@@ -2493,7 +2619,7 @@ document.addEventListener("DOMContentLoaded", () => {
             fetch('/api/student/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password, studentClass })
+                body: JSON.stringify({ name, email, password, studentClass, courseId })
             })
             .then(res => {
                 if (!res.ok) {
@@ -2513,8 +2639,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     sessionStorage.setItem("student_info", JSON.stringify({
                         name: data.student.name,
                         email: data.student.email,
-                        studentClass: data.student.studentClass,
-                        period: data.student.period
+                        classes: data.student.classes,
+                        courses: data.student.courses
                     }));
                     checkStudentSession();
                 });
@@ -2572,24 +2698,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Logout Handler
+    const handleStudentLogout = () => {
+        const confirmLogout = confirm("Deseja realmente sair da sua conta de estudante?");
+        if (!confirmLogout) return;
+        
+        const infoStr = sessionStorage.getItem("student_info");
+        if (infoStr) {
+            try {
+                const info = JSON.parse(infoStr);
+                fetch('/api/student/leave', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: info.email })
+                }).catch(()=>{});
+            } catch(e){}
+        }
+        
+        sessionStorage.removeItem("student_info");
+        currentStudentCourseId = null;
+        currentStudentClassName = null;
+        checkStudentSession();
+    };
+
     if (btnStudentLogout) {
-        btnStudentLogout.addEventListener('click', () => {
-            const confirmLogout = confirm("Deseja realmente sair da sua conta de estudante?");
-            if (!confirmLogout) return;
-            
-            const infoStr = sessionStorage.getItem("student_info");
-            if (infoStr) {
-                try {
-                    const info = JSON.parse(infoStr);
-                    fetch('/api/student/leave', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ email: info.email })
-                    }).catch(()=>{});
-                } catch(e){}
-            }
-            
-            sessionStorage.removeItem("student_info");
+        btnStudentLogout.addEventListener('click', handleStudentLogout);
+    }
+    
+    const btnStudentHubLogout = document.getElementById('btn-student-hub-logout');
+    if (btnStudentHubLogout) {
+        btnStudentHubLogout.addEventListener('click', handleStudentLogout);
+    }
+    
+    const btnChangeCourse = document.getElementById('btn-change-course');
+    if (btnChangeCourse) {
+        btnChangeCourse.addEventListener('click', () => {
+            currentStudentCourseId = null;
+            currentStudentClassName = null;
             checkStudentSession();
         });
     }

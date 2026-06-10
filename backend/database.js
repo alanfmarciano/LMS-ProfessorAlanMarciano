@@ -353,6 +353,16 @@ async function init() {
     }
 
     memoryDB.students = await loadTable('students', true);
+    
+    // Migração de studentClass para classes array
+    memoryDB.students.forEach(student => {
+        if (!student.classes) {
+            student.classes = [];
+            if (student.studentClass) {
+                student.classes.push(student.studentClass);
+            }
+        }
+    });
     memoryDB.classes = await loadTable('classes', true);
     memoryDB.courses = await loadTable('courses', true);
     memoryDB.submissions = await loadTable('submissions', true);

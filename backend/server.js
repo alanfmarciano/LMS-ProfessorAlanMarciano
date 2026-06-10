@@ -14,10 +14,30 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../data/uploads')));
 
 // Rota dinamica para servir data.js com conteudo atualizado em tempo real
+// Rota dinamica para servir data.js com conteudo atualizado em tempo real
 app.get('/data.js', (req, res) => {
     res.set('Content-Type', 'application/javascript');
+    const { courseId } = req.query;
     const dataObj = {};
     
+    // Find the course if courseId is provided
+    let allowedApostilas = null;
+    let allowedAvaliacoes = null;
+
+    if (courseId && db.memory.courses) {
+        const course = db.memory.courses.find(c => c.id === courseId);
+        if (course && course.structure) {
+            allowedApostilas = [];
+            allowedAvaliacoes = [];
+            course.structure.forEach(mod => {
+                mod.units.forEach(unit => {
+                    if (unit.apostilaKey) allowedApostilas.push(unit.apostilaKey);
+                    if (unit.avaliacaoKey) allowedAvaliacoes.push(unit.avaliacaoKey);
+                });
+            });
+        }
+    }
+
     try {
         const files = fs.readdirSync(path.join(__dirname, '../content'));
         const ignoredFiles = [
@@ -25,13 +45,19 @@ app.get('/data.js', (req, res) => {
             'task.md',
             'walkthrough.md',
             'manual_novas_unidades.md',
-            'readme.md'
+            'readme.md',
+            'project_analysis.md',
+            'folder_structure_analysis.md'
         ];
         files.forEach((file) => {
             if (file.endsWith('.md') && !ignoredFiles.includes(file.toLowerCase())) {
-                const filePath = path.join(__dirname, '../content', file);
-                const content = fs.readFileSync(filePath, 'utf8');
-                dataObj[file.replace('.md', '')] = content;
+                const key = file.replace('.md', '');
+                // Se um curso for especificado, só envie as apostilas associadas a ele
+                if (!allowedApostilas || allowedApostilas.includes(key) || key.startsWith('Apostila_')) { // TODO strict filter
+                    const filePath = path.join(__dirname, '../content', file);
+                    const content = fs.readFileSync(filePath, 'utf8');
+                    dataObj[key] = content;
+                }
             }
         });
     } catch (e) {
@@ -40,12 +66,21 @@ app.get('/data.js', (req, res) => {
 
     if (db.memory && db.memory.evaluations) {
         for (const evalKey in db.memory.evaluations) {
-            dataObj[evalKey] = db.memory.evaluations[evalKey];
+            if (!allowedAvaliacoes || allowedAvaliacoes.includes(evalKey)) {
+                dataObj[evalKey] = db.memory.evaluations[evalKey];
+            }
         }
     }
 
     dataObj["courseStructure"] = db.memory.courseStructure || []; // Legado
-    dataObj["courses"] = db.memory.courses || [];
+    
+    // Send only the requested course, or all if no courseId
+    if (courseId) {
+        dataObj["courses"] = db.memory.courses ? db.memory.courses.filter(c => c.id === courseId) : [];
+    } else {
+        dataObj["courses"] = db.memory.courses || [];
+    }
+    
     dataObj["branding"] = db.memory.branding || {};
 
     const fileContent = `const courseData = ${JSON.stringify(dataObj, null, 2)};`;
@@ -279,10 +314,15 @@ app.delete('/api/courses/:id', (req, res) => {
 // Retorna a lista de turmas liberadas para cadastro de aluno
 app.get('/api/classes', (req, res) => {
     const classes = readJSON(DB_CLASSES_FILE);
-    const activeClasses = classes.filter(c => c.registrationEnabled).map(c => ({
-        name: c.name,
-        courseId: c.courseId
-    }));
+    const courses = db.memory.courses || [];
+    const activeClasses = classes.filter(c => c.registrationEnabled).map(c => {
+        const course = courses.find(course => course.id === c.courseId);
+        return {
+            name: c.name,
+            courseId: c.courseId,
+            courseName: course ? course.name : 'Curso Desconhecido'
+        };
+    });
     res.json(activeClasses);
 });
 
@@ -316,13 +356,13 @@ app.get('/api/status', (req, res) => {
 
 // Cadastro de Aluno
 app.post('/api/student/register', (req, res) => {
-    const { name, email, password, studentClass } = req.body;
-    if (!name || !email || !password || !studentClass) {
+    const { name, email, password, studentClass, courseId } = req.body;
+    if (!name || !email || !password || !studentClass || !courseId) {
         return res.status(400).json({ error: 'Dados incompletos.' });
     }
 
     const classes = readJSON(DB_CLASSES_FILE);
-    const matchedClass = classes.find(c => c.name === studentClass && c.registrationEnabled);
+    const matchedClass = classes.find(c => c.name === studentClass && c.courseId === courseId && c.registrationEnabled);
     if (!matchedClass) {
         return res.status(400).json({ error: 'A turma selecionada não existe ou não está liberada para cadastro.' });
     }
@@ -341,7 +381,8 @@ app.post('/api/student/register', (req, res) => {
         name: name.trim(),
         email: normalizedEmail,
         password: password.trim(),
-        studentClass,
+        classes: [{ name: studentClass, courseId: courseId, period: period }],
+        studentClass: studentClass, // Retrocompatibilidade
         period,
         loginTime: null,
         recoveryRequested: false
@@ -359,7 +400,7 @@ app.post('/api/student/login', (req, res) => {
         return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
     }
 
-    const students = readJSON(DB_STUDENTS_FILE);
+    const students = db.memory.students;
     const normalizedEmail = email.trim().toLowerCase();
     const student = students.find(s => s.email && s.email.toLowerCase() === normalizedEmail && s.password === password.trim());
 
@@ -368,15 +409,69 @@ app.post('/api/student/login', (req, res) => {
     }
 
     student.loginTime = new Date().toISOString();
-    writeJSON(DB_STUDENTS_FILE, students);
+    db.save();
 
     // Retorna dados do estudante sem expor o campo de senha
     const { password: _, ...safeStudent } = student;
-    const classes = readJSON(DB_CLASSES_FILE);
-    const cls = classes.find(c => c.name === student.studentClass);
-    if (cls && cls.courseId) {
-        safeStudent.courseId = cls.courseId;
+    
+    const allClasses = db.memory.classes;
+    const allCourses = db.memory.courses;
+    
+    // Normalize classes array to always be objects
+    const resolvedClasses = [];
+    const studentCourses = [];
+    
+    const rawClasses = student.classes || (student.studentClass ? [student.studentClass] : []);
+    
+    rawClasses.forEach(c => {
+        let className = '';
+        let courseId = null;
+        let period = student.period || null;
+        
+        if (typeof c === 'string') {
+            className = c;
+            // Lookup in allClasses to find courseId and period
+            const cls = allClasses.find(clsObj => clsObj.name === c);
+            if (cls) {
+                courseId = cls.courseId;
+                if (cls.period) period = cls.period;
+            }
+        } else if (c && typeof c === 'object') {
+            className = c.name || '';
+            courseId = c.courseId || null;
+            period = c.period || student.period || null;
+        }
+        
+        if (className) {
+            resolvedClasses.push({
+                name: className,
+                courseId: courseId,
+                period: period
+            });
+            
+            if (courseId) {
+                const courseObj = allCourses.find(co => co.id === courseId);
+                if (courseObj && !studentCourses.some(sc => sc.id === courseObj.id)) {
+                    studentCourses.push({
+                        id: courseObj.id,
+                        name: courseObj.name,
+                        description: courseObj.description,
+                        className: className
+                    });
+                }
+            }
+        }
+    });
+    
+    safeStudent.classes = resolvedClasses;
+    safeStudent.courses = studentCourses;
+    
+    if (resolvedClasses.length > 0) {
+        safeStudent.studentClass = resolvedClasses[0].name;
+    } else {
+        safeStudent.studentClass = '';
     }
+
     res.json({ success: true, student: safeStudent });
 });
 
@@ -925,20 +1020,26 @@ app.get('/api/admin/students', (req, res) => {
 // Criação manual de aluno pelo instrutor
 app.post('/api/admin/student/create', (req, res) => {
     validateAdmin(req, res, () => {
-        const { name, email, studentPassword, studentClass } = req.body;
-        if (!name || !email || !studentPassword || !studentClass) {
-            return res.status(400).json({ error: 'Dados incompletos.' });
+        let { name, email, studentPassword, studentClass, classes } = req.body;
+        
+        // Suporte retroativo ou novo array
+        let studentClasses = classes || (studentClass ? [studentClass] : []);
+        
+        if (!name || !email || !studentPassword || studentClasses.length === 0) {
+            return res.status(400).json({ error: 'Dados incompletos. Informe pelo menos uma turma.' });
         }
 
-        const classes = readJSON(DB_CLASSES_FILE);
-        const matchedClass = classes.find(c => c.name === studentClass);
-        if (!matchedClass) {
-            return res.status(400).json({ error: 'A turma especificada não está pré-cadastrada no sistema.' });
+        const allClasses = db.memory.classes;
+        
+        // Valida se as turmas existem
+        for (let c of studentClasses) {
+            const matchedClass = allClasses.find(cls => cls.name === c);
+            if (!matchedClass) {
+                return res.status(400).json({ error: `A turma ${c} não está pré-cadastrada no sistema.` });
+            }
         }
 
-        const period = matchedClass.period || 'Tarde';
-
-        const students = readJSON(DB_STUDENTS_FILE);
+        const students = db.memory.students;
         const normalizedEmail = email.trim().toLowerCase();
         const exists = students.find(s => s.email && s.email.toLowerCase() === normalizedEmail);
 
@@ -950,12 +1051,13 @@ app.post('/api/admin/student/create', (req, res) => {
             name: name.trim(),
             email: normalizedEmail,
             password: studentPassword.trim(),
-            studentClass,
-            period,
+            classes: studentClasses,
+            studentClass: studentClasses[0], // Compatibilidade com submissões legadas
+            period: 'Tarde', // Period pode ser estendido no futuro para suportar múltiplos
             loginTime: null,
             recoveryRequested: false
         });
-        writeJSON(DB_STUDENTS_FILE, students);
+        db.save();
         res.json({ success: true });
     });
 });
@@ -963,12 +1065,15 @@ app.post('/api/admin/student/create', (req, res) => {
 // Atualização de cadastro de aluno pelo instrutor
 app.post('/api/admin/student/update', (req, res) => {
     validateAdmin(req, res, () => {
-        const { originalEmail, name, email, password, studentClass, period } = req.body;
-        if (!originalEmail || !name || !email || !password || !studentClass || !period) {
-            return res.status(400).json({ error: 'Dados incompletos.' });
+        const { originalEmail, name, email, password, studentClass, classes, period } = req.body;
+        
+        let studentClasses = classes || (studentClass ? [studentClass] : []);
+
+        if (!originalEmail || !name || !email || !password || studentClasses.length === 0) {
+            return res.status(400).json({ error: 'Dados incompletos. Informe pelo menos uma turma.' });
         }
 
-        const students = readJSON(DB_STUDENTS_FILE);
+        const students = db.memory.students;
         const studentIndex = students.findIndex(s => s.email && s.email.toLowerCase() === originalEmail.trim().toLowerCase());
         
         if (studentIndex === -1) {
@@ -988,26 +1093,27 @@ app.post('/api/admin/student/update', (req, res) => {
             name: name.trim(),
             email: newEmailNormalized,
             password: password.trim(),
-            studentClass,
-            period
+            classes: studentClasses,
+            studentClass: studentClasses[0], // Compatibilidade
+            period: period || students[studentIndex].period
         };
 
-        writeJSON(DB_STUDENTS_FILE, students);
+        db.save();
         
         // Cascata nas submissões de notas antigas
-        const submissions = readJSON(DB_SUBMISSIONS_FILE);
+        const submissions = db.memory.submissions;
         let submissionsUpdated = false;
         submissions.forEach(sub => {
             if (sub.student && sub.student.email && sub.student.email.toLowerCase() === originalEmail.trim().toLowerCase()) {
                 sub.student.email = newEmailNormalized;
                 sub.student.name = name.trim();
-                sub.student.studentClass = studentClass;
-                sub.student.period = period;
+                sub.student.studentClass = studentClasses[0]; // Manter primeira turma na submissão antiga
+                if (period) sub.student.period = period;
                 submissionsUpdated = true;
             }
         });
         if (submissionsUpdated) {
-            writeJSON(DB_SUBMISSIONS_FILE, submissions);
+            db.save();
         }
 
         res.json({ success: true });
@@ -1051,9 +1157,9 @@ app.post('/api/admin/class/create', (req, res) => {
         }
         const className = name.trim().toUpperCase();
         const classes = readJSON(DB_CLASSES_FILE);
-        const exists = classes.find(c => c.name === className);
+        const exists = classes.find(c => c.name === className && c.courseId === courseId);
         if (exists) {
-            return res.status(400).json({ error: 'Esta turma já está cadastrada.' });
+            return res.status(400).json({ error: 'Esta turma já está cadastrada neste curso.' });
         }
         
         const courses = db.memory.courses || [];
@@ -1090,12 +1196,12 @@ app.post('/api/admin/class/create', (req, res) => {
 // Ativar/Desativar liberação de cadastro para turma (administrador)
 app.post('/api/admin/class/toggle-registration', (req, res) => {
     validateAdmin(req, res, () => {
-        const { name, registrationEnabled } = req.body;
-        if (!name) {
-            return res.status(400).json({ error: 'Nome da turma não informado.' });
+        const { name, courseId, registrationEnabled } = req.body;
+        if (!name || !courseId) {
+            return res.status(400).json({ error: 'Nome da turma ou curso não informado.' });
         }
         const classes = readJSON(DB_CLASSES_FILE);
-        const cls = classes.find(c => c.name === name);
+        const cls = classes.find(c => c.name === name && c.courseId === courseId);
         if (!cls) {
             return res.status(404).json({ error: 'Turma não encontrada.' });
         }
@@ -1108,12 +1214,12 @@ app.post('/api/admin/class/toggle-registration', (req, res) => {
 // Excluir turma (administrador)
 app.post('/api/admin/class/delete', (req, res) => {
     validateAdmin(req, res, () => {
-        const { name } = req.body;
-        if (!name) {
-            return res.status(400).json({ error: 'Nome da turma não informado.' });
+        const { name, courseId } = req.body;
+        if (!name || !courseId) {
+            return res.status(400).json({ error: 'Nome da turma ou curso não informado.' });
         }
         const classes = readJSON(DB_CLASSES_FILE);
-        const filtered = classes.filter(c => c.name !== name);
+        const filtered = classes.filter(c => !(c.name === name && c.courseId === courseId));
         writeJSON(DB_CLASSES_FILE, filtered);
         res.json({ success: true });
     });

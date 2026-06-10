@@ -967,6 +967,21 @@
         </div>
     </div>
 
+    <!-- HUB DE CURSOS ADMIN -->
+    <div id="admin-hub" class="flex-1 flex-col bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800/30 via-slateDark to-slateDark h-screen w-full relative z-50 overflow-y-auto" style="display: none;">
+        <div class="max-w-6xl mx-auto w-full p-8 pt-16 flex-1 flex flex-col items-center">
+            <h2 class="text-4xl font-extrabold text-white mb-2 tracking-tight text-center">🏢 Hub de Cursos</h2>
+            <p class="text-slate-400 text-lg mb-10 text-center">Selecione a Área de Trabalho (Workspace) de um curso para gerenciar</p>
+            <div id="admin-hub-courses" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                <!-- Injetado via JS -->
+            </div>
+            
+            <div class="mt-12 flex justify-center w-full">
+                <button id="btn-admin-logout" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-6 py-2 rounded-xl font-bold transition-all border border-red-500/30">🚪 Sair da Conta</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MAIN DASHBOARD -->
     <div id="admin-app" style="display: none; flex-direction: column; flex: 1;">
         <header class="bg-slatePanel border-b border-slate-700/50 py-5 px-10 flex justify-between items-center sticky top-0 z-50 shadow-sm">
@@ -1004,6 +1019,10 @@
                     </div>
                 </div>
 
+                <button id="btn-change-workspace" class="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:text-blue-300 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                    <span>🏢</span> Trocar Workspace
+                </button>
+
                 <button id="btn-export-csv" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 hover:text-white font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     Exportar (CSV)
@@ -1037,7 +1056,7 @@
         <!-- Barra de Navegação por Abas -->
         <div class="bg-slatePanel/80 backdrop-blur-md border-b border-slate-700/50 px-10 flex gap-2 overflow-x-auto scrollbar-hide">
             <button class="tab-btn active px-4 py-4 text-sm font-bold text-primary border-b-2 border-primary hover:text-red-400 transition-colors whitespace-nowrap outline-none" data-tab="tab-dashboard">📊 Monitor Geral</button>
-            <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-courses">🎨 Cursos & White-Label</button>
+            <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-courses">🎨 Cursos</button>
             <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-materials">🔓 Controle de Liberação</button>
             <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-classes">🏫 Turmas</button>
             <button class="tab-btn px-4 py-4 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-200 hover:border-slate-500 transition-colors whitespace-nowrap outline-none" data-tab="tab-students">👥 Contas de Alunos</button>
@@ -1198,9 +1217,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-800/30 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-lg">
                     <!-- Abas de Módulos -->
                     <div class="flex gap-2 p-1.5 bg-black/30 rounded-xl border border-slate-700/50 w-fit" id="module-selector-tabs">
-                        <button class="module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none" data-module="FUTEC">FUTEC</button>
-                        <button class="module-tab-btn px-4 py-2 text-xs font-extrabold text-slate-400 hover:text-white rounded-lg transition-all focus:outline-none" data-module="FECOP">FECOP</button>
-                        <button class="module-tab-btn px-4 py-2 text-xs font-extrabold text-slate-400 hover:text-white rounded-lg transition-all focus:outline-none" data-module="IRCOM">IRCOM</button>
+                        <!-- Gerado dinamicamente via JS -->
                     </div>
                     
                     <!-- Botões de Ação em Lote -->
@@ -1242,7 +1259,7 @@
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Identificador da Turma</label>
                         <input type="text" id="create-class-name" placeholder="Ex: 1DES, 2FECOP, 2DES..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
-                    <div class="flex flex-col gap-1.5 text-left mb-2">
+                    <div class="flex flex-col gap-1.5 text-left mb-2" style="display: none;">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Curso Vinculado</label>
                         <select id="create-class-course" class="w-full px-4 py-2.5 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
                             <option value="">Selecione um curso...</option>
@@ -1307,10 +1324,10 @@
                         <input type="text" id="create-student-password" placeholder="Definir senha provisória..." class="w-full px-4 py-2.5 bg-black/20 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm">
                     </div>
                     <div class="flex flex-col gap-1.5 text-left mb-2">
-                        <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Turma</label>
-                        <select id="create-student-class" class="w-full px-4 py-2.5 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
-                            <!-- Carregado via API -->
-                        </select>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Turmas (Matrículas)</label>
+                        <div id="create-student-classes-container" class="w-full max-h-[150px] overflow-y-auto px-3 py-2 bg-slatePanel border border-slate-700 rounded-xl text-white outline-none flex flex-col gap-2 custom-scrollbar text-sm">
+                            <!-- Checkboxes gerados via API -->
+                        </div>
                     </div>
                     <button id="btn-create-student" class="w-full py-3 bg-gradient-to-r from-primary to-red-600 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-red-500/30 transition-all mt-2 text-sm">Salvar Conta do Aluno</button>
                 </div>
@@ -1469,7 +1486,7 @@
             <div id="tab-editor" class="tab-content" style="display: none; flex-direction: column; gap: 30px; width: 100%;">
                 
                 <!-- Selecionar Curso para Editor -->
-                <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-lg flex items-center gap-4">
+                <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-lg flex items-center gap-4" style="display: none;">
                     <label class="font-bold text-white whitespace-nowrap">📚 Selecione o Curso para Editar:</label>
                     <select id="editor-course-select" class="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm font-bold">
                         <option value="">-- Escolha um curso --</option>
@@ -1879,11 +1896,11 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Turma</label>
-                        <select id="edit-student-class" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer text-sm">
+                    <div class="flex flex-col gap-1.5 col-span-2">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Turmas Matriculadas</label>
+                        <div id="edit-student-classes-container" class="w-full max-h-[150px] overflow-y-auto px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none flex flex-col gap-2 custom-scrollbar text-sm">
                             <!-- Carregado via API -->
-                        </select>
+                        </div>
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Período</label>
@@ -2133,7 +2150,7 @@
                 if (res.ok) {
                     adminPassword = token;
                     sessionStorage.setItem('admin_pass', token);
-                    showDashboard();
+                    showHub();
                 } else {
                     errorDiv.textContent = 'E-mail ou senha incorretos.';
                     errorDiv.style.display = 'block';
@@ -2157,7 +2174,7 @@
             })
             .then(res => {
                 if (res.ok) {
-                    showDashboard();
+                    showHub();
                 } else {
                     sessionStorage.removeItem('admin_pass');
                     adminPassword = '';
@@ -2169,101 +2186,163 @@
             });
         }
 
-        function showDashboard() {
+        let currentAdminCourseId = null;
+
+        function showHub() {
             document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('admin-hub').style.display = 'flex';
+            document.getElementById('admin-app').style.display = 'none';
+            
+            renderHubCourses();
+        }
+
+        function renderHubCourses() {
+            const container = document.getElementById('admin-hub-courses');
+            container.innerHTML = '';
+            
+            const courses = (typeof courseData !== 'undefined' && courseData.courses) ? courseData.courses : [];
+            
+            if (courses.length === 0) {
+                container.innerHTML = '<div class="col-span-3 text-center text-slate-400 py-10">Nenhum curso encontrado.</div>';
+                return;
+            }
+            
+            courses.forEach(course => {
+                const card = document.createElement('div');
+                card.className = 'bg-slatePanel border border-white/10 p-6 rounded-2xl hover:border-primary/50 hover:-translate-y-1 transition-all cursor-pointer shadow-lg hover:shadow-primary/20 flex flex-col items-center text-center';
+                card.innerHTML = `
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-red-600 flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-inner shadow-black/50">
+                        ${course.name.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">${course.name}</h3>
+                    <p class="text-sm text-slate-400 line-clamp-2">${course.description || 'Sem descrição.'}</p>
+                    <div class="mt-4 pt-4 border-t border-white/5 w-full">
+                        <span class="text-xs font-bold text-primary uppercase tracking-wider">Gerenciar Workspace ➔</span>
+                    </div>
+                `;
+                card.addEventListener('click', () => showDashboardForCourse(course.id));
+                container.appendChild(card);
+            });
+        }
+
+        document.getElementById('btn-admin-logout')?.addEventListener('click', () => {
+            sessionStorage.removeItem('admin_pass');
+            window.location.reload();
+        });
+
+        document.getElementById('btn-change-workspace')?.addEventListener('click', () => {
+            currentAdminCourseId = null;
+            clearInterval(pollInterval); // Stop polling for old course
+            showHub();
+        });
+
+        function showDashboardForCourse(courseId) {
+            currentAdminCourseId = courseId;
+            document.getElementById('admin-hub').style.display = 'none';
             document.getElementById('admin-app').style.display = 'flex';
             
-            renderMaterialsList();
+            // Optionally, we could reload data.js with courseId here to restrict what Admin sees,
+            // but since it's Admin, having all data is fine.
             
+            // Render the release controls specifically for this course
+            // We need to initialize activeReleaseModule based on the course structure
+            const course = courseData.courses.find(c => c.id === currentAdminCourseId);
+            if (course && course.structure && course.structure.length > 0) {
+                activeReleaseModule = course.structure[0].id;
+                renderModuleTabs(course.structure);
+            }
+            
+            renderMaterialsList();
             refreshDashboard();
             pollInterval = setInterval(refreshDashboard, 3000);
 
-            // Fetch Branding & Courses for the new tab
             if (typeof loadBrandingAndCourses === 'function') {
                 loadBrandingAndCourses();
             }
 
-            // Recarrega dados ao trocar a turma ativa no dropdown
-            document.getElementById('admin-active-class').addEventListener('change', () => {
+            document.getElementById('admin-active-class')?.addEventListener('change', () => {
                 refreshDashboard();
             });
         }
 
 
 
+        function renderModuleTabs(structure) {
+            const container = document.getElementById('module-selector-tabs');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            structure.forEach((mod, idx) => {
+                const btn = document.createElement('button');
+                const isFirst = idx === 0;
+                btn.className = `module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none ${isFirst ? 'active-module bg-red-600 text-white shadow-lg shadow-red-500/20' : 'text-slate-400 hover:text-white'}`;
+                btn.setAttribute('data-module', mod.id);
+                btn.textContent = mod.id;
+                
+                btn.addEventListener('click', () => {
+                    activeReleaseModule = mod.id;
+                    renderMaterialsList();
+                    refreshDashboard();
+                });
+                
+                container.appendChild(btn);
+            });
+        }
+
         // Renderiza switches de controle de liberação (Aba Controle de Liberação)
         function renderMaterialsList() {
             const m = activeReleaseModule;
             const container = document.getElementById('active-module-materials-list');
-            if (!container) return;
+            if (!container || !currentAdminCourseId) return;
             
+            const course = courseData.courses.find(c => c.id === currentAdminCourseId);
+            const modData = course && course.structure ? course.structure.find(mod => mod.id === m) : null;
+            if (!modData) return;
+
             // Atualizar o título e o badge do módulo selecionado no header
             const titleDisplay = document.getElementById('current-module-title-display');
             const badgeDisplay = document.getElementById('current-module-badge-display');
             
-            const moduleNames = {
-                'FUTEC': 'Fundamentos de TI',
-                'FECOP': 'Colaboração e Produtividade',
-                'IRCOM': 'Instalação de Recursos'
-            };
-            const moduleBadges = {
-                'FUTEC': 'bg-red-500/20 text-red-400 border border-red-500/30',
-                'FECOP': 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
-                'IRCOM': 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-            };
-            
             if (titleDisplay) {
-                titleDisplay.textContent = `${m} — ${moduleNames[m]}`;
+                titleDisplay.textContent = `${modData.id} — ${modData.name}`;
             }
             if (badgeDisplay) {
-                badgeDisplay.textContent = m;
-                badgeDisplay.className = `text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-md ${moduleBadges[m]}`;
+                badgeDisplay.textContent = modData.id;
+                badgeDisplay.className = `text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-md bg-red-500/20 text-red-400 border border-red-500/30`;
             }
             
             // #3 Atualizar classes dos botões seletores de abas com cores persistentes
-            const moduleColorMap = { 'FUTEC': 'red', 'FECOP': 'blue', 'IRCOM': 'purple' };
             document.querySelectorAll('.module-tab-btn').forEach(btn => {
                 const mod = btn.getAttribute('data-module');
                 if (mod === m) {
                     btn.classList.add('active-module');
-                    if (mod === 'FUTEC') btn.className = 'module-tab-btn active-module px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-red-600 text-white shadow-lg shadow-red-500/20';
-                    else if (mod === 'FECOP') btn.className = 'module-tab-btn active-module px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-blue-600 text-white shadow-lg shadow-blue-500/20';
-                    else if (mod === 'IRCOM') btn.className = 'module-tab-btn active-module px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-purple-600 text-white shadow-lg shadow-purple-500/20';
+                    btn.className = 'module-tab-btn active-module px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none bg-red-600 text-white shadow-lg shadow-red-500/20';
                 } else {
                     btn.classList.remove('active-module');
-                    btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none';
+                    btn.className = 'module-tab-btn px-4 py-2 text-xs font-extrabold rounded-lg transition-all focus:outline-none text-slate-400 hover:text-white';
                 }
             });
 
             container.innerHTML = '';
-            
-            // Encontrar o módulo correspondente na estrutura do curso para pegar nomes reais
-            const modData = (typeof courseData !== 'undefined' && courseData.courseStructure) 
-                ? courseData.courseStructure.find(mod => mod.id === m) 
-                : null;
 
-            for (let i = 1; i <= 5; i++) {
-                const unitData = modData ? modData.units.find(u => u.id === i) : null;
-                const unitName = unitData ? unitData.name : `Unidade ${i}`;
-                
-                const apKey = `Apostila_${m}_${i}`;
-                const avKey = `Avaliacao_${m}_${i}`;
+            modData.units.forEach((unit, idx) => {
+                const apKey = unit.apostilaKey;
+                const avKey = unit.avaliacaoKey;
+                const unitName = unit.name;
                 
                 const unitCard = document.createElement('div');
-                // #10 Add unit-release-card class and module color for hover effects
-                const colorKey = moduleColorMap[m] || 'red';
                 unitCard.className = 'unit-release-card bg-black/20 border border-white/10 p-3.5 rounded-2xl flex flex-col gap-2';
-                unitCard.setAttribute('data-module-color', colorKey);
+                unitCard.setAttribute('data-module-color', 'red');
                 unitCard.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-extrabold text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded-md border border-white/5">Unidade ${i}</span>
+                        <span class="text-[10px] font-extrabold text-slate-300 bg-slate-800/80 px-2.5 py-0.5 rounded-md border border-white/5">Unidade ${unit.id}</span>
                     </div>
                     <div class="text-xs font-bold text-slate-200 truncate pr-1" title="${unitName}">
                         ${unitName}
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-1">
                         <!-- Apostila Capsule -->
-                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors toggle-tooltip" data-tooltip="Apostila da Unidade ${i} — Clique para liberar/bloquear">
+                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors toggle-tooltip" data-tooltip="Apostila da Unidade ${unit.id} — Clique para liberar/bloquear">
                             <span class="text-[10px] text-slate-400 font-extrabold tracking-wider uppercase">📘 Apostila</span>
                             <label class="switch scale-90 origin-right">
                                 <input type="checkbox" class="material-toggle" data-key="${apKey}" id="toggle-mat-${apKey}">
@@ -2271,7 +2350,7 @@
                             </label>
                         </div>
                         <!-- Avaliação Capsule -->
-                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors toggle-tooltip" data-tooltip="Prova da Unidade ${i} — Clique para liberar/bloquear">
+                        <div class="bg-slate-900/40 border border-white/5 p-2 rounded-xl flex items-center justify-between gap-1 hover:bg-slate-900/60 transition-colors toggle-tooltip" data-tooltip="Prova da Unidade ${unit.id} — Clique para liberar/bloquear">
                             <span class="text-[10px] text-primary font-extrabold tracking-wider uppercase">🎯 Prova</span>
                             <div class="flex items-center gap-1.5">
                                 <button class="btn-preview-exam bg-white/5 hover:bg-white/15 border border-white/10 text-white p-1 rounded-lg text-[10px] font-bold hover:border-white/20 transition-colors" data-key="${avKey}" title="Configurar / Imprimir Prova">
@@ -2286,7 +2365,7 @@
                     </div>
                 `;
                 container.appendChild(unitCard);
-            }
+            });
             
             document.querySelectorAll('.material-toggle').forEach(chk => {
                 chk.addEventListener('change', (e) => {
@@ -2356,9 +2435,18 @@
 
             const m = activeReleaseModule;
             const keys = [];
-            for (let i = 1; i <= 5; i++) {
-                keys.push(`Apostila_${m}_${i}`);
-                keys.push(`Avaliacao_${m}_${i}`);
+            
+            if (currentAdminCourseId && courseData.courses) {
+                const course = courseData.courses.find(c => c.id === currentAdminCourseId);
+                if (course && course.structure) {
+                    const modData = course.structure.find(mod => mod.id === m);
+                    if (modData && modData.units) {
+                        modData.units.forEach(u => {
+                            if (u.apostilaKey) keys.push(u.apostilaKey);
+                            if (u.avaliacaoKey) keys.push(u.avaliacaoKey);
+                        });
+                    }
+                }
             }
 
             document.body.style.cursor = 'wait';
@@ -2504,8 +2592,16 @@
             document.getElementById('edit-student-name').value = student.name;
             document.getElementById('edit-student-email').value = student.email;
             document.getElementById('edit-student-password').value = student.password || '';
-            document.getElementById('edit-student-class').value = student.studentClass;
             document.getElementById('edit-student-period').value = student.period || 'Tarde';
+            
+            // Marcar checkboxes correspondentes às turmas do aluno
+            const container = document.getElementById('edit-student-classes-container');
+            if (container) {
+                const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    cb.checked = student.classes && student.classes.includes(cb.value);
+                });
+            }
             
             document.getElementById('student-edit-error').style.display = 'none';
             document.getElementById('edit-student-modal').style.display = 'flex';
@@ -2538,7 +2634,15 @@
             const name = document.getElementById('create-student-name').value.trim();
             const email = document.getElementById('create-student-email').value.trim();
             const studentPassword = document.getElementById('create-student-password').value.trim();
-            const studentClass = document.getElementById('create-student-class').value.trim();
+            
+            const createContainer = document.getElementById('create-student-classes-container');
+            const selectedClasses = [];
+            if (createContainer) {
+                createContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                    selectedClasses.push(cb.value);
+                });
+            }
+            const studentClass = selectedClasses[0] || '';
             
             const errDiv = document.getElementById('student-create-error');
             const succDiv = document.getElementById('student-create-success');
@@ -2546,8 +2650,8 @@
             errDiv.style.display = 'none';
             succDiv.style.display = 'none';
             
-            if (!name || !email || !studentPassword || !studentClass) {
-                errDiv.textContent = 'Por favor, preencha todos os campos do cadastro.';
+            if (!name || !email || !studentPassword || selectedClasses.length === 0) {
+                errDiv.textContent = 'Por favor, preencha todos os campos do cadastro e selecione ao menos uma turma.';
                 errDiv.style.display = 'block';
                 return;
             }
@@ -2628,85 +2732,101 @@
             });
         });
 
-        // Atualiza os dropdowns de seleção de turma
+        // Atualiza os dropdowns e painéis de seleção de turma
         function updateClassDropdowns(classes) {
+            let workspaceClasses = classes;
+            if (currentAdminCourseId) {
+                workspaceClasses = classes.filter(c => c.courseId === currentAdminCourseId);
+            }
+            
+            // Dropdown de filtro da tabela (usa workspaceClasses)
             const filterSel = document.getElementById('filter-class');
-            const curFilter = filterSel.value;
-            filterSel.innerHTML = '<option value="">Todas as Turmas</option>';
-            classes.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.name;
-                opt.textContent = c.name;
-                filterSel.appendChild(opt);
-            });
-            filterSel.value = curFilter;
-
-            const createSel = document.getElementById('create-student-class');
-            const curCreate = createSel.value;
-            createSel.innerHTML = '';
-            if (classes.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = '';
-                opt.textContent = 'Nenhuma turma cadastrada';
-                createSel.appendChild(opt);
-            } else {
-                classes.forEach(c => {
+            if (filterSel) {
+                const curFilter = filterSel.value;
+                filterSel.innerHTML = '<option value="">Todas as Turmas</option>';
+                workspaceClasses.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.name;
                     opt.textContent = c.name;
-                    createSel.appendChild(opt);
+                    filterSel.appendChild(opt);
                 });
-                createSel.value = curCreate;
+                filterSel.value = curFilter;
             }
 
-            const editSel = document.getElementById('edit-student-class');
-            if (editSel) {
-                const curEdit = editSel.value;
-                editSel.innerHTML = '';
+            // Função helper para renderizar checkboxes baseada em todas as turmas
+            const renderCheckboxes = (containerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                // Salvar estados atuais para não perder seleções ao recarregar
+                const currentChecked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                
+                const grouped = {};
+                classes.forEach(c => {
+                    if (!grouped[c.courseId]) grouped[c.courseId] = [];
+                    grouped[c.courseId].push(c);
+                });
+                
+                let html = '';
                 if (classes.length === 0) {
+                    html = '<div class="text-xs text-slate-500 py-2">Nenhuma turma cadastrada no sistema.</div>';
+                } else {
+                    Object.keys(grouped).forEach(courseId => {
+                        const course = (typeof courseData !== 'undefined' && courseData.courses) ? courseData.courses.find(cd => cd.id === courseId) || { name: 'Curso Desconhecido' } : { name: 'Curso Desconhecido' };
+                        html += `
+                            <div class="mb-2">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase mb-1 border-b border-slate-700/50 pb-1">${course.name}</div>
+                                <div class="flex flex-col gap-1 pl-1">
+                        `;
+                        grouped[courseId].forEach(c => {
+                            const isChecked = currentChecked.includes(c.name) ? 'checked' : '';
+                            html += `
+                                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-white transition-colors">
+                                    <input type="checkbox" name="student-class-checkbox" value="${c.name}" ${isChecked} class="rounded bg-slate-800 border-slate-600 text-primary focus:ring-primary focus:ring-offset-slate-900 cursor-pointer w-4 h-4">
+                                    ${c.name}
+                                </label>
+                            `;
+                        });
+                        html += `</div></div>`;
+                    });
+                }
+                container.innerHTML = html;
+            };
+
+            renderCheckboxes('create-student-classes-container');
+            renderCheckboxes('edit-student-classes-container');
+
+            // Cabeçalho admin active class select (usa workspaceClasses)
+            const activeClassSel = document.getElementById('admin-active-class');
+            if (activeClassSel) {
+                const curActiveClass = activeClassSel.value;
+                activeClassSel.innerHTML = '';
+                if (workspaceClasses.length === 0) {
                     const opt = document.createElement('option');
                     opt.value = '';
                     opt.textContent = 'Nenhuma turma cadastrada';
-                    editSel.appendChild(opt);
+                    activeClassSel.appendChild(opt);
                 } else {
-                    classes.forEach(c => {
+                    workspaceClasses.forEach(c => {
                         const opt = document.createElement('option');
                         opt.value = c.name;
                         opt.textContent = c.name;
-                        editSel.appendChild(opt);
+                        activeClassSel.appendChild(opt);
                     });
-                    editSel.value = curEdit;
+                    activeClassSel.value = curActiveClass;
                 }
-            }
-
-            // Cabeçalho admin active class select
-            const activeClassSel = document.getElementById('admin-active-class');
-            const curActiveClass = activeClassSel.value;
-            activeClassSel.innerHTML = '';
-            if (classes.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = '';
-                opt.textContent = 'Nenhuma turma';
-                activeClassSel.appendChild(opt);
-            } else {
-                classes.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.name;
-                    opt.textContent = c.name;
-                    activeClassSel.appendChild(opt);
-                });
-            }
-            if (classes.some(c => c.name === curActiveClass)) {
-                activeClassSel.value = curActiveClass;
-            } else if (classes.length > 0) {
-                activeClassSel.value = classes[0].name;
             }
         }
 
+        // Removed duplicate code
         // Renderiza tabela de turmas (Aba Turmas)
         function updateClassesTable(classes, students) {
             const tbody = document.getElementById('classes-body');
             if (!tbody) return;
+            
+            if (currentAdminCourseId) {
+                classes = classes.filter(c => c.courseId === currentAdminCourseId);
+            }
             
             if (classes.length === 0) {
                 tbody.innerHTML = `
@@ -2762,7 +2882,7 @@
                             'Content-Type': 'application/json',
                             'Authorization': adminPassword
                         },
-                        body: JSON.stringify({ name, registrationEnabled })
+                        body: JSON.stringify({ name, courseId: currentAdminCourseId, registrationEnabled })
                     })
                     .then(res => res.json())
                     .then(() => {
@@ -2785,7 +2905,7 @@
                             'Content-Type': 'application/json',
                             'Authorization': adminPassword
                         },
-                        body: JSON.stringify({ name })
+                        body: JSON.stringify({ name, courseId: currentAdminCourseId })
                     })
                     .then(res => {
                         if (!res.ok) throw new Error("Erro ao excluir turma.");
@@ -2816,9 +2936,9 @@
                 return;
             }
 
-            const courseId = document.getElementById('create-class-course').value;
+            const courseId = currentAdminCourseId;
             if (!courseId) {
-                errDiv.textContent = 'Por favor, selecione um curso vinculado.';
+                errDiv.textContent = 'Erro interno: Workspace não selecionado.';
                 errDiv.style.display = 'block';
                 return;
             }
@@ -4296,29 +4416,29 @@
             document.getElementById('edit-student-modal').style.display = 'none';
         });
 
-        // Atualizar período automaticamente quando a turma é selecionada na edição
-        document.getElementById('edit-student-class').addEventListener('change', (e) => {
-            const selectedClass = e.target.value;
-            const cls = allClassesCache.find(c => c.name === selectedClass);
-            if (cls && cls.period) {
-                document.getElementById('edit-student-period').value = cls.period;
-            }
-        });
-
+        // Atualizar período automaticamente quando a turma é selecionada na edição - Removido (lógica múltipla agora)
         // Salvar alterações de cadastro do estudante
         document.getElementById('btn-save-student-edit').addEventListener('click', () => {
             const originalEmail = document.getElementById('edit-student-original-email').value;
             const name = document.getElementById('edit-student-name').value.trim();
             const email = document.getElementById('edit-student-email').value.trim();
             const password = document.getElementById('edit-student-password').value.trim();
-            const studentClass = document.getElementById('edit-student-class').value;
             const period = document.getElementById('edit-student-period').value;
+            
+            const editContainer = document.getElementById('edit-student-classes-container');
+            const selectedClasses = [];
+            if (editContainer) {
+                editContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                    selectedClasses.push(cb.value);
+                });
+            }
+            const studentClass = selectedClasses[0] || '';
             
             const errDiv = document.getElementById('student-edit-error');
             errDiv.style.display = 'none';
             
-            if (!name || !email || !password || !studentClass || !period) {
-                errDiv.textContent = 'Por favor, preencha todos os campos.';
+            if (!name || !email || !password || selectedClasses.length === 0 || !period) {
+                errDiv.textContent = 'Por favor, preencha todos os campos e selecione ao menos uma turma.';
                 errDiv.style.display = 'block';
                 return;
             }
@@ -4329,7 +4449,7 @@
                     'Content-Type': 'application/json',
                     'Authorization': adminPassword
                 },
-                body: JSON.stringify({ originalEmail, name, email, password, studentClass, period })
+                body: JSON.stringify({ originalEmail, name, email, password, studentClass, classes: selectedClasses, period })
             })
             .then(res => {
                 if (!res.ok) {
@@ -4859,11 +4979,9 @@
         const btnEditorNavbar = document.querySelector('[data-tab="tab-editor"]');
         if (btnEditorNavbar) {
             btnEditorNavbar.addEventListener('click', () => {
-                // Ao abrir a aba, não carrega automaticamente se não houver curso selecionado
-                const select = document.getElementById('editor-course-select');
-                if (select && select.value) {
+                if (currentAdminCourseId) {
                     document.getElementById('editor-workspace').style.display = 'flex';
-                    loadEditorCourseStructure(select.value);
+                    loadEditorCourseStructure(currentAdminCourseId);
                 } else {
                     document.getElementById('editor-workspace').style.display = 'none';
                 }
@@ -5021,7 +5139,7 @@
 
         // Salvar a Estrutura Geral no Servidor
         function saveEditorCourseStructureToServer() {
-            const courseId = document.getElementById('editor-course-select').value;
+            const courseId = currentAdminCourseId;
             if (!courseId) return;
 
             fetch(`/api/admin/courses/${courseId}/structure`, {
@@ -5178,7 +5296,7 @@
 
         // CRUD de Unidades (Apostila + Avaliação)
         document.getElementById('btn-create-unit').addEventListener('click', () => {
-            const courseId = document.getElementById('editor-course-select').value;
+            const courseId = currentAdminCourseId;
             const moduleId = document.getElementById('new-unit-module-select').value;
             const unitName = document.getElementById('new-unit-name').value.trim();
 
