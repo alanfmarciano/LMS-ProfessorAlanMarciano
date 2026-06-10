@@ -96,6 +96,7 @@ const DB_SUBMISSIONS_FILE = path.join(__dirname, '../data/db_submissions.json');
 const CONFIG_FILE = path.join(__dirname, '../data/config.json');
 const DB_CLASSES_FILE = path.join(__dirname, '../data/db_classes.json');
 const DB_ADMINS_FILE = path.join(__dirname, '../data/db_admins.json');
+const DB_ATTENDANCE_FILE = path.join(__dirname, '../data/db_attendance.json');
 
 // Armazena todos os IPs da rede local
 let localIpAddresses = [];
@@ -124,7 +125,20 @@ function readJSON(file) {
     if (file.includes('db_submissions.json')) return db.memory.submissions;
     if (file.includes('config.json')) return db.memory.config;
     if (file.includes('db_admins.json')) return db.memory.admins;
-    return [];
+    if (file.includes('db_attendance.json')) {
+        if (!db.memory.attendance) db.memory.attendance = [];
+        return db.memory.attendance;
+    }
+
+    try {
+        if (fs.existsSync(file)) {
+            const data = fs.readFileSync(file, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (e) {
+        console.error(`Erro ao ler ${file}:`, e);
+    }
+    return file.includes('config.json') ? {} : [];
 }
 
 // Função para escrever dados JSON via Memory DB
@@ -134,6 +148,7 @@ function writeJSON(file, data) {
     else if (file.includes('db_submissions.json')) db.memory.submissions = data;
     else if (file.includes('config.json')) db.memory.config = data;
     else if (file.includes('db_admins.json')) db.memory.admins = data;
+    else if (file.includes('db_attendance.json')) db.memory.attendance = data;
     db.save();
 }
 
@@ -245,9 +260,35 @@ app.get('/api/branding', (req, res) => {
     res.json(db.memory.branding || {});
 });
 
+function hasGlobalAdminAccess(req) {
+    const legacyPassword = req.headers['admin-password'] || req.query.adminPassword;
+    if (legacyPassword && legacyPassword === db.memory.config.adminPassword) {
+        return true;
+    }
+
+    const authHeader = req.headers.authorization || (req.body && req.body.password) || req.query.password;
+    if (!authHeader) {
+        return false;
+    }
+
+    let email;
+    let password;
+    if (authHeader.includes(':')) {
+        const parts = authHeader.split(':');
+        email = parts[0].trim().toLowerCase();
+        password = parts.slice(1).join(':').trim();
+    } else {
+        email = 'admin@senai.br';
+        password = authHeader.trim();
+    }
+
+    const admins = readJSON(DB_ADMINS_FILE);
+    return admins.some(a => a.email && a.email.toLowerCase() === email && a.password === password);
+}
+
 app.post('/api/branding', (req, res) => {
     const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
-    if (adminPassword !== db.memory.config.adminPassword) {
+    if (!hasGlobalAdminAccess(req)) {
         return res.status(401).json({ error: 'Não autorizado.' });
     }
     db.memory.branding = { ...db.memory.branding, ...req.body };
@@ -261,7 +302,7 @@ app.get('/api/courses', (req, res) => {
 
 app.post('/api/courses', (req, res) => {
     const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
-    if (adminPassword !== db.memory.config.adminPassword) {
+    if (!hasGlobalAdminAccess(req)) {
         return res.status(401).json({ error: 'Não autorizado.' });
     }
     const newCourse = req.body;
@@ -281,7 +322,7 @@ app.post('/api/courses', (req, res) => {
 
 app.put('/api/courses/:id', (req, res) => {
     const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
-    if (adminPassword !== db.memory.config.adminPassword) {
+    if (!hasGlobalAdminAccess(req)) {
         return res.status(401).json({ error: 'Não autorizado.' });
     }
     const courseId = req.params.id;
@@ -297,7 +338,7 @@ app.put('/api/courses/:id', (req, res) => {
 
 app.delete('/api/courses/:id', (req, res) => {
     const adminPassword = req.headers['admin-password'] || req.query.adminPassword;
-    if (adminPassword !== db.memory.config.adminPassword) {
+    if (!hasGlobalAdminAccess(req)) {
         return res.status(401).json({ error: 'Não autorizado.' });
     }
     const courseId = req.params.id;
@@ -409,6 +450,15 @@ app.post('/api/student/login', (req, res) => {
     }
 
     student.loginTime = new Date().toISOString();
+    
+    const today = new Date().toISOString().split('T')[0];
+    if (!student.attendanceDays) {
+        student.attendanceDays = [];
+    }
+    if (!student.attendanceDays.includes(today)) {
+        student.attendanceDays.push(today);
+    }
+
     db.save();
 
     // Retorna dados do estudante sem expor o campo de senha
@@ -496,10 +546,18 @@ app.post('/api/student/recover', (req, res) => {
     res.json({ success: true, message: 'Solicitação de recuperação enviada ao instrutor.' });
 });
 
+function getStructureForClass(cls) {
+    const course = (db.memory.courses || []).find(c => c.id === cls.courseId);
+    if (course && Array.isArray(course.structure)) {
+        return course.structure;
+    }
+    return db.memory.courseStructure || [];
+}
+
 // Helper para obter itens liberados de forma dinamica, incluindo novos modulos/unidades
 function getReleasedItemsForClass(cls) {
     const released = cls.releasedItems || {};
-    const courseStructure = db.memory.courseStructure || [];
+    const courseStructure = getStructureForClass(cls);
     courseStructure.forEach(mod => {
         mod.units.forEach(u => {
             if (u.apostilaKey && released[u.apostilaKey] === undefined) {
@@ -586,7 +644,10 @@ app.post('/api/student/submit', (req, res) => {
         !(s.student.email && s.student.email.toLowerCase() === studentEmail && s.examKey === examKey)
     );
 
+    const protocolCode = 'PRV-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+
     const submissionObj = {
+        protocolCode,
         student,
         examKey,
         score,
@@ -601,6 +662,7 @@ app.post('/api/student/submit', (req, res) => {
 
     res.json({
         success: true,
+        protocolCode,
         score,
         correctCount,
         totalCount
@@ -620,6 +682,33 @@ app.post('/api/student/my-submissions', (req, res) => {
     const mySubmissions = submissions.filter(s => s.student && s.student.email && s.student.email.toLowerCase() === normalizedEmail);
     
     res.json({ success: true, submissions: mySubmissions });
+});
+
+// Painel do Aluno (Frequência e Avaliações com Gabarito)
+app.get('/api/student/dashboard', (req, res) => {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email não informado.' });
+    
+    const normalizedEmail = email.toLowerCase();
+    
+    // 1. Fetch Attendance
+    const attendance = readJSON(DB_ATTENDANCE_FILE);
+    const myAttendance = attendance.filter(a => a.attendances && typeof a.attendances[normalizedEmail] !== 'undefined');
+    
+    // 2. Fetch Exams (Submissions)
+    const submissions = readJSON(DB_SUBMISSIONS_FILE);
+    const mySubmissions = submissions.filter(s => s.student && s.student.email && s.student.email.toLowerCase() === normalizedEmail);
+    
+    res.json({
+        success: true,
+        attendance: myAttendance.map(a => ({
+            id: a.id,
+            date: a.date,
+            topic: a.topic,
+            status: a.attendances[normalizedEmail]
+        })),
+        exams: mySubmissions
+    });
 });
 
 // Obter progresso do aluno (GET)
@@ -674,6 +763,16 @@ function validateAdmin(req, res, callback) {
     }
 }
 
+app.post('/api/admin/login', (req, res) => {
+    validateAdmin(req, res, (config, matchedAdmin) => {
+        res.json({
+            success: true,
+            role: matchedAdmin.role || 'admin',
+            classes: matchedAdmin.classes || []
+        });
+    });
+});
+
 // Retorna as configurações do servidor (com senha sanitizada)
 app.post('/api/admin/config', (req, res) => {
     validateAdmin(req, res, (config) => {
@@ -703,7 +802,7 @@ app.get('/api/admin/accounts', (req, res) => {
     validateAdmin(req, res, () => {
         const admins = readJSON(DB_ADMINS_FILE);
         // Não retorna senhas por segurança
-        const safeAdmins = admins.map(a => ({ name: a.name, email: a.email }));
+        const safeAdmins = admins.map(a => ({ name: a.name, email: a.email, role: a.role || 'admin', classes: a.classes || [] }));
         res.json(safeAdmins);
     });
 });
@@ -711,25 +810,29 @@ app.get('/api/admin/accounts', (req, res) => {
 // Criar conta administrativa
 app.post('/api/admin/accounts/create', (req, res) => {
     validateAdmin(req, res, () => {
-        const { name, email, password } = req.body;
-        if (!name || !email || !password || name.trim() === '' || email.trim() === '' || password.trim() === '') {
-            return res.status(400).json({ error: 'Dados incompletos ou inválidos.' });
+        const { name, email, password, role, classes } = req.body;
+        
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Dados incompletos.' });
         }
-
+        
         const admins = readJSON(DB_ADMINS_FILE);
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail = email.toLowerCase().trim();
+        
         const exists = admins.some(a => a.email && a.email.toLowerCase() === normalizedEmail);
-
+        
         if (exists) {
-            return res.status(400).json({ error: 'E-mail administrativo já cadastrado.' });
+            return res.status(400).json({ error: 'E-mail já cadastrado.' });
         }
-
+        
         admins.push({
             name: name.trim(),
             email: normalizedEmail,
-            password: password.trim()
+            password: password.trim(),
+            role: role || 'admin',
+            classes: Array.isArray(classes) ? classes : []
         });
-
+        
         writeJSON(DB_ADMINS_FILE, admins);
         res.json({ success: true });
     });
@@ -1005,8 +1108,12 @@ app.post('/api/admin/submissions/delete', (req, res) => {
 
 // Obter alunos cadastrados e online
 app.get('/api/admin/students', (req, res) => {
-    validateAdmin(req, res, () => {
-        const students = readJSON(DB_STUDENTS_FILE);
+    validateAdmin(req, res, (config, matchedAdmin) => {
+        let students = readJSON(DB_STUDENTS_FILE);
+        if (matchedAdmin && matchedAdmin.role === 'professor' && Array.isArray(matchedAdmin.classes)) {
+            students = students.filter(s => matchedAdmin.classes.includes(s.studentClass));
+        }
+        
         const now = Date.now();
         const enrichedStudents = students.map(s => {
             const lastPing = db.memory.sessions[s.email];
@@ -1142,8 +1249,11 @@ app.post('/api/admin/delete-student', (req, res) => {
 
 // Obter lista completa de turmas cadastradas (administrador)
 app.get('/api/admin/classes', (req, res) => {
-    validateAdmin(req, res, () => {
-        const classes = readJSON(DB_CLASSES_FILE);
+    validateAdmin(req, res, (config, matchedAdmin) => {
+        let classes = readJSON(DB_CLASSES_FILE);
+        if (matchedAdmin && matchedAdmin.role === 'professor' && Array.isArray(matchedAdmin.classes)) {
+            classes = classes.filter(c => matchedAdmin.classes.includes(c.name));
+        }
         res.json(classes);
     });
 });
@@ -1194,6 +1304,146 @@ app.post('/api/admin/class/create', (req, res) => {
 });
 
 // Ativar/Desativar liberação de cadastro para turma (administrador)
+app.post('/api/admin/import', (req, res) => {
+    validateAdmin(req, res, () => {
+        const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+        const defaultCourseId = String(req.body.defaultCourseId || '').trim();
+
+        if (rows.length === 0) {
+            return res.status(400).json({ error: 'Nenhuma linha valida para importar.' });
+        }
+
+        const students = readJSON(DB_STUDENTS_FILE);
+        const classes = readJSON(DB_CLASSES_FILE);
+        const courses = db.memory.courses || [];
+
+        const pick = (row, keys) => {
+            for (const key of keys) {
+                const value = row[key];
+                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                    return String(value).trim();
+                }
+            }
+            return '';
+        };
+
+        const resolveCourse = (rawCourse) => {
+            const courseRef = String(rawCourse || defaultCourseId || '').trim().toLowerCase();
+            if (!courseRef && courses.length === 1) return courses[0];
+            return courses.find(c => {
+                return String(c.id || '').toLowerCase() === courseRef ||
+                    String(c.name || '').toLowerCase() === courseRef;
+            });
+        };
+
+        const buildDefaultReleasedItems = (course) => {
+            const defaultReleasedItems = {};
+            if (course && course.structure) {
+                course.structure.forEach(m => {
+                    const numUnits = m.units ? m.units.length : 5;
+                    for (let i = 1; i <= numUnits; i++) {
+                        defaultReleasedItems[`Apostila_${m.id}_${i}`] = true;
+                        defaultReleasedItems[`Avaliacao_${m.id}_${i}`] = false;
+                    }
+                });
+            }
+            return defaultReleasedItems;
+        };
+
+        const splitClasses = (value) => {
+            return String(value || '')
+                .split(/[;|]/)
+                .map(v => v.trim().toUpperCase())
+                .filter(Boolean);
+        };
+
+        let createdStudents = 0;
+        let updatedStudents = 0;
+        let createdClasses = 0;
+        let skipped = 0;
+        const errors = [];
+
+        rows.forEach((row, index) => {
+            const line = index + 2;
+            const name = pick(row, ['name', 'nome', 'aluno', 'student', 'studentname']);
+            const email = pick(row, ['email', 'e-mail', 'mail']).toLowerCase();
+            const password = pick(row, ['password', 'senha', 'studentpassword']) || '123456';
+            const period = pick(row, ['period', 'periodo', 'turno']) || 'Tarde';
+            const course = resolveCourse(pick(row, ['courseid', 'course', 'curso']));
+            const classNames = [
+                ...splitClasses(pick(row, ['classes', 'turmas'])),
+                ...splitClasses(pick(row, ['studentclass', 'class', 'classe', 'turma']))
+            ].filter((value, pos, arr) => arr.indexOf(value) === pos);
+
+            if (!name || !email || classNames.length === 0 || !course) {
+                skipped++;
+                errors.push({
+                    line,
+                    error: 'Informe nome, email, turma e curso existente.'
+                });
+                return;
+            }
+
+            classNames.forEach(className => {
+                const exists = classes.find(c => c.name === className && c.courseId === course.id);
+                if (!exists) {
+                    classes.push({
+                        name: className,
+                        period,
+                        courseId: course.id,
+                        registrationEnabled: true,
+                        examConfigs: {},
+                        releasedItems: buildDefaultReleasedItems(course)
+                    });
+                    createdClasses++;
+                }
+            });
+
+            const existing = students.find(s => s.email && s.email.toLowerCase() === email);
+            if (existing) {
+                const existingClasses = Array.isArray(existing.classes)
+                    ? existing.classes.map(c => typeof c === 'string' ? c : c.name).filter(Boolean)
+                    : (existing.studentClass ? [existing.studentClass] : []);
+                const mergedClasses = [...existingClasses, ...classNames].filter((value, pos, arr) => arr.indexOf(value) === pos);
+
+                existing.name = name;
+                existing.password = password;
+                existing.classes = mergedClasses;
+                existing.studentClass = mergedClasses[0];
+                existing.period = period;
+                updatedStudents++;
+            } else {
+                students.push({
+                    name,
+                    email,
+                    password,
+                    classes: classNames,
+                    studentClass: classNames[0],
+                    period,
+                    loginTime: null,
+                    recoveryRequested: false
+                });
+                createdStudents++;
+            }
+        });
+
+        writeJSON(DB_CLASSES_FILE, classes);
+        writeJSON(DB_STUDENTS_FILE, students);
+
+        res.json({
+            success: true,
+            summary: {
+                received: rows.length,
+                createdStudents,
+                updatedStudents,
+                createdClasses,
+                skipped,
+                errors: errors.slice(0, 20)
+            }
+        });
+    });
+});
+
 app.post('/api/admin/class/toggle-registration', (req, res) => {
     validateAdmin(req, res, () => {
         const { name, courseId, registrationEnabled } = req.body;
@@ -1251,6 +1501,62 @@ app.post('/api/admin/reset', (req, res) => {
         writeJSON(DB_CLASSES_FILE, classes);
 
         res.json({ success: true, message: 'Sala de aula e configurações de todas as turmas resetadas com sucesso!' });
+    });
+});
+
+// ==========================================
+// FREQUÊNCIA (ADMIN)
+// ==========================================
+app.get('/api/admin/attendance/lessons', (req, res) => {
+    validateAdmin(req, res, (config, matchedAdmin) => {
+        const { className, courseId } = req.query;
+        if (!className || !courseId) return res.status(400).json({ error: 'Faltam parâmetros' });
+        
+        const attendance = readJSON(DB_ATTENDANCE_FILE);
+        const lessons = attendance.filter(a => a.className === className && a.courseId === courseId);
+        
+        lessons.sort((a, b) => new Date(b.date) - new Date(a.date));
+        res.json(lessons);
+    });
+});
+
+app.post('/api/admin/attendance/lesson/save', (req, res) => {
+    validateAdmin(req, res, (config, matchedAdmin) => {
+        const { id, className, courseId, date, topic, attendances } = req.body;
+        if (!className || !courseId || !date) return res.status(400).json({ error: 'Dados incompletos' });
+        
+        const attendanceList = readJSON(DB_ATTENDANCE_FILE);
+        let lesson = attendanceList.find(a => a.id === id);
+        
+        if (lesson) {
+            lesson.date = date;
+            lesson.topic = topic || '';
+            lesson.attendances = attendances || {};
+        } else {
+            const newId = id || (Date.now().toString(36) + Math.random().toString(36).substr(2));
+            attendanceList.push({
+                id: newId,
+                className,
+                courseId,
+                date,
+                topic: topic || '',
+                teacherEmail: matchedAdmin ? matchedAdmin.email : 'admin@senai.br',
+                attendances: attendances || {}
+            });
+        }
+        
+        writeJSON(DB_ATTENDANCE_FILE, attendanceList);
+        res.json({ success: true });
+    });
+});
+
+app.post('/api/admin/attendance/lesson/delete', (req, res) => {
+    validateAdmin(req, res, () => {
+        const { id } = req.body;
+        const attendanceList = readJSON(DB_ATTENDANCE_FILE);
+        const filtered = attendanceList.filter(a => a.id !== id);
+        writeJSON(DB_ATTENDANCE_FILE, filtered);
+        res.json({ success: true });
     });
 });
 
@@ -1611,7 +1917,7 @@ app.put('/api/admin/material/:key', (req, res) => {
             return res.status(400).json({ error: 'Chave de material inválida.' });
         }
 
-        const filePath = path.join(__dirname, `${key}.md`);
+        const filePath = path.join(__dirname, '../content', `${key}.md`);
         
         try {
             // Backup antes de salvar
@@ -1657,7 +1963,7 @@ app.post('/api/admin/material/create', (req, res) => {
         const avaliacaoKey = `Avaliacao_${keyBase}`;
 
         // Cria arquivos em disco e no BD
-        const mdPath = path.join(__dirname, `${apostilaKey}.md`);
+        const mdPath = path.join(__dirname, '../content', `${apostilaKey}.md`);
         const defaultMd = `# 📘 ${unitName}\n\nEscreva o conteúdo da sua nova unidade aqui...\n`;
         
         try {
@@ -1699,7 +2005,7 @@ app.get('/api/admin/evaluation/:key', (req, res) => {
         
         if (!evaluation) {
             // Tenta carregar e migrar se houver arquivo .md legando em disco
-            const mdPath = path.join(__dirname, `${key}.md`);
+            const mdPath = path.join(__dirname, '../content', `${key}.md`);
             if (fs.existsSync(mdPath)) {
                 try {
                     const mdContent = fs.readFileSync(mdPath, 'utf8');
@@ -1779,7 +2085,7 @@ app.post('/api/admin/evaluation/duplicate', (req, res) => {
 // ----------------------------------------------------
 
 const multer = require('multer');
-const uploadDir = path.join(__dirname, 'uploads');
+const uploadDir = path.join(__dirname, '../data/uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -1794,17 +2100,25 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+function findUnitByApostilaKey(key) {
+    for (const course of db.memory.courses || []) {
+        for (const mod of course.structure || []) {
+            const unit = (mod.units || []).find(u => u.apostilaKey === key);
+            if (unit) return unit;
+        }
+    }
+
+    for (const mod of db.memory.courseStructure || []) {
+        const unit = (mod.units || []).find(u => u.apostilaKey === key);
+        if (unit) return unit;
+    }
+
+    return null;
+}
+
 function getFilesForApostila(key) {
-    const structure = db.memory.courseStructure || [];
-    let files = [];
-    structure.forEach(mod => {
-        mod.units.forEach(u => {
-            if (u.apostilaKey === key) {
-                files = u.files || [];
-            }
-        });
-    });
-    return files;
+    const unit = findUnitByApostilaKey(key);
+    return unit && Array.isArray(unit.files) ? unit.files : [];
 }
 
 app.post('/api/admin/upload', (req, res) => {
@@ -1829,23 +2143,19 @@ app.post('/api/admin/upload', (req, res) => {
                 fileType = 'pdf';
             }
             
-            const structure = db.memory.courseStructure || [];
+            const unit = findUnitByApostilaKey(apostilaKey);
             let linked = false;
-            structure.forEach(mod => {
-                mod.units.forEach(u => {
-                    if (u.apostilaKey === apostilaKey) {
-                        if (!u.files) u.files = [];
-                        u.files.push({
-                            id: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                            name: originalname,
-                            path: relativePath,
-                            type: fileType,
-                            timestamp: new Date().toISOString()
-                        });
-                        linked = true;
-                    }
+            if (unit) {
+                if (!unit.files) unit.files = [];
+                unit.files.push({
+                    id: 'f_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    name: originalname,
+                    path: relativePath,
+                    type: fileType,
+                    timestamp: new Date().toISOString()
                 });
-            });
+                linked = true;
+            }
             
             if (linked) {
                 db.save();
@@ -1882,23 +2192,19 @@ app.post('/api/admin/material/link', (req, res) => {
             return res.status(400).json({ error: 'Dados incompletos.' });
         }
         
-        const structure = db.memory.courseStructure || [];
+        const unit = findUnitByApostilaKey(apostilaKey);
         let linked = false;
-        structure.forEach(mod => {
-            mod.units.forEach(u => {
-                if (u.apostilaKey === apostilaKey) {
-                    if (!u.files) u.files = [];
-                    u.files.push({
-                        id: 'l_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                        name,
-                        path: url,
-                        type: 'link',
-                        timestamp: new Date().toISOString()
-                    });
-                    linked = true;
-                }
+        if (unit) {
+            if (!unit.files) unit.files = [];
+            unit.files.push({
+                id: 'l_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                name,
+                path: url,
+                type: 'link',
+                timestamp: new Date().toISOString()
             });
-        });
+            linked = true;
+        }
         
         if (linked) {
             db.save();
@@ -1916,19 +2222,13 @@ app.post('/api/admin/material/delete-file', (req, res) => {
             return res.status(400).json({ error: 'Dados incompletos.' });
         }
         
-        const structure = db.memory.courseStructure || [];
+        const unit = findUnitByApostilaKey(apostilaKey);
         let removed = false;
-        structure.forEach(mod => {
-            mod.units.forEach(u => {
-                if (u.apostilaKey === apostilaKey && u.files) {
-                    const beforeLength = u.files.length;
-                    u.files = u.files.filter(f => f.id !== fileId);
-                    if (u.files.length < beforeLength) {
-                        removed = true;
-                    }
-                }
-            });
-        });
+        if (unit && unit.files) {
+            const beforeLength = unit.files.length;
+            unit.files = unit.files.filter(f => f.id !== fileId);
+            removed = unit.files.length < beforeLength;
+        }
         
         if (removed) {
             db.save();
@@ -2005,6 +2305,10 @@ app.post('/api/student/leave', (req, res) => {
         delete db.memory.sessions[email];
     }
     res.send('ok');
+});
+
+app.get(['/admin', '/admin/'], (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/admin.html'));
 });
 
 // Rota de fallback para servir index.html

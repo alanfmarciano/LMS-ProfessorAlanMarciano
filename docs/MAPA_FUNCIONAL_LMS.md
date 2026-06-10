@@ -72,6 +72,32 @@ Campos:
 - E-mail
 - Senha
 
+### Central Administrativa
+Objetivo: preparar o ambiente antes de abrir um workspace de curso.
+
+Elementos:
+- Card de Configurações Gerais
+- Lista de workspaces de curso
+- Botão de sair
+
+### Configurações Gerais
+Objetivo: administrar itens globais do LMS fora do workspace de um curso.
+
+Abas:
+- Turmas
+- Contas de Alunos
+- Administradores
+- Cursos
+
+### Workspace do Curso
+Objetivo: gerenciar conteúdo, avaliações, dúvidas, monitoramento e liberações de um curso específico.
+
+Abas:
+- Monitor Geral
+- Controle de Liberação
+- Dúvidas / Fórum
+- Editor de Conteúdo
+
 ### Dashboard
 Elementos:
 - Total de alunos
@@ -155,6 +181,7 @@ Botões:
 Botões:
 - Liberar item
 - Bloquear item
+- Configurar prova da unidade
 - Liberar módulo inteiro
 - Bloquear módulo inteiro
 - Liberar todas as apostilas

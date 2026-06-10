@@ -49,227 +49,409 @@
         }
     </script>
     
-    <!-- HUB DO ALUNO (Cursos) -->
+    <!-- HUB DO ALUNO (Cursos) — Legacy, hidden by default -->
     <div id="student-hub" class="w-full h-full bg-slateDark flex-col items-center pt-20" style="display: none; position: absolute; z-index: 50; overflow-y: auto;">
         <div class="max-w-5xl mx-auto w-full px-8">
             <h2 class="text-4xl font-black text-white mb-2 tracking-tight">🎓 Seus Cursos</h2>
             <p class="text-slate-400 text-lg mb-12 font-medium">Selecione o curso que deseja acessar hoje.</p>
-            
-            <div id="student-hub-courses" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Cursos injetados dinamicamente via JS -->
-            </div>
-            
+            <div id="student-hub-courses" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             <div class="mt-16 flex justify-center">
                 <button id="btn-student-hub-logout" class="px-6 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 font-bold rounded-xl transition-colors">🚪 Sair da Conta</button>
             </div>
         </div>
     </div>
 
-    <div id="app-container" class="flex w-full h-full relative" style="display: flex;">
-        
-        <!-- Sidebar Navigation -->
-        <nav id="sidebar" class="w-80 min-w-[320px] bg-slatePanel/80 backdrop-blur-xl border-r border-slate-700/50 flex flex-col overflow-y-auto transition-transform duration-300 z-40 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
-            <div class="logo-area sticky top-0 bg-slatePanel/90 backdrop-blur-md px-6 py-8 border-b border-slate-700/50 z-10 cursor-pointer" onclick="window.location.href='index.html'">
-                <h1 class="text-3xl font-extrabold tracking-tight text-white">LMS<span class="text-primary">4.0</span></h1>
-                <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Portal de Treinamento</p>
+    <div id="app-container" class="app" style="display: flex;">
+
+        <!-- ======================================= -->
+        <!-- SIDEBAR                                   -->
+        <!-- ======================================= -->
+        <aside id="sidebar" class="sidebar">
+            <div>
+                <div class="logo" onclick="window.location.href='index.html'" style="cursor:pointer">LMS<span>4.0</span></div>
+                <div class="logo-subtitle">PORTAL DE TREINAMENTO</div>
             </div>
 
-            <!-- Barra de Busca -->
-            <div class="px-5 py-4 border-b border-slate-700/50">
-                <input type="text" id="search-input" placeholder="Pesquisar aulas ou missões..." class="w-full px-4 py-3 bg-black/20 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 shadow-inner">
+            <!-- Course Switcher -->
+            <div class="course-switcher" id="course-switcher" onclick="showMyCoursesView()" style="cursor:pointer">
+                <span>🎓 <span id="course-switcher-label">Selecione um curso</span></span>
+                <span>⌄</span>
             </div>
 
-            <!-- Card do Aluno -->
-            <div class="instructor-card flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3 mx-4 my-4 backdrop-blur-sm shadow-lg" id="student-profile-card" style="display: none;">
-                <div class="instructor-avatar flex items-center justify-center bg-gradient-to-br from-primary to-red-700 text-white text-xs font-bold w-9 h-9 rounded-full shadow-md" id="student-avatar">AL</div>
-                <div class="instructor-info flex flex-col">
-                    <span class="instructor-name text-sm font-bold text-white" id="student-profile-name">Aluno</span>
-                    <span class="instructor-role text-xs text-slate-400" id="student-profile-class">Turma</span>
+            <!-- Global Sidebar View -->
+            <div id="sidebar-global-view" style="display: flex; flex-direction: column; flex: 1;">
+                <nav>
+                    <div class="sidebar-section-title">Menu principal</div>
+                    <div class="nav-list">
+                        <a class="nav-item active" href="#" onclick="showMyCoursesView(); return false;" id="nav-my-courses">
+                            <span class="nav-icon">🏠</span> Meus Cursos
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('📅 Calendário em breve!'); return false;">
+                            <span class="nav-icon">📅</span> Calendário
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('✅ Atividades em breve!'); return false;">
+                            <span class="nav-icon">✅</span> Atividades
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('✉️ Mensagens em breve!'); return false;">
+                            <span class="nav-icon">✉️</span> Mensagens
+                            <span class="badge">2</span>
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('📊 Notas em breve!'); return false;">
+                            <span class="nav-icon">📊</span> Notas
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('🏅 Certificados em breve!'); return false;">
+                            <span class="nav-icon">🏅</span> Certificados
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('📚 Biblioteca em breve!'); return false;">
+                            <span class="nav-icon">📚</span> Biblioteca
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('🎧 Suporte em breve!'); return false;">
+                            <span class="nav-icon">🎧</span> Suporte
+                        </a>
+                    </div>
+                </nav>
+
+                <div class="premium-card">
+                    <h4>👑 Seja Premium</h4>
+                    <p>Acesse conteúdos exclusivos, recursos avançados e relatórios completos.</p>
+                    <button class="btn-premium" onclick="showToast('✨ Recurso Premium em breve!')">Upgrade</button>
                 </div>
-                <button id="btn-student-logout" title="Sair da conta" class="ml-auto text-red-400 hover:text-red-300 transition-colors text-lg focus:outline-none">🚪</button>
             </div>
 
-            <!-- Dynamic Sidebar Navigation Modules -->
-            <div id="sidebar-navigation-modules" class="flex flex-col gap-2 p-2">
-                <!-- Injected dynamically by app.js -->
-            </div>
+            <!-- Course Sidebar View -->
+            <div id="sidebar-course-view" style="display: none; flex-direction: column; flex: 1;">
+                <nav>
+                    <div class="sidebar-section-title">Navegação do Curso</div>
+                    <div class="nav-list">
+                        <a class="nav-item active" href="#" onclick="showCoursePanelView(); return false;" id="nav-course-panel">
+                            <span class="nav-icon">📊</span> Painel do Curso
+                        </a>
+                    </div>
 
-            <!-- Rodapé da Sidebar -->
-            <div class="mt-auto px-6 py-4 text-xs text-slate-500 border-t border-slate-700/50 bg-black/10">
-                <div>Portal LMS • Portal do Aluno • v2.0</div>
-                <div class="mt-1"><span id="diagnostico-link" class="underline cursor-pointer text-primary hover:text-red-400 transition-colors">🩺 Validador</span></div>
-            </div>
-        </nav>
+                    <!-- Modulos (Injetados via app.js) -->
+                    <div id="sidebar-navigation-modules" style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;"></div>
 
-        <!-- Main Content Area -->
-        <main id="main-content" class="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800/30 via-slateDark to-slateDark">
-            
-            <header id="topbar" class="h-20 px-8 flex items-center justify-between border-b border-slate-700/50 bg-slatePanel/50 backdrop-blur-md z-30">
-                <div class="flex items-center gap-4">
-                    <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none text-2xl">☰</button>
-                    <div id="breadcrumb" class="text-sm font-semibold text-slate-300 hover:text-white cursor-pointer transition-colors" onclick="window.location.href='index.html'">Portal LMS</div>
+                    <div class="sidebar-section-title" style="margin-top: 20px;">Apoio ao aluno</div>
+                    <div class="nav-list">
+                        <a class="nav-item" href="#" onclick="showToast('✉️ Mensagens em breve!'); return false;">
+                            <span class="nav-icon">✉️</span> Mensagens
+                            <span class="badge">2</span>
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('🔔 Avisos em breve!'); return false;">
+                            <span class="nav-icon">🔔</span> Avisos
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('🎧 Suporte em breve!'); return false;">
+                            <span class="nav-icon">🎧</span> Suporte
+                        </a>
+                        <a class="nav-item" href="#" onclick="showToast('📚 Biblioteca em breve!'); return false;">
+                            <span class="nav-icon">📚</span> Biblioteca
+                        </a>
+                    </div>
+                </nav>
+
+                <div class="premium-card">
+                    <h4>👑 Seja Premium</h4>
+                    <p>Acesse conteúdos exclusivos, recursos avançados e relatórios completos.</p>
+                    <button class="btn-premium" onclick="showToast('✨ Recurso Premium em breve!')">Upgrade</button>
                 </div>
-                <div class="topbar-actions flex gap-3">
-                    <button id="btn-change-course" title="Trocar de Curso" class="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-lg font-bold hover:bg-blue-500/20 hover:text-blue-300 hover:-translate-y-1 transition-all duration-200 focus:outline-none">
-                        <span>🏢</span> Trocar Curso
-                    </button>
-                    <button id="btn-notebook-toggle" title="Abrir Meu Caderno de Anotações" class="flex items-center gap-2 bg-slatePanel border border-slate-600/50 text-yellow-200 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 hover:border-slate-500 hover:-translate-y-1 hover:shadow-[0_4px_12px_rgba(234,179,8,0.15)] active:translate-y-0 transition-all duration-200 shadow-md focus:outline-none">
-                        <span>📝</span> Caderno
-                    </button>
-                    <button id="focus-mode-btn" title="Ativar Modo Foco (Otimizado para leitura)" class="flex items-center gap-2 bg-slate-800 border border-slate-600/50 text-slate-300 px-4 py-2 rounded-lg font-semibold hover:bg-slate-700 hover:text-white hover:-translate-y-1 hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)] active:translate-y-0 transition-all duration-200 focus:outline-none">
-                        <span>👁️</span> Foco
-                    </button>
-                    <button id="export-pdf-btn" title="Exportar esta apostila como PDF para os alunos" disabled class="flex items-center gap-2 bg-slate-800 border border-slate-700 text-slate-500 px-4 py-2 rounded-lg font-semibold opacity-50 cursor-not-allowed transition-all duration-200">
-                        <span>📄</span> PDF
-                    </button>
+            </div>
+        </aside>
+
+        <!-- ======================================= -->
+        <!-- MAIN AREA                                 -->
+        <!-- ======================================= -->
+        <main class="main">
+            <!-- TOPBAR -->
+            <header class="topbar" id="topbar">
+                <div class="breadcrumb" id="breadcrumb" onclick="showMyCoursesView()" style="cursor:pointer">
+                    <span>🏠</span>
+                    <strong>LMS4.0</strong>
+                    <span>/</span>
+                    <span>Portal do Aluno</span>
+                </div>
+
+                <div class="top-actions">
+                    <button id="mobile-menu-btn" class="top-btn" style="display:none;" onclick="document.getElementById('sidebar').classList.toggle('sidebar-open')">☰</button>
+                    
+                    <!-- Search -->
+                    <div style="position:relative; display:flex; align-items:center;">
+                        <span style="position:absolute; left:12px; color:var(--text-muted);">🔍</span>
+                        <input type="text" id="search-input" placeholder="Pesquisar..." style="padding:10px 14px 10px 36px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; color:var(--text-main); font-size:14px; width:200px; outline:none;">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <button class="top-btn green" onclick="showCoursePanelView()">📊 Meu Painel</button>
+                    <button class="top-btn blue" id="btn-change-course" onclick="showMyCoursesView()">🏢 Trocar Curso</button>
+                    <button class="top-btn" id="btn-notebook-toggle" style="color:#fde68a;">📝 Caderno</button>
+                    <button class="top-btn" id="focus-mode-btn">👁️ Foco</button>
+                    <button class="top-btn" id="export-pdf-btn" disabled>📄 PDF</button>
+
+                    <!-- User Profile -->
+                    <div class="user-profile" id="student-profile-dropdown-trigger" style="position:relative; cursor:pointer;">
+                        <div class="avatar" id="student-avatar">AL</div>
+                        <div>
+                            <div class="user-name" id="student-profile-name">Aluno</div>
+                            <div class="user-role" id="student-profile-class">Estudante</div>
+                        </div>
+                        <span style="color:var(--text-muted); font-size:12px; margin-left:4px;">▼</span>
+                        
+                        <!-- Dropdown -->
+                        <div class="profile-dropdown" style="display:none; position:absolute; top:100%; right:0; margin-top:8px; width:200px; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.4); z-index:100;">
+                            <a href="#" onclick="showCoursePanelView(); return false;" style="display:block; padding:12px 16px; color:var(--text-soft); font-size:14px; border-bottom:1px solid var(--border);">📊 Meu Painel</a>
+                            <a href="#" onclick="showMyCoursesView(); return false;" style="display:block; padding:12px 16px; color:var(--text-soft); font-size:14px; border-bottom:1px solid var(--border);">🏢 Trocar Curso</a>
+                            <a href="#" id="btn-student-logout" style="display:block; padding:12px 16px; color:#ff4757; font-size:14px; font-weight:700;">🚪 Sair da conta</a>
+                        </div>
+                    </div>
                 </div>
             </header>
 
-            <div id="content-viewer" class="markdown-body flex-1 overflow-y-auto p-8 lg:p-12 pb-32">
-                <!-- Welcome Screen -->
-                <div class="welcome-screen max-w-5xl mx-auto pt-4">
-                    <h2 id="welcome-greeting" class="text-4xl font-extrabold text-white mb-2 tracking-tight">Olá, Estudante! 👋</h2>
-                    <p class="text-slate-400 text-lg mb-8">Selecione uma Unidade ou Avaliação no menu lateral para iniciar seu aprendizado.</p>
-                    
-                    <!-- Painel de Progresso Visual Premium -->
-                    <div class="progress-dashboard bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl mb-10">
-                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700/50">
-                            <h3 class="text-xl font-bold text-white flex items-center gap-2">📊 Sua Trilha de Progresso</h3>
-                            <span class="text-sm font-semibold text-slate-400 bg-black/20 px-3 py-1 rounded-full" id="progress-total-status">0 de 15 Concluídos</span>
-                        </div>
-                        
-                        <div class="flex flex-col md:flex-row gap-10 items-center">
-                            <!-- Circular Progress -->
-                            <div class="relative w-32 h-32 flex-shrink-0">
-                                <svg class="w-full h-full transform -rotate-90">
-                                    <circle cx="64" cy="64" r="56" class="stroke-slate-700 fill-none" stroke-width="12"></circle>
-                                    <circle id="radial-progress-bar-el" cx="64" cy="64" r="56" class="stroke-primary fill-none transition-all duration-1000 ease-out" stroke-width="12" stroke-dasharray="351" stroke-dashoffset="351" stroke-linecap="round"></circle>
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <span class="text-2xl font-black text-white" id="radial-progress-percentage-text">0%</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Module Bars -->
-                            <div class="flex-1 w-full flex flex-col gap-5">
-                                <div>
-                                    <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
-                                        <span>FUTEC — Fundamentos de TI</span>
-                                        <span id="progress-val-futec" class="text-primary">0%</span>
-                                    </div>
-                                    <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
-                                        <div id="progress-bar-futec" class="h-full bg-gradient-to-r from-primary to-red-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
-                                        <span>FECOP — Colaboração e Produtividade</span>
-                                        <span id="progress-val-fecop" class="text-blue-400">0%</span>
-                                    </div>
-                                    <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
-                                        <div id="progress-bar-fecop" class="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between text-sm font-bold text-slate-300 mb-2">
-                                        <span>IRCOM — Instalação de Recursos</span>
-                                        <span id="progress-val-ircom" class="text-purple-400">0%</span>
-                                    </div>
-                                    <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
-                                        <div id="progress-bar-ircom" class="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full transition-all duration-1000" style="width: 0%"></div>
-                                    </div>
-                                </div>
+            <!-- CONTENT -->
+            <div class="content" id="content-viewer">
+
+                <!-- ======================================================= -->
+                <!-- TELA 1: MEUS CURSOS                                      -->
+                <!-- ======================================================= -->
+                <section id="view-my-courses">
+                    <div class="page-header">
+                        <div class="page-title-group">
+                            <div class="page-icon">🎓</div>
+                            <div>
+                                <h1 class="page-title" id="welcome-greeting">Seus Cursos</h1>
+                                <p class="page-subtitle">Acompanhe seu progresso e continue aprendendo.</p>
                             </div>
                         </div>
+                        <div class="hero-illustration">🎓</div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-lg hover:bg-slate-800/50 transition-colors">
-                            <h4 class="text-4xl font-black text-white mb-1">320</h4>
-                            <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider">Horas de Carga</p>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Cursos ativos</div>
+                            <div class="stat-value" id="global-stat-active-courses">0</div>
+                            <div class="stat-help">Em andamento</div>
                         </div>
-                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-lg hover:bg-slate-800/50 transition-colors">
-                            <h4 class="text-4xl font-black text-white mb-1">15</h4>
-                            <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider">Unidades</p>
+                        <div class="stat-card">
+                            <div class="stat-label">Progresso médio</div>
+                            <div class="stat-value" id="global-stat-avg-progress">0%</div>
+                            <div class="stat-help">+12% este mês</div>
                         </div>
-                        <div class="bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-lg hover:bg-slate-800/50 transition-colors relative overflow-hidden group">
-                            <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <h4 id="stat-completed" class="text-4xl font-black text-primary mb-1 relative z-10">0</h4>
-                            <p class="text-sm text-slate-400 uppercase font-semibold tracking-wider relative z-10">Concluídos</p>
+                        <div class="stat-card">
+                            <div class="stat-label">Próxima atividade</div>
+                            <div class="stat-value" id="global-stat-next-act">Em breve</div>
+                            <div class="stat-help" id="global-stat-next-date">Ver calendário</div>
                         </div>
-                    </div>
-
-                    <!-- Histórico de Provas -->
-                    <div id="student-chart-container" style="display: none;" class="bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl mb-12 w-full text-left">
-                        <h3 class="text-2xl font-extrabold text-white mb-6 flex items-center gap-3"><span>📈</span> Evolução das Notas</h3>
-                        <div class="relative w-full h-[300px]">
-                            <canvas id="student-evolution-chart"></canvas>
-                        </div>
-                    </div>
-
-                    <div id="student-completed-exams-container" style="display: none;" class="w-full text-left mb-12">
-                        <h3 class="text-2xl font-extrabold text-white mb-6 flex items-center gap-3"><span>🎯</span> Avaliações Realizadas</h3>
-                        <div id="completed-exams-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <!-- Injetado dinamicamente via JS -->
+                        <div class="stat-card">
+                            <div class="stat-label">Horas de estudo</div>
+                            <div class="stat-value" id="global-stat-hours">24h30</div>
+                            <div class="stat-help">+4h esta semana</div>
                         </div>
                     </div>
 
+                    <div class="toolbar">
+                        <input type="text" class="input" placeholder="🔎 Buscar cursos" id="course-search-input">
+                        <select class="select" id="filter-status"><option>Status: Todos</option><option>Em andamento</option><option>Concluídos</option></select>
+                        <select class="select" id="filter-turno"><option>Turno: Todos</option><option>Manhã</option><option>Tarde</option><option>Noite</option></select>
+                        <select class="select" id="filter-order"><option>Mais recentes</option></select>
+                    </div>
 
-                    <!-- Índice do Curso -->
-                    <div class="curriculum-index bg-slate-800/20 rounded-2xl border border-white/5 p-8">
-                        <h3 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4">📚 Índice do Curso</h3>
-                        
-                        <div class="mb-8">
-                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-primary text-white text-xs px-2 py-1 rounded-md font-black">FUTEC</span> Fundamentos de TI (80h)</h4>
-                            <table class="w-full text-sm text-left text-slate-400">
-                                <tbody>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 1</td><td class="py-3 px-4">📺 Sistemas Operacionais + 💾 Dispositivos Computacionais</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 2</td><td class="py-3 px-4">🏭 Indústria 4.0 + 🌐 Internet</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 3</td><td class="py-3 px-4">📊 Planilhas + 📧 Correio Eletrônico + 🎤 Apresentações</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 4</td><td class="py-3 px-4">🗄️ Banco de Dados (SGBD) + 💻 Programação (Lógica)</td></tr>
-                                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 5</td><td class="py-3 px-4">☁️ Aplicações Web + 📱 Mídias Sociais + 🎮 Gamificação</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="mb-8">
-                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-black">FECOP</span> Colaboração e Produtividade (120h)</h4>
-                            <table class="w-full text-sm text-left text-slate-400">
-                                <tbody>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 1</td><td class="py-3 px-4">📅 Agenda Eletrônica + 👥 Grupos</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 2</td><td class="py-3 px-4">☁️ Armazenamento em Nuvem (OneDrive, SharePoint)</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 3</td><td class="py-3 px-4">📊 Planilhas Avançadas (Dashboards, Macros)</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 4</td><td class="py-3 px-4">🎬 Apresentações + 📹 Reuniões Online (Teams/Meet)</td></tr>
-                                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 5</td><td class="py-3 px-4">📋 Projetos + 📝 Formulários + 🔧 Automação</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-
+                    <div class="grid-two">
                         <div>
-                            <h4 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-3"><span class="bg-purple-600 text-white text-xs px-2 py-1 rounded-md font-black">IRCOM</span> Instalação de Recursos Computacionais (120h)</h4>
-                            <table class="w-full text-sm text-left text-slate-400">
-                                <tbody>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 1</td><td class="py-3 px-4">📚 Histórico + Terminologia + Sistemas Numéricos</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 2</td><td class="py-3 px-4">🖥️ Meios Computacionais (Desktop, Notebook, Servidores)</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 3</td><td class="py-3 px-4">⚙️ Arquitetura (Processador, Placa Mãe, Periféricos)</td></tr>
-                                    <tr class="border-b border-slate-700/50 hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 4</td><td class="py-3 px-4">💾 Armazenamento (HD, SSD) + Fontes + Gabinetes</td></tr>
-                                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 font-bold w-32 text-white">Unidade 5</td><td class="py-3 px-4">🔧 Montagem/Desmontagem + Documentação + Instalação SO</td></tr>
-                                </tbody>
-                            </table>
+                            <div class="courses-grid" id="student-courses-grid">
+                                <div style="text-align:center; color:var(--text-muted); padding:40px; font-style:italic; grid-column: 1/-1;">Carregando cursos...</div>
+                            </div>
+
+                            <div class="bottom-banner">
+                                <div>
+                                    <h3>🏆 Mantenha a consistência!</h3>
+                                    <p>Você estudou 4 dias nesta semana. Continue assim para alcançar seus objetivos.</p>
+                                </div>
+                                <button class="top-btn blue" onclick="showCoursePanelView()">Ver meu desempenho</button>
+                            </div>
+                        </div>
+
+                        <aside>
+                            <div class="card" style="margin-bottom: 20px;">
+                                <h3 class="section-title">⚡ Ações rápidas</h3>
+                                <div class="quick-list">
+                                    <div class="quick-item" onclick="showToast('📅 Calendário em breve!')">
+                                        <div><strong>Ver calendário</strong><span>Confira suas aulas e prazos</span></div>
+                                        <span>›</span>
+                                    </div>
+                                    <div class="quick-item" onclick="showToast('✅ Atividades em breve!')">
+                                        <div><strong>Minhas atividades</strong><span>Ver tarefas e entregas</span></div>
+                                        <span>›</span>
+                                    </div>
+                                    <div class="quick-item" onclick="showCoursePanelView()">
+                                        <div><strong>Notas e desempenho</strong><span>Acompanhe suas notas</span></div>
+                                        <span>›</span>
+                                    </div>
+                                    <div class="quick-item" onclick="showToast('📚 Biblioteca em breve!')">
+                                        <div><strong>Biblioteca</strong><span>Acesse materiais de apoio</span></div>
+                                        <span>›</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <h3 class="section-title">🕘 Atividade recente</h3>
+                                <div class="activity-list" id="global-activity-list">
+                                    <div class="activity-item">
+                                        <strong>Você acessou o portal</strong>
+                                        <span>Portal LMS • Agora</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                </section>
+
+                <!-- ======================================================= -->
+                <!-- TELA 2: PAINEL INTERNO DO CURSO                          -->
+                <!-- ======================================================= -->
+                <section id="view-course-panel" style="display:none;">
+                    <div class="page-header">
+                        <div class="page-title-group">
+                            <div class="page-icon">📚</div>
+                            <div>
+                                <h1 class="page-title" id="course-panel-title">Painel do Curso</h1>
+                                <p class="page-subtitle" id="course-panel-subtitle">Acompanhe seu progresso, atividades e próximas aulas.</p>
+                            </div>
+                        </div>
+                        <div class="hero-illustration">💻</div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <article class="card continue-card" onclick="document.querySelector('#sidebar-navigation-modules .module-header')?.click()" style="cursor:pointer">
+                            <div class="lesson-cover" id="continue-lesson-cover">▶</div>
+                            <div>
+                                <h3 class="section-title">▶️ Continue de onde parou</h3>
+                                <h2 class="course-title" id="continue-lesson-title">Selecione uma aula</h2>
+                                <p class="course-next" id="continue-lesson-module">Clique para continuar</p>
+
+                                <div style="margin: 18px 0;">
+                                    <div class="progress-info">
+                                        <span>Progresso do curso</span>
+                                        <strong style="color: var(--red);" id="course-panel-progress-text">0%</strong>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="course-panel-progress-bar" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <button class="primary-btn" style="margin-top: 18px;" onclick="document.querySelector('#sidebar-navigation-modules .module-header')?.click()">Continuar aula →</button>
+                            </div>
+                        </article>
+
+                        <div class="card kpi-strip">
+                            <div class="kpi">
+                                <div class="kpi-icon">📈</div>
+                                <div class="kpi-value" id="kpi-progress">0%</div>
+                                <div class="kpi-label">Progresso geral</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-icon">✅</div>
+                                <div class="kpi-value" id="kpi-attendance">--</div>
+                                <div class="kpi-label">Presença</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-icon">👤</div>
+                                <div class="kpi-value" id="course-stat-absences">0</div>
+                                <div class="kpi-label">Faltas</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-icon">⭐</div>
+                                <div class="kpi-value" id="course-stat-avg">--</div>
+                                <div class="kpi-label">Média geral</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-icon">📋</div>
+                                <div class="kpi-value" id="kpi-pending-tasks">0</div>
+                                <div class="kpi-label">Tarefas pendentes</div>
+                            </div>
+                            <div class="kpi">
+                                <div class="kpi-icon">⏱️</div>
+                                <div class="kpi-value" id="kpi-workload">80h</div>
+                                <div class="kpi-label">Carga horária</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Card de Autoria -->
-                    <div class="mt-12 flex items-center gap-4 bg-slate-800/40 border border-white/5 p-4 rounded-xl max-w-lg">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-slate-700 text-white font-bold text-lg shadow-inner">AM</div>
-                        <div class="flex flex-col">
-                            <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-1">Material desenvolvido por</span>
-                            <span class="text-base font-bold text-white">Alan Marciano</span>
-                            <span class="text-xs text-slate-500">Instrutor • Gestor em T.I. • Escola Modelo</span>
+                    <div class="course-dashboard-layout">
+                        <!-- Coluna 1: Caminho de Aprendizagem + Avisos -->
+                        <div>
+                            <section class="card">
+                                <h3 class="section-title">🗺️ Seu caminho de aprendizagem</h3>
+                                <div class="module-list" id="course-modules-path">
+                                    <div style="text-align:center; color:var(--text-muted); font-style:italic; padding:32px;">Carregando módulos...</div>
+                                </div>
+                            </section>
+
+                            <section class="card" style="margin-top: 20px;">
+                                <h3 class="section-title">
+                                    📣 Avisos do professor
+                                    <a class="view-all" href="#" onclick="showToast('Ver todos os avisos'); return false;">Ver todos</a>
+                                </h3>
+                                <div class="notice-list" id="course-notices-list">
+                                    <div class="notice-item">
+                                        <strong>Bem-vindo ao curso!</strong>
+                                        <span>Não se esqueça de acessar o material de apoio na biblioteca antes de iniciar as avaliações.</span>
+                                        <br><span style="font-size:12px; margin-top:6px; display:block;">Professor • Hoje</span>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
-                    </div>
-                </div>
+
+                        <!-- Coluna 2: Próximas aulas + Avaliações -->
+                        <div>
+                            <section class="card" style="margin-bottom: 20px;">
+                                <h3 class="section-title">
+                                    📅 Próximas aulas
+                                    <a class="view-all" href="#" onclick="showToast('Ver calendário completo'); return false;">Ver calendário</a>
+                                </h3>
+                                <div class="schedule-list" id="course-schedule-list">
+                                    <div class="schedule-item">
+                                        <div class="date-box">HOJE<br>19:30</div>
+                                        <div>
+                                            <strong>Próxima aula disponível</strong>
+                                            <p class="course-next">Acesse o painel para continuar</p>
+                                        </div>
+                                        <div class="pill">2h</div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="card">
+                                <h3 class="section-title">
+                                    📝 Avaliações
+                                    <a class="view-all" href="#" onclick="showToast('Ver todas as avaliações'); return false;">Ver todas</a>
+                                </h3>
+                                <div class="assessment-list" id="course-exams-list">
+                                    <div style="text-align:center; color:var(--text-muted); font-size:14px; font-style:italic; padding:16px;">Nenhuma avaliação encontrada.</div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Coluna 3: Frequência + Atividade Recente -->
+                        <div>
+                            <section class="card frequency-card" style="margin-bottom: 20px;">
+                                <h3 class="section-title" style="justify-content:center;">✅ Frequência</h3>
+                                <div class="donut" id="attendance-donut-circle">
+                                    <strong id="attendance-donut-text">0%</strong>
+                                </div>
+                                <div class="frequency-row"><span>Presente</span><strong id="stat-att-present">0 aulas</strong></div>
+                                <div class="frequency-row"><span>Faltas</span><strong id="stat-att-absent">0 aulas</strong></div>
+                                <div class="frequency-row" style="border:none;"><span>Total registrado</span><strong id="stat-att-total">0 aulas</strong></div>
+                            </section>
+
+                            <section class="card">
+                                <h3 class="section-title">
+                                    🕘 Atividade recente
+                                    <a class="view-all" href="#" onclick="showToast('Ver todo o histórico'); return false;">Ver tudo</a>
+                                </h3>
+                                <div class="activity-list" id="course-activity-list">
+                                    <div class="activity-item">
+                                        <strong>Você acessou o painel do curso</strong>
             </div>
+
         </main>
     </div>
 
@@ -295,7 +477,7 @@
     </div>
 
     <!-- Aluno Login Modal Overlay -->
-    <div id="student-login-overlay" class="fixed inset-0 bg-slateDark/80 backdrop-blur-md z-[9998] hidden items-center justify-center p-4">
+    <div id="student-login-overlay" class="fixed inset-0 bg-slateDark/80 backdrop-blur-md z-[9998] items-center justify-center p-4" style="display: none;">
         <div class="login-card bg-slatePanel/90 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-2xl w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-all">
             
             <!-- TELA DE LOGIN -->

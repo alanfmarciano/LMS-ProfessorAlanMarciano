@@ -15,6 +15,7 @@ const DB_EVALUATIONS_FILE = path.join(__dirname, '../data/db_evaluations.json');
 const DB_PROGRESS_FILE = path.join(__dirname, '../data/db_progress.json');
 const DB_UPLOADS_FILE = path.join(__dirname, '../data/db_uploads.json');
 const DB_ADMINS_FILE = path.join(__dirname, '../data/db_admins.json');
+const DB_ATTENDANCE_FILE = path.join(__dirname, '../data/db_attendance.json');
 
 // Conexão com SQLite
 const dbPath = path.join(__dirname, '../data/database.db');
@@ -35,6 +36,7 @@ let memoryDB = {
     progress: {},
     uploads: {},
     admins: [],
+    attendance: [], // Novo: histórico de aulas e presenças
     sessions: {} // Alunos online { "email": last_ping_timestamp }
 };
 
@@ -128,6 +130,7 @@ function createTables() {
             sqliteDb.run("CREATE TABLE IF NOT EXISTS evaluations (key TEXT PRIMARY KEY, value TEXT)");
             sqliteDb.run("CREATE TABLE IF NOT EXISTS progress (key TEXT PRIMARY KEY, value TEXT)");
             sqliteDb.run("CREATE TABLE IF NOT EXISTS uploads (key TEXT PRIMARY KEY, value TEXT)");
+            sqliteDb.run("CREATE TABLE IF NOT EXISTS attendance (key TEXT PRIMARY KEY, value TEXT)");
             sqliteDb.run("CREATE TABLE IF NOT EXISTS admins (key TEXT PRIMARY KEY, value TEXT)", (err) => {
                 if (err) reject(err);
                 else resolve();
@@ -329,6 +332,7 @@ async function init() {
     await migrateJsonToTable(DB_SUBMISSIONS_FILE, 'submissions', 'id', true);
     await migrateJsonToTable(DB_ADMINS_FILE, 'admins', 'email', true);
     await migrateJsonToTable(DB_FORUM_FILE, 'forum', 'id', true);
+    await migrateJsonToTable(DB_ATTENDANCE_FILE, 'attendance', 'id', true);
     
     await migrateJsonToTable(DB_NOTES_FILE, 'notes', '', false);
     await migrateJsonToTable(DB_ANNOTATIONS_FILE, 'annotations', '', false);
@@ -368,6 +372,7 @@ async function init() {
     memoryDB.submissions = await loadTable('submissions', true);
     memoryDB.forum = await loadTable('forum', true);
     memoryDB.admins = await loadTable('admins', true);
+    memoryDB.attendance = await loadTable('attendance', true);
 
     memoryDB.notes = await loadTable('notes', false);
     memoryDB.annotations = await loadTable('annotations', false);
@@ -466,6 +471,7 @@ function saveToDisk() {
                 syncArrayTable('submissions', memoryDB.submissions, 'id');
                 syncArrayTable('forum', memoryDB.forum, 'id');
                 syncArrayTable('admins', memoryDB.admins, 'email');
+                syncArrayTable('attendance', memoryDB.attendance, 'id');
 
                 syncObjectTable('notes', memoryDB.notes);
                 syncObjectTable('annotations', memoryDB.annotations);

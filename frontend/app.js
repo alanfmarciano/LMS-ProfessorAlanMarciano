@@ -11,13 +11,109 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentBreadcrumb = "Portal LMS";
     let breadcrumbHistory = []; // Histórico de navegação
     
-    // Estado do sistema de avaliações
+    // Polyfill to prevent crashes from missing function
+    window.stopExamConfigPoll = function() {
+        if (window.examConfigPollInterval) {
+            clearInterval(window.examConfigPollInterval);
+            window.examConfigPollInterval = null;
+        }
+    };
+    
+    // Alterna para o Painel Global (Meus Cursos)
+    window.showMyCoursesView = function() {
+        stopExamConfigPoll();
+        if (examLockPoll) { clearInterval(examLockPoll); examLockPoll = null; }
+        
+        const sidebarGlobal = document.getElementById('sidebar-global-view');
+        const sidebarCourse = document.getElementById('sidebar-course-view');
+        if(sidebarGlobal) sidebarGlobal.style.display = 'flex';
+        if(sidebarCourse) sidebarCourse.style.display = 'none';
+        
+        const viewMyCourses = document.getElementById('view-my-courses');
+        const viewCoursePanel = document.getElementById('view-course-panel');
+        const viewMarkdown = document.getElementById('view-markdown');
+        if(viewMyCourses) viewMyCourses.style.display = 'block';
+        if(viewCoursePanel) viewCoursePanel.style.display = 'none';
+        if(viewMarkdown) viewMarkdown.style.display = 'none';
+
+        currentBreadcrumb = "Portal LMS > Meus Cursos";
+        if(breadcrumb) breadcrumb.innerHTML = '<span>🏠</span><strong>LMS4.0</strong><span>/</span><span>Meus Cursos</span>';
+
+        // Load Global Dashboard Data
+        loadGlobalDashboard();
+        
+        if(contentViewer) contentViewer.scrollTo(0, 0);
+    };
+
+    // Alterna para o Painel EspecÃ­fico do Curso
+    window.showCoursePanelView = function() {
+        if (!currentStudentCourseId) {
+            if(typeof showToast === 'function') showToast('Selecione um curso primeiro.');
+            return;
+        }
+
+        stopExamConfigPoll();
+        if (examLockPoll) { clearInterval(examLockPoll); examLockPoll = null; }
+        
+        document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+        if(document.getElementById('nav-course-panel')) {
+            document.getElementById('nav-course-panel').classList.add("active");
+        }
+        currentKey = null;
+
+        const sidebarGlobal = document.getElementById('sidebar-global-view');
+        const sidebarCourse = document.getElementById('sidebar-course-view');
+        if(sidebarGlobal) sidebarGlobal.style.display = 'none';
+        if(sidebarCourse) sidebarCourse.style.display = 'flex';
+        
+        const viewMyCourses = document.getElementById('view-my-courses');
+        const viewCoursePanel = document.getElementById('view-course-panel');
+        const viewMarkdown = document.getElementById('view-markdown');
+        if(viewMyCourses) viewMyCourses.style.display = 'none';
+        if(viewCoursePanel) viewCoursePanel.style.display = 'block';
+        if(viewMarkdown) viewMarkdown.style.display = 'none';
+
+        currentBreadcrumb = `Portal LMS > ${currentStudentCourseId} > Painel`;
+        if(breadcrumb) breadcrumb.innerHTML = `<span>🏠</span><strong>LMS4.0</strong><span>/</span><span>${currentStudentCourseId}</span><span>/</span><span>Painel</span>`;
+
+        // Update Course sidebar name
+        const sidebarName = document.getElementById('sidebar-active-course-name');
+        if (sidebarName) sidebarName.textContent = currentStudentCourseId;
+
+        // Load Course Dashboard Data
+        loadCourseDashboard();
+        updateProgressBadges();
+
+        if(contentViewer) contentViewer.scrollTo(0, 0);
+    };
+
+    // Mantendo a compatibilidade do nome renderStudentDashboard
+    window.renderStudentDashboard = showMyCoursesView;
+
+    const btnStudentDashboard = document.getElementById('btn-student-dashboard');
+    if (btnStudentDashboard) {
+        btnStudentDashboard.addEventListener('click', showMyCoursesView);
+    }
+    
+    // Estado do sistema de avaliaÃ§Ãµes
     let currentExamState = null;
     let currentStudentCourseId = null;
     let currentStudentClassName = null; // { questions, rubric, title, theme, shuffledQuestions, questionCount }
 
     // Estado de Progresso e Simulador
     let completedUnits = JSON.parse(localStorage.getItem("completed_units") || "{}");
+    
+    window.renderMarkdownContent = function(html) {
+        if(document.getElementById('view-my-courses')) document.getElementById('view-my-courses').style.display = 'none';
+        if(document.getElementById('view-course-panel')) document.getElementById('view-course-panel').style.display = 'none';
+        
+        const mdView = document.getElementById('view-markdown');
+        if (mdView) {
+            mdView.style.display = 'block';
+            mdView.innerHTML = html;
+        }
+    };
+
     let isSimulatorMode = false;
     let userAnswers = {};
     let isSimulatorSubmitted = false;
@@ -36,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
         script.id = 'dynamic-data-script';
         script.src = scriptUrl;
         script.onload = () => {
-            // Recalcula chaves se necessário
+            // Recalcula chaves se necessÃ¡rio
             if (typeof courseData !== 'undefined') {
                 allEvaluationKeys.length = 0;
                 const structure = getActiveStructure();
@@ -61,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderDynamicSidebar();
             syncSidebarLocks();
             
-            // Auto-selecionar o primeiro item disponível
+            // Auto-selecionar o primeiro item disponÃ­vel
             const firstItem = document.querySelector(".nav-item");
             if (firstItem && !currentKey) {
                 firstItem.click();
@@ -79,14 +175,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const isActive = appContainer.classList.contains("focus-active");
             focusModeBtn.classList.toggle("active", isActive);
             if (isActive) {
-                focusModeBtn.innerHTML = `<span class="btn-icon">👁️</span> Sair do Foco`;
+                focusModeBtn.innerHTML = `<span class="btn-icon">ðŸ‘ï¸</span> Sair do Foco`;
             } else {
-                focusModeBtn.innerHTML = `<span class="btn-icon">👁️</span> Modo Foco`;
+                focusModeBtn.innerHTML = `<span class="btn-icon">ðŸ‘ï¸</span> Modo Foco`;
             }
         });
     }
 
-    // Configurar Diagnóstico
+    // Configurar DiagnÃ³stico
     const diagnosticoLink = document.getElementById("diagnostico-link");
     if (diagnosticoLink) {
         diagnosticoLink.addEventListener("click", () => {
@@ -101,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
             breaks: true,
         });
     } else {
-        console.error("Marked.js não carregou.");
+        console.error("Marked.js nÃ£o carregou.");
     }
 
     function getActiveStructure() {
@@ -142,9 +238,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!markdownText) return defaultTitle;
         const match = markdownText.match(/^#\s+(.+)$/m);
         if (match && match[1]) {
-            // Remove emojis e substitui Missão por Unidade
+            // Remove emojis e substitui MissÃ£o por Unidade
             let title = match[1].replace(/^[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]\s*/g, '').trim();
-            title = title.replace(/Missão/g, 'Unidade');
+            title = title.replace(/MissÃ£o/g, 'Unidade');
             return title;
         }
         return defaultTitle;
@@ -165,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
             h3.innerHTML = `
                 <span>${mod.name}</span>
                 <span class="text-primary font-bold ml-auto mr-3" id="progress-m-${mod.id}">0%</span>
-                <span class="transform transition-transform duration-300 group-[.collapsed]:-rotate-90">▾</span>
+                <span class="transform transition-transform duration-300 group-[.collapsed]:-rotate-90">â–¾</span>
             `;
             h3.addEventListener("click", () => {
                 section.classList.toggle("collapsed");
@@ -194,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         li.classList.add("completed", "bg-green-500/10", "border-green-500", "text-green-300");
                         li.classList.remove("border-transparent", "hover:border-slate-500", "text-slate-300");
                     }
-                    li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-slate-500 uppercase font-bold mt-1">📘 Apostila Guia</span>`;
+                    li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-slate-500 uppercase font-bold mt-1">ðŸ“˜ Apostila Guia</span>`;
                     li.onclick = () => {
                         document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-primary/20', 'border-primary', 'text-white'));
                         li.classList.add('bg-primary/20', 'border-primary', 'text-white');
@@ -203,16 +299,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     ul.appendChild(li);
                 }
 
-                // Render Avaliação Item
+                // Render AvaliaÃ§Ã£o Item
                 if (courseData[u.avaliacaoKey]) {
                     const li = document.createElement("li");
                     li.className = "nav-item cursor-pointer px-6 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent hover:border-blue-400 transition-all";
                     li.setAttribute("data-key", u.avaliacaoKey);
-                    li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-blue-400 uppercase font-bold mt-1">🎯 Avaliação</span>`;
+                    li.innerHTML = `<strong>Unidade ${u.id}: ${missionTitle}</strong> <span class="block text-[11px] text-blue-400 uppercase font-bold mt-1">ðŸŽ¯ AvaliaÃ§Ã£o</span>`;
                     li.onclick = () => {
                         document.querySelectorAll('#sidebar-navigation-modules li').forEach(el => el.classList.remove('bg-primary/20', 'border-primary', 'text-white'));
                         li.classList.add('bg-blue-500/20', 'border-blue-500', 'text-white');
-                        loadContent(u.avaliacaoKey, li, `${mod.id} > Unidade ${u.id} > Avaliação`);
+                        loadContent(u.avaliacaoKey, li, `${mod.id} > Unidade ${u.id} > AvaliaÃ§Ã£o`);
                     };
                     ul.appendChild(li);
                 }
@@ -240,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
         toast.innerHTML = `
             <div style="font-weight: 800; color: #ef4444; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between;">
                 <span>${title}</span>
-                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer; padding: 0 5px;">✕</button>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer; padding: 0 5px;">âœ•</button>
             </div>
             <div style="font-size: 0.85rem; color: #cbd5e1; font-weight: 500; line-height: 1.4;">${message}</div>
         `;
@@ -266,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // SEÇÃO DE PROGRESSO, GLOSSÁRIO E BUSCA HIGHLIGHT
+    // SEÃ‡ÃƒO DE PROGRESSO, GLOSSÃRIO E BUSCA HIGHLIGHT
     // ==========================================
 
     function updateProgressBadges() {
@@ -330,8 +426,41 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const statCompleted = document.getElementById('stat-completed');
-        if (statCompleted) {
-            statCompleted.textContent = completedUnitsCount;
+        if (statCompleted) statCompleted.textContent = completedUnitsCount;
+
+        let attendanceCount = 0;
+        let attendanceListHtml = '';
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (studentInfoStr) {
+            try {
+                const info = JSON.parse(studentInfoStr);
+                if (info.attendanceDays && Array.isArray(info.attendanceDays)) {
+                    attendanceCount = info.attendanceDays.length;
+                    
+                    const sortedDays = [...info.attendanceDays].sort((a, b) => new Date(b) - new Date(a));
+                    attendanceListHtml = sortedDays.map(d => {
+                        const [y, m, day] = d.split('-');
+                        return `<li class="bg-black/20 p-3 rounded-lg border border-slate-700/50 flex justify-between items-center">
+                            <span class="flex items-center gap-2"><span class="text-green-400">â—</span> Login registrado</span>
+                            <strong class="text-primary">${day}/${m}/${y}</strong>
+                        </li>`;
+                    }).join('');
+                }
+            } catch (e) {}
+        }
+        
+        const statAttendance = document.getElementById('stat-attendance');
+        if (statAttendance) statAttendance.textContent = attendanceCount;
+
+        const attendanceContainer = document.getElementById('student-attendance-container');
+        const attendanceUl = document.getElementById('attendance-list');
+        if (attendanceContainer && attendanceUl) {
+            if (attendanceCount > 0) {
+                attendanceContainer.style.display = 'flex';
+                attendanceUl.innerHTML = attendanceListHtml;
+            } else {
+                attendanceContainer.style.display = 'none';
+            }
         }
 
         const radBar = document.getElementById('radial-progress-bar-el');
@@ -340,7 +469,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const totalPct = totalAvail > 0 ? Math.round((totalDone / totalAvail) * 100) : 0;
 
-        if (totalStatusText) totalStatusText.textContent = `${completedUnitsCount} de ${totalUnitsCount} Unidades Concluídas`;
+        if (totalStatusText) totalStatusText.textContent = `${completedUnitsCount} de ${totalUnitsCount} Unidades ConcluÃ­das`;
         if (radText) radText.textContent = `${totalPct}%`;
         if (radBar) {
             const offset = 251.2 - (251.2 * totalPct / 100);
@@ -391,7 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Pontuação (%)',
+                    label: 'PontuaÃ§Ã£o (%)',
                     data: scores,
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -481,7 +610,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 container.style.display = "block";
                 listEl.innerHTML = "";
                 
-                // Renderizar gráfico de evolução
+                // Renderizar grÃ¡fico de evoluÃ§Ã£o
                 renderStudentEvolutionChart(data.submissions);
                 
                 // Ordenar do mais recente para o mais antigo
@@ -491,12 +620,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     const card = document.createElement("div");
                     card.className = "bg-slate-800/30 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col gap-3 text-left relative shadow-lg hover:bg-slate-800/50 transition-colors group";
                     
-                    const date = new Date(sub.timestamp).toLocaleDateString('pt-BR') + ' às ' + new Date(sub.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    const date = new Date(sub.timestamp).toLocaleDateString('pt-BR') + ' Ã s ' + new Date(sub.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
                     const moduleName = sub.examKey.replace('Avaliacao_', '').replace('_', ' Unidade ');
                     
                     const isApproved = sub.score >= 60;
                     const badgeClass = isApproved ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30';
-                    const badgeText = isApproved ? 'Aprovado' : 'Recuperação';
+                    const badgeText = isApproved ? 'Aprovado' : 'RecuperaÃ§Ã£o';
                     const scoreColor = isApproved ? 'text-white' : 'text-primary';
                     
                     card.innerHTML = `
@@ -506,12 +635,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                         <h4 class="text-3xl font-black ${scoreColor} mt-1">${sub.score}%</h4>
                         <div class="text-sm text-slate-400 font-semibold mt-1">
-                            🎯 ${sub.correctCount} de ${sub.totalCount} acertos
+                            ðŸŽ¯ ${sub.correctCount} de ${sub.totalCount} acertos
                         </div>
                         <div class="text-xs text-slate-500 mt-2">
-                            📅 ${date}
+                            ðŸ“… ${date}
                         </div>
-                        <button class="btn-view-exam-history w-full mt-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold text-sm transition-all focus:outline-none focus:ring-1 focus:ring-slate-500">🔍 Ver Gabarito Detalhado</button>
+                        <div class="text-[10px] text-slate-400 font-mono mt-1 mb-1">
+                            #ï¸âƒ£ Protocolo: <span class="text-primary font-bold">${sub.protocolCode || 'NÃ£o registrado'}</span>
+                        </div>
+                        <button class="btn-view-exam-history w-full mt-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold text-sm transition-all focus:outline-none focus:ring-1 focus:ring-slate-500">ðŸ” Ver Gabarito Detalhado</button>
                     `;
                     
                     card.querySelector(".btn-view-exam-history").addEventListener("click", () => {
@@ -519,7 +651,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (rawMarkdown) {
                             const moduleNavName = sub.examKey.includes('FUTEC') ? 'FUTEC' : (sub.examKey.includes('FECOP') ? 'FECOP' : 'IRCOM');
                             const unitNum = sub.examKey.charAt(sub.examKey.length - 1);
-                            const breadcrumbText = `${moduleNavName} > Unidade ${unitNum} > Avaliação`;
+                            const breadcrumbText = `${moduleNavName} > Unidade ${unitNum} > AvaliaÃ§Ã£o`;
                             
                             breadcrumb.innerHTML = formatBreadcrumb(breadcrumbText);
                             currentBreadcrumb = breadcrumbText;
@@ -531,7 +663,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             
                             renderExamHistoryView(sub, rawMarkdown);
                         } else {
-                            alert("Não foi possível carregar o conteúdo original desta prova.");
+                            alert("NÃ£o foi possÃ­vel carregar o conteÃºdo original desta prova.");
                         }
                     });
                     
@@ -542,8 +674,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     container.style.display = "block";
                     listEl.innerHTML = `
                         <div style="grid-column: 1 / -1; background: var(--bg-card); border: 1px dashed var(--border); padding: 30px; border-radius: 16px; text-align: center; color: var(--text-muted);">
-                            <span style="font-size: 2rem; display: block; margin-bottom: 10px;">🎯</span>
-                            Nenhuma avaliação realizada ainda. Suas provas e notas aparecerão aqui quando você responder as avaliações liberadas.
+                            <span style="font-size: 2rem; display: block; margin-bottom: 10px;">ðŸŽ¯</span>
+                            Nenhuma avaliaÃ§Ã£o realizada ainda. Suas provas e notas aparecerÃ£o aqui quando vocÃª responder as avaliaÃ§Ãµes liberadas.
                         </div>
                     `;
                     const chartContainer = document.getElementById('student-chart-container');
@@ -554,7 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         })
         .catch(err => {
-            console.error("Erro ao carregar histórico de provas:", err);
+            console.error("Erro ao carregar histÃ³rico de provas:", err);
         });
     }
 
@@ -567,7 +699,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
         
         function walk(node) {
-            if (node.nodeType === 3) { // Nó de texto
+            if (node.nodeType === 3) { // NÃ³ de texto
                 const matches = node.nodeValue.match(regex);
                 if (matches) {
                     const span = document.createElement('span');
@@ -607,28 +739,28 @@ document.addEventListener("DOMContentLoaded", () => {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // Glossário Hover
+    // GlossÃ¡rio Hover
     function applyGlossary(container) {
         const glossary = {
-            "Active Directory": "Serviço de diretório centralizado da Microsoft usado para gerenciar computadores e usuários em uma rede corporativa.",
-            "LDAP": "Lightweight Directory Access Protocol — Protocolo padrão para consulta de credenciais de usuários e computadores em serviços de diretório como Active Directory.",
-            "UEFI": "Unified Extensible Firmware Interface — Interface de firmware moderna que substituiu o antigo BIOS, fornecendo carregamento mais rápido e recursos de segurança avançados.",
-            "BIOS": "Basic Input/Output System — Firmware tradicional gravado na placa-mãe que inicializa o hardware e inicia o sistema operacional durante o boot.",
-            "TDP": "Thermal Design Power — Potência de Design Térmico. A quantidade máxima de calor em Watts gerada pela CPU que o cooler precisa dissipar de forma segura.",
-            "KMS": "Key Management Service — Serviço de Gerenciamento de Chaves para ativação automatizada de licenças Microsoft em ambiente corporativo local.",
-            "FHS": "Filesystem Hierarchy Standard — Diretriz padrão que define a finalidade de cada diretório e pasta do sistema em distribuições Linux.",
-            "PLC": "Programmable Logic Controller (CLP) — Controlador Lógico Programável. Computador industrial robusto projetado para automatizar processos produtivos e máquinas.",
-            "CLP": "Controlador Lógico Programável — Computador industrial robusto projetado para automatizar processos de manufatura e maquinários na indústria.",
-            "GPO": "Group Policy Object — Diretiva de Grupo do Active Directory que aplica configurações automáticas de segurança e restrições nos computadores do domínio.",
-            "OU": "Organizational Unit — Unidade Organizacional. Pasta lógica no Active Directory usada para organizar usuários e computadores por setores ou departamentos.",
-            "RAM": "Random Access Memory — Memória volátil ultrarrápida que armazena os dados dos programas que a CPU está processando ativamente no momento.",
-            "CPU": "Central Processing Unit — Unidade Central de Processamento. O processador principal que calcula dados e executa instruções de software.",
-            "SSD": "Solid State Drive — Disco eletrônico sem partes móveis, muito mais rápido, durável e eficiente que os discos rígidos (HDs) tradicionais.",
-            "NVMe": "Non-Volatile Memory Express — Protocolo de alto desempenho projetado especificamente para acessar armazenamento de estado sólido rápido via slots PCIe.",
-            "HD": "Hard Disk — Disco Rígido tradicional. Dispositivo de armazenamento mecânico e magnético de alta capacidade mas velocidades lentas devido às agulhas de leitura.",
-            "FUTEC": "Módulo de Fundamentos de TI do Portal Portal LMS (80h de carga horária).",
-            "FECOP": "Módulo de Colaboração e Produtividade do Portal Portal LMS (120h de carga horária).",
-            "IRCOM": "Módulo de Instalação de Recursos Computacionais do Portal Portal LMS (120h de carga horária)."
+            "Active Directory": "ServiÃ§o de diretÃ³rio centralizado da Microsoft usado para gerenciar computadores e usuÃ¡rios em uma rede corporativa.",
+            "LDAP": "Lightweight Directory Access Protocol â€” Protocolo padrÃ£o para consulta de credenciais de usuÃ¡rios e computadores em serviÃ§os de diretÃ³rio como Active Directory.",
+            "UEFI": "Unified Extensible Firmware Interface â€” Interface de firmware moderna que substituiu o antigo BIOS, fornecendo carregamento mais rÃ¡pido e recursos de seguranÃ§a avanÃ§ados.",
+            "BIOS": "Basic Input/Output System â€” Firmware tradicional gravado na placa-mÃ£e que inicializa o hardware e inicia o sistema operacional durante o boot.",
+            "TDP": "Thermal Design Power â€” PotÃªncia de Design TÃ©rmico. A quantidade mÃ¡xima de calor em Watts gerada pela CPU que o cooler precisa dissipar de forma segura.",
+            "KMS": "Key Management Service â€” ServiÃ§o de Gerenciamento de Chaves para ativaÃ§Ã£o automatizada de licenÃ§as Microsoft em ambiente corporativo local.",
+            "FHS": "Filesystem Hierarchy Standard â€” Diretriz padrÃ£o que define a finalidade de cada diretÃ³rio e pasta do sistema em distribuiÃ§Ãµes Linux.",
+            "PLC": "Programmable Logic Controller (CLP) â€” Controlador LÃ³gico ProgramÃ¡vel. Computador industrial robusto projetado para automatizar processos produtivos e mÃ¡quinas.",
+            "CLP": "Controlador LÃ³gico ProgramÃ¡vel â€” Computador industrial robusto projetado para automatizar processos de manufatura e maquinÃ¡rios na indÃºstria.",
+            "GPO": "Group Policy Object â€” Diretiva de Grupo do Active Directory que aplica configuraÃ§Ãµes automÃ¡ticas de seguranÃ§a e restriÃ§Ãµes nos computadores do domÃ­nio.",
+            "OU": "Organizational Unit â€” Unidade Organizacional. Pasta lÃ³gica no Active Directory usada para organizar usuÃ¡rios e computadores por setores ou departamentos.",
+            "RAM": "Random Access Memory â€” MemÃ³ria volÃ¡til ultrarrÃ¡pida que armazena os dados dos programas que a CPU estÃ¡ processando ativamente no momento.",
+            "CPU": "Central Processing Unit â€” Unidade Central de Processamento. O processador principal que calcula dados e executa instruÃ§Ãµes de software.",
+            "SSD": "Solid State Drive â€” Disco eletrÃ´nico sem partes mÃ³veis, muito mais rÃ¡pido, durÃ¡vel e eficiente que os discos rÃ­gidos (HDs) tradicionais.",
+            "NVMe": "Non-Volatile Memory Express â€” Protocolo de alto desempenho projetado especificamente para acessar armazenamento de estado sÃ³lido rÃ¡pido via slots PCIe.",
+            "HD": "Hard Disk â€” Disco RÃ­gido tradicional. Dispositivo de armazenamento mecÃ¢nico e magnÃ©tico de alta capacidade mas velocidades lentas devido Ã s agulhas de leitura.",
+            "FUTEC": "MÃ³dulo de Fundamentos de TI do Portal Portal LMS (80h de carga horÃ¡ria).",
+            "FECOP": "MÃ³dulo de ColaboraÃ§Ã£o e Produtividade do Portal Portal LMS (120h de carga horÃ¡ria).",
+            "IRCOM": "MÃ³dulo de InstalaÃ§Ã£o de Recursos Computacionais do Portal Portal LMS (120h de carga horÃ¡ria)."
         };
 
         const sortedKeys = Object.keys(glossary).sort((a, b) => b.length - a.length);
@@ -683,7 +815,7 @@ document.addEventListener("DOMContentLoaded", () => {
             term.addEventListener('mouseenter', (e) => {
                 const def = term.getAttribute('data-definition');
                 const word = term.textContent;
-                tooltip.innerHTML = `<div class="tooltip-title">💡 ${word} <span>Glossário</span></div><div>${def}</div>`;
+                tooltip.innerHTML = `<div class="tooltip-title">ðŸ’¡ ${word} <span>GlossÃ¡rio</span></div><div>${def}</div>`;
                 tooltip.style.display = 'block';
                 
                 const rect = term.getBoundingClientRect();
@@ -702,27 +834,27 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Painel de Diagnóstico do Professor
+    // Painel de DiagnÃ³stico do Professor
     function loadDiagnostico() {
         document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-        breadcrumb.innerHTML = formatBreadcrumb("Diagnóstico");
-        currentBreadcrumb = "Diagnóstico";
+        breadcrumb.innerHTML = formatBreadcrumb("DiagnÃ³stico");
+        currentBreadcrumb = "DiagnÃ³stico";
         currentKey = null;
         exportPdfBtn.disabled = true;
         currentExamState = null;
         
         let reportHTML = `
             <div class="diagnostico-panel">
-                <h2>🩺 Validador e Saúde de Conteúdo (Portal LMS)</h2>
+                <h2>ðŸ©º Validador e SaÃºde de ConteÃºdo (Portal LMS)</h2>
                 <p style="color: var(--text-muted); margin-bottom: 20px;">
-                    Esta ferramenta analisa automaticamente o tamanho das apostilas, a presença de imagens e a integridade de todas as avaliações no sistema.
+                    Esta ferramenta analisa automaticamente o tamanho das apostilas, a presenÃ§a de imagens e a integridade de todas as avaliaÃ§Ãµes no sistema.
                 </p>
                 <table class="diagnostico-table">
                     <thead>
                         <tr>
                             <th>Recurso</th>
                             <th>Tipo</th>
-                            <th>Métrica / Diagnóstico</th>
+                            <th>MÃ©trica / DiagnÃ³stico</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -741,7 +873,7 @@ document.addEventListener("DOMContentLoaded", () => {
         allKeys.forEach(k => {
             const content = courseData[k];
             let name = k.replace(/_/g, ' ');
-            let type = k.includes('Apostila') ? '📘 Apostila' : '🎯 Avaliação';
+            let type = k.includes('Apostila') ? 'ðŸ“˜ Apostila' : 'ðŸŽ¯ AvaliaÃ§Ã£o';
             let metric = '';
             let statusHTML = '';
             
@@ -757,7 +889,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (lineCount >= 400) {
                         statusHTML = '<span class="diagnostico-status ok">Excelente</span>';
                     } else if (lineCount >= 250) {
-                        statusHTML = '<span class="diagnostico-status warning">Aceitável</span>';
+                        statusHTML = '<span class="diagnostico-status warning">AceitÃ¡vel</span>';
                     } else {
                         statusHTML = '<span class="diagnostico-status error">Muito Curta</span>';
                     }
@@ -765,30 +897,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     const imgMatches = content.match(/!\[.*?\]\((.*?)\)/g);
                     if (imgMatches) {
-                        metric += `<br><span style="font-size:0.8rem;color:var(--text-muted)">🖼️ Contém ${imgMatches.length} imagens mapeadas</span>`;
+                        metric += `<br><span style="font-size:0.8rem;color:var(--text-muted)">ðŸ–¼ï¸ ContÃ©m ${imgMatches.length} imagens mapeadas</span>`;
                     }
                 } else {
                     const parsed = parseEvaluation(content);
                     if (!parsed) {
-                        metric = 'Erro de parsing. Estrutura inválida ou Markdown fora dos padrões.';
+                        metric = 'Erro de parsing. Estrutura invÃ¡lida ou Markdown fora dos padrÃµes.';
                         statusHTML = '<span class="diagnostico-status error">Erro</span>';
                     } else {
                         const qCount = parsed.questions.length;
-                        const hasRubric = parsed.rubricMarkdown ? 'Sim' : 'Não';
+                        const hasRubric = parsed.rubricMarkdown ? 'Sim' : 'NÃ£o';
                         
                         if (qCount === 20) {
                             statusHTML = '<span class="diagnostico-status ok">OK</span>';
                         } else if (qCount >= 15) {
                             statusHTML = '<span class="diagnostico-status warning">Incompleta</span>';
                         } else {
-                            statusHTML = '<span class="diagnostico-status error">Crítico</span>';
+                            statusHTML = '<span class="diagnostico-status error">CrÃ­tico</span>';
                         }
-                        metric = `${qCount} questões encontradas. Rúbrica: ${hasRubric}.`;
+                        metric = `${qCount} questÃµes encontradas. RÃºbrica: ${hasRubric}.`;
                         
                         const totalCorrect = parsed.questions.filter(q => q.alternatives.some(a => a.isCorrect)).length;
                         if (totalCorrect !== qCount) {
                             statusHTML = '<span class="diagnostico-status error">Erro Gabarito</span>';
-                            metric += ` <span style="color:#f87171">(${qCount - totalCorrect} questões sem resposta no gabarito!)</span>`;
+                            metric += ` <span style="color:#f87171">(${qCount - totalCorrect} questÃµes sem resposta no gabarito!)</span>`;
                         }
                     }
                 }
@@ -810,22 +942,22 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
         
-        contentViewer.innerHTML = reportHTML;
+        renderMarkdownContent(reportHTML);
         contentViewer.scrollTo(0, 0);
     }
 
-    // Inicializa o Menu Lateral Dinâmico
+    // Inicializa o Menu Lateral DinÃ¢mico
     renderDynamicSidebar();
     updateProgressBadges();
 
     // ==========================================
-    // SEÇÃO 1: PARSER DE AVALIAÇÕES
+    // SEÃ‡ÃƒO 1: PARSER DE AVALIAÃ‡Ã•ES
     // ==========================================
 
     /**
-     * Parseia o Markdown de uma avaliação extraindo questões, alternativas e gabarito.
+     * Parseia o Markdown de uma avaliaÃ§Ã£o extraindo questÃµes, alternativas e gabarito.
      * Suporta os formatos:
-     * - FUTEC/FECOP com separadores --- e gabarito formatado (1. **B** (explicação))
+     * - FUTEC/FECOP com separadores --- e gabarito formatado (1. **B** (explicaÃ§Ã£o))
      * - IRCOM/FECOP compacto sem separadores e gabarito em linha (1. B 2. A ...)
      */
     function parseEvaluation(markdownText) {
@@ -834,13 +966,13 @@ document.addEventListener("DOMContentLoaded", () => {
             return markdownText;
         }
 
-        // Extrair título e tema
+        // Extrair tÃ­tulo e tema
         const titleMatch = markdownText.match(/^#\s+(.+)$/m);
         const themeMatch = markdownText.match(/\*\*Tema:\*\*\s*(.+)/);
-        const title = titleMatch ? titleMatch[1].replace(/📝\s*/, '') : 'Avaliação';
+        const title = titleMatch ? titleMatch[1].replace(/ðŸ“\s*/, '') : 'AvaliaÃ§Ã£o';
         const theme = themeMatch ? themeMatch[1] : '';
 
-        // Extrair a Parte 2 (Rúbrica) - tudo entre "## Parte 2" e "<details>"
+        // Extrair a Parte 2 (RÃºbrica) - tudo entre "## Parte 2" e "<details>"
         let rubricMarkdown = '';
         const rubricMatch = markdownText.match(/(## Parte 2[\s\S]*?)(?=<details>)/);
         if (rubricMatch) {
@@ -853,7 +985,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (detailsMatch) {
             const detailsContent = detailsMatch[1];
 
-            // Formato 1: "1. **B** (explicação)" (FUTEC/FECOP detalhado)
+            // Formato 1: "1. **B** (explicaÃ§Ã£o)" (FUTEC/FECOP detalhado)
             const detailedMatches = detailsContent.matchAll(/(\d+)\.\s*\*\*([A-Da-d])\*\*/g);
             for (const m of detailedMatches) {
                 gabarito[parseInt(m[1])] = m[2].toUpperCase();
@@ -868,9 +1000,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Extrair questões
+        // Extrair questÃµes
         const questions = [];
-        // Regex para encontrar cada bloco de questão
+        // Regex para encontrar cada bloco de questÃ£o
         // Formato: **N. Texto da pergunta**
         const questionRegex = /\*\*(\d+)\.\s*(.*?)\*\*\s*\n([\s\S]*?)(?=\*\*\d+\.|## Parte 2|<details>|$)/g;
         let qMatch;
@@ -913,7 +1045,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // SEÇÃO 2: MOTOR DE EMBARALHAMENTO
+    // SEÃ‡ÃƒO 2: MOTOR DE EMBARALHAMENTO
     // ==========================================
 
     /** Fisher-Yates shuffle - embaralha array in-place e retorna */
@@ -926,7 +1058,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return shuffled;
     }
 
-    /** Embaralha alternativas de uma questão, mantendo rastreio da correta */
+    /** Embaralha alternativas de uma questÃ£o, mantendo rastreio da correta */
     function shuffleAlternatives(question) {
         const shuffledAlts = shuffleArray(question.alternatives);
         const newLetters = ['A', 'B', 'C', 'D'];
@@ -950,13 +1082,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /** 
      * Gera uma prova embaralhada:
-     * - Seleciona `count` questões aleatórias
-     * - Embaralha a ordem das questões
-     * - Embaralha as alternativas de cada questão
+     * - Seleciona `count` questÃµes aleatÃ³rias
+     * - Embaralha a ordem das questÃµes
+     * - Embaralha as alternativas de cada questÃ£o
      * Retorna { questions: [...], answerKey: { 1: 'C', 2: 'A', ... } }
      */
     function generateExam(allQuestions, count) {
-        // Seleciona questões: se count < total, pega aleatórias; senão usa todas
+        // Seleciona questÃµes: se count < total, pega aleatÃ³rias; senÃ£o usa todas
         let selected = [...allQuestions];
         if (count < selected.length) {
             selected = shuffleArray(selected).slice(0, count);
@@ -980,15 +1112,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // SEÇÃO 3: UI DE CONFIGURAÇÃO DA PROVA
+    // SEÃ‡ÃƒO 3: UI DE CONFIGURAÃ‡ÃƒO DA PROVA
     // ==========================================
 
-    /** Verifica se uma chave é de avaliação */
+    /** Verifica se uma chave Ã© de avaliaÃ§Ã£o */
     function isEvaluation(key) {
         return allEvaluationKeys.includes(key);
     }
 
-    /** Renderiza a interface de configuração da prova */
+    /** Renderiza a interface de configuraÃ§Ã£o da prova */
     function renderEvaluationUI(parsedEval, questionCount, excludedQuestions = new Set()) {
         const availableQuestions = parsedEval.questions.filter(q => !excludedQuestions.has(q.originalNumber));
         const qCount = Math.max(1, Math.min(questionCount || availableQuestions.length, availableQuestions.length));
@@ -1004,22 +1136,22 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const html = buildEvaluationHTML(currentExamState);
-        contentViewer.innerHTML = html;
+        renderMarkdownContent(html);
         contentViewer.scrollTo(0, 0);
 
         // Attach event listeners
         attachEvaluationListeners();
         
-        // Renderiza a lista de questões inicial
+        // Renderiza a lista de questÃµes inicial
         updatePreview(false);
     }
 
     function buildEvaluationHTML(state) {
         return `
             <div class="exam-config-panel">
-                <!-- Cabeçalho -->
+                <!-- CabeÃ§alho -->
                 <div class="exam-header">
-                    <div class="exam-header-icon">🎯</div>
+                    <div class="exam-header-icon">ðŸŽ¯</div>
                     <div class="exam-header-info">
                         <h1>${state.title}</h1>
                         <p class="exam-theme">${state.theme}</p>
@@ -1029,29 +1161,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 <!-- Painel de Controles Simplificado para Aluno -->
                 <div class="exam-controls" style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="controls-icon">⚙️</span>
+                        <span class="controls-icon">âš™ï¸</span>
                         <h3>Simulado Online</h3>
                     </div>
                     
-                    <!-- Botões de Ação do Aluno -->
+                    <!-- BotÃµes de AÃ§Ã£o do Aluno -->
                     <div class="exam-actions" id="student-actions" style="display: flex;">
                         ${isSimulatorSubmitted ? `
                             <button id="btn-simulator-reset" class="btn-simulator-reset">
-                                🔄 Reiniciar Simulado
+                                ðŸ”„ Reiniciar Simulado
                             </button>
                         ` : `
                             <button id="btn-simulator-submit" class="btn-simulator-submit">
-                                ✅ Finalizar e Corrigir Simulado
+                                âœ… Finalizar e Corrigir Simulado
                             </button>
                         `}
                     </div>
                 </div>
 
-                <!-- Preview das Questões -->
+                <!-- Preview das QuestÃµes -->
                 <div class="exam-preview">
                     <div class="exam-preview-header">
-                        <h3>📝 Simulador de Avaliação</h3>
-                        <span class="exam-preview-badge" id="preview-badge-count">${state.questionCount} questões</span>
+                        <h3>ðŸ“ Simulador de AvaliaÃ§Ã£o</h3>
+                        <span class="exam-preview-badge" id="preview-badge-count">${state.questionCount} questÃµes</span>
                     </div>
                     <div class="exam-questions-list" id="exam-questions-list">
                         <!-- Carregado via updatePreview() -->
@@ -1070,7 +1202,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const answeredCount = Object.keys(userAnswers).length;
                     
                     if (answeredCount < count) {
-                        const confirmSubmit = confirm(`Você respondeu apenas ${answeredCount} de ${count} questões. Tem certeza que deseja finalizar?`);
+                        const confirmSubmit = confirm(`VocÃª respondeu apenas ${answeredCount} de ${count} questÃµes. Tem certeza que deseja finalizar?`);
                         if (!confirmSubmit) return;
                     }
                     
@@ -1089,7 +1221,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const studentInfo = JSON.parse(sessionStorage.getItem("student_info") || "{}");
 
-                    // Tentar submissão online ao servidor local
+                    // Tentar submissÃ£o online ao servidor local
                     fetch('/api/student/submit', {
                         method: 'POST',
                         headers: {
@@ -1104,9 +1236,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     .then(res => {
                         if (!res.ok) {
                             return res.json().then(errData => {
-                                throw new Error(errData.error || "Erro na submissão ao servidor.");
+                                throw new Error(errData.error || "Erro na submissÃ£o ao servidor.");
                             }).catch(() => {
-                                throw new Error("Erro de comunicação com o servidor.");
+                                throw new Error("Erro de comunicaÃ§Ã£o com o servidor.");
                             });
                         }
                         return res.json();
@@ -1115,7 +1247,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         isSimulatorSubmitted = true;
                         studentActions.innerHTML = `
                             <button id="btn-simulator-reset" class="btn-simulator-reset">
-                                🔄 Reiniciar Simulado
+                                ðŸ”„ Reiniciar Simulado
                             </button>
                         `;
                         currentExamState.serverGrading = {
@@ -1129,19 +1261,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     })
                     .catch(err => {
                         const errMsg = err.message || "";
-                        if (errMsg.includes("não está ativa")) {
-                            alert("⚠️ " + errMsg);
-                            return; // Cancela a submissão, não faz correção offline
+                        if (errMsg.includes("nÃ£o estÃ¡ ativa")) {
+                            alert("âš ï¸ " + errMsg);
+                            return; // Cancela a submissÃ£o, nÃ£o faz correÃ§Ã£o offline
                         }
                         
-                        console.warn("Sem conexão com o servidor local. Corrigindo prova localmente offline.", err);
+                        console.warn("Sem conexÃ£o com o servidor local. Corrigindo prova localmente offline.", err);
                         isSimulatorSubmitted = true;
                         studentActions.innerHTML = `
                             <button id="btn-simulator-reset" class="btn-simulator-reset">
-                                🔄 Reiniciar Simulado
+                                ðŸ”„ Reiniciar Simulado
                             </button>
                         `;
-                        // Calcular correção offline
+                        // Calcular correÃ§Ã£o offline
                         let correctCount = 0;
                         currentExamState.shuffledQuestions.forEach((q, idx) => {
                             if (idx >= count) return;
@@ -1165,7 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     currentExamState.serverGrading = null;
                     studentActions.innerHTML = `
                         <button id="btn-simulator-submit" class="btn-simulator-submit">
-                            ✅ Finalizar e Corrigir Simulado
+                            âœ… Finalizar e Corrigir Simulado
                         </button>
                     `;
                     updatePreview(true);
@@ -1188,17 +1320,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="simulator-score-circle ${approved ? 'approved' : ''}">
                     ${grading.score}%
                 </div>
-                <h3>${approved ? '🎉 Parabéns! Você foi Aprovado!' : '⚠️ Precisa Estudar Mais!'}</h3>
+                <h3>${approved ? 'ðŸŽ‰ ParabÃ©ns! VocÃª foi Aprovado!' : 'âš ï¸ Precisa Estudar Mais!'}</h3>
                 <p class="simulator-score-meta">
-                    Você acertou <strong>${grading.correctCount}</strong> de <strong>${grading.totalCount}</strong> questões (${grading.score}% de aproveitamento).
+                    VocÃª acertou <strong>${grading.correctCount}</strong> de <strong>${grading.totalCount}</strong> questÃµes (${grading.score}% de aproveitamento).
                 </p>
                 <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">
                     ${grading.online 
-                        ? '💚 Nota registrada com sucesso no servidor do professor!' 
-                        : '⚠️ Servidor offline. Nota calculada localmente (não registrada no painel do professor).'}
+                        ? 'ðŸ’š Nota registrada com sucesso no servidor do professor!' 
+                        : 'âš ï¸ Servidor offline. Nota calculada localmente (nÃ£o registrada no painel do professor).'}
                 </div>
                 <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">
-                    * A nota mínima para aprovação é 60%. Veja o gabarito detalhado abaixo para aprender com os erros.
+                    * A nota mÃ­nima para aprovaÃ§Ã£o Ã© 60%. Veja o gabarito detalhado abaixo para aprender com os erros.
                 </div>
             </div>
         `;
@@ -1294,12 +1426,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (badgeEl) {
-            badgeEl.textContent = `${count} questões`;
+            badgeEl.textContent = `${count} questÃµes`;
         }
     }
 
     // ==========================================
-    // SEÇÃO 4: GERAÇÃO DE PDF
+    // SEÃ‡ÃƒO 4: GERAÃ‡ÃƒO DE PDF
     // ==========================================
 
     function generateExamPDF(isAnswerKey) {
@@ -1309,7 +1441,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const versionsInput = document.getElementById('exam-versions-count');
         const versionsCount = versionsInput ? Math.max(1, Math.min(5, parseInt(versionsInput.value))) : 1;
         const titleText = isAnswerKey 
-            ? `GABARITO — ${currentExamState.title}` 
+            ? `GABARITO â€” ${currentExamState.title}` 
             : currentExamState.title;
 
         let documentsHTML = '';
@@ -1317,8 +1449,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         for (let v = 0; v < versionsCount; v++) {
             let examData;
-            // Se for apenas uma versão, usamos a ordem atual visualizada na tela. 
-            // Caso contrário, geramos novas versões embaralhadas de forma transparente.
+            // Se for apenas uma versÃ£o, usamos a ordem atual visualizada na tela. 
+            // Caso contrÃ¡rio, geramos novas versÃµes embaralhadas de forma transparente.
             if (versionsCount === 1) {
                 examData = {
                     questions: currentExamState.shuffledQuestions,
@@ -1330,9 +1462,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const count = Math.min(currentExamState.questionCount, examData.questions.length);
             const versionLabel = versionLabels[v];
-            const versionTitleText = versionsCount > 1 ? ` (VERSÃO ${versionLabel})` : '';
+            const versionTitleText = versionsCount > 1 ? ` (VERSÃƒO ${versionLabel})` : '';
 
-            // Cabeçalho de identificação (apenas para prova de aluno)
+            // CabeÃ§alho de identificaÃ§Ã£o (apenas para prova de aluno)
             let headerHTML = '';
             if (!isAnswerKey) {
                 headerHTML = `
@@ -1347,7 +1479,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="field-line"></div>
                         </div>
                         <div class="student-field">
-                            <label>Período:</label>
+                            <label>PerÃ­odo:</label>
                             <div class="field-line"></div>
                         </div>
                         <div class="student-field">
@@ -1363,12 +1495,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
-            // Cartão Resposta / Gabarito Rápido
+            // CartÃ£o Resposta / Gabarito RÃ¡pido
             let bubbleSheetHTML = '';
             if (isAnswerKey) {
                 bubbleSheetHTML = `
                 <div class="print-bubble-sheet">
-                    <div class="print-bubble-sheet-title">🔑 GABARITO DE RESPOSTAS RÁPIDAS - VERSÃO ${versionLabel}</div>
+                    <div class="print-bubble-sheet-title">ðŸ”‘ GABARITO DE RESPOSTAS RÃPIDAS - VERSÃƒO ${versionLabel}</div>
                     <div class="print-bubble-sheet-grid">
                         ${examData.questions.slice(0, count).map((q, idx) => {
                             const correctLetter = examData.answerKey[idx + 1];
@@ -1388,7 +1520,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 bubbleSheetHTML = `
                 <div class="print-bubble-sheet">
-                    <div class="print-bubble-sheet-title">✏️ CARTÃO RESPOSTA (VERSÃO ${versionLabel}) - PREENCHA COM CANETA AZUL OU PRETA</div>
+                    <div class="print-bubble-sheet-title">âœï¸ CARTÃƒO RESPOSTA (VERSÃƒO ${versionLabel}) - PREENCHA COM CANETA AZUL OU PRETA</div>
                     <div class="print-bubble-sheet-grid">
                         ${Array.from({ length: count }).map((_, idx) => `
                             <div class="print-bubble-row">
@@ -1404,14 +1536,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
-            // Corpo de questões
+            // Corpo de questÃµes
             let questionsHTML = '';
             if (isAnswerKey) {
                 questionsHTML = `
                     <div class="answer-key-detail">
                         <h3>Detalhamento das Respostas</h3>
                         ${examData.questions.slice(0, count).map((q, idx) => `
-                            <p><strong>${idx + 1}. ${examData.answerKey[idx + 1]}</strong> — ${q.text}</p>
+                            <p><strong>${idx + 1}. ${examData.answerKey[idx + 1]}</strong> â€” ${q.text}</p>
                         `).join('')}
                     </div>
                 `;
@@ -1439,27 +1571,27 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="logo">LMS<span>4.0</span></div>
                         <div class="meta">
                             <span style="font-size:11pt;font-weight:800;color:#e9c46a;display:block;margin-bottom:2px">
-                                ${isAnswerKey ? '🔑 GABARITO DO PROFESSOR' : '📝 AVALIAÇÃO'}${versionTitleText}
+                                ${isAnswerKey ? 'ðŸ”‘ GABARITO DO PROFESSOR' : 'ðŸ“ AVALIAÃ‡ÃƒO'}${versionTitleText}
                             </span>
-                            <span style="color:#a8d8ff;font-size:9pt">Instrutor Alan Marciano — Gestor em T.I.</span><br>
+                            <span style="color:#a8d8ff;font-size:9pt">Instrutor Alan Marciano â€” Gestor em T.I.</span><br>
                             ${dateStr}<br>
-                            <strong style="color:#e9c46a">USO RESTRITO — MATERIAL DIDÁTICO</strong>
+                            <strong style="color:#e9c46a">USO RESTRITO â€” MATERIAL DIDÃTICO</strong>
                         </div>
                     </div>
                     
                     ${headerHTML}
                     
-                    <div class="pdf-breadcrumb">${currentExamState.title}${currentExamState.theme ? ' — ' + currentExamState.theme : ''}</div>
+                    <div class="pdf-breadcrumb">${currentExamState.title}${currentExamState.theme ? ' â€” ' + currentExamState.theme : ''}</div>
                     
                     ${!isAnswerKey ? `
                     <div class="exam-instructions">
-                        <strong>Instruções:</strong> Responda às questões e preencha as bolhas correspondentes no Cartão Resposta. Prova com <strong>${count} questões</strong>. Boa prova!
+                        <strong>InstruÃ§Ãµes:</strong> Responda Ã s questÃµes e preencha as bolhas correspondentes no CartÃ£o Resposta. Prova com <strong>${count} questÃµes</strong>. Boa prova!
                     </div>
                     ` : ''}
                     
                     <div class="pdf-body" style="padding: 25px 40px 10px;">
                         ${bubbleSheetHTML}
-                        ${isAnswerKey ? `<h1>🔑 Gabarito Detalhado — Versão ${versionLabel}</h1>` : ''}
+                        ${isAnswerKey ? `<h1>ðŸ”‘ Gabarito Detalhado â€” VersÃ£o ${versionLabel}</h1>` : ''}
                         ${questionsHTML}
                     </div>
                 </div>
@@ -1467,8 +1599,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="pdf-footer" style="padding: 10px 40px 30px; margin-top: auto;">
                     <hr style="border: none; border-top: 2px solid #e0e6f0; margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between; font-size: 8.5pt; color: #888;">
-                        <span>Escola Modelo — Portal Portal LMS · ${dateStr}</span>
-                        <span style="color:#0f3460;font-weight:700">✍️ Instrutor Alan Marciano — Gestor em T.I.</span>
+                        <span>Escola Modelo â€” Portal Portal LMS Â· ${dateStr}</span>
+                        <span style="color:#0f3460;font-weight:700">âœï¸ Instrutor Alan Marciano â€” Gestor em T.I.</span>
                     </div>
                 </div>
             </div>
@@ -1567,7 +1699,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .answer-key-detail h3 { margin-bottom: 12px; }
         .answer-key-detail p { font-size: 9.5pt; margin-bottom: 6px; color: #444; }
 
-        /* Cartão Resposta de Impressão */
+        /* CartÃ£o Resposta de ImpressÃ£o */
         .print-bubble-sheet {
             border: 2px solid #1a1a2e;
             background: #f8faff;
@@ -1643,23 +1775,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // SEÇÃO 5: CARREGAMENTO DE CONTEÚDO (ORIGINAL + AVALIAÇÕES)
+    // SEÃ‡ÃƒO 5: CARREGAMENTO DE CONTEÃšDO (ORIGINAL + AVALIAÃ‡Ã•ES)
     // ==========================================
 
     function renderLockedScreen(title, key, rawMarkdown) {
-        contentViewer.innerHTML = `
+        renderMarkdownContent(`
             <div class="exam-locked-panel" style="text-align: center; padding: 80px 20px; animation: fadeIn 0.5s ease;">
-                <div class="exam-locked-icon" style="font-size: 5rem; margin-bottom: 20px; animation: pulse 2s infinite;">🔒</div>
-                <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main); font-family: 'Inter', sans-serif;">Avaliação Bloqueada</h2>
+                <div class="exam-locked-icon" style="font-size: 5rem; margin-bottom: 20px; animation: pulse 2s infinite;">ðŸ”’</div>
+                <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main); font-family: 'Inter', sans-serif;">AvaliaÃ§Ã£o Bloqueada</h2>
                 <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;">
                     Aguardando o instrutor liberar a prova <strong style="color: var(--primary);">${title}</strong> na rede...
                 </p>
                 <div class="exam-locked-loader" style="display: inline-block; width: 45px; height: 45px; border: 4px solid rgba(239, 68, 68, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear;"></div>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 25px;">
-                    Esta tela se atualizará automaticamente assim que o acesso for liberado.
+                    Esta tela se atualizarÃ¡ automaticamente assim que o acesso for liberado.
                 </p>
             </div>
-        `;
+        `);
         contentViewer.scrollTo(0, 0);
     }
 
@@ -1686,7 +1818,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function checkExamAccess(key, rawMarkdown) {
-        // Desabilita o botão PDF padrão
+        // Desabilita o botÃ£o PDF padrÃ£o
         exportPdfBtn.disabled = true;
 
         // Limpar polling existente, se houver
@@ -1718,7 +1850,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const excludedQuestions = new Set(configForThisExam.excludedQuestions);
 
             if (releasedItems[key] === true) {
-                // Liberada! Antes de renderizar, checa se o aluno já fez.
+                // Liberada! Antes de renderizar, checa se o aluno jÃ¡ fez.
                 fetch('/api/student/my-submissions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1729,7 +1861,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (subData.success && subData.submissions) {
                         const mySub = subData.submissions.find(s => s.examKey === key);
                         if (mySub) {
-                            renderExamHistoryView(mySub, rawMarkdown);
+                            renderExamAlreadyTakenView(mySub);
                             return;
                         }
                     }
@@ -1742,8 +1874,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 })
                 .catch(err => {
-                    console.log("Erro ao verificar histórico:", err);
-                    // Falha no histórico, tenta renderizar normal (pode ser offline local sem notas)
+                    console.log("Erro ao verificar histÃ³rico:", err);
+                    // Falha no histÃ³rico, tenta renderizar normal (pode ser offline local sem notas)
                     const parsed = parseEvaluation(rawMarkdown);
                     if (parsed && parsed.questions.length > 0) {
                         renderEvaluationUI(parsed, activeCount, excludedQuestions);
@@ -1754,7 +1886,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 // Trancada! Renderiza tela de bloqueio e inicia o polling
                 const parsed = parseEvaluation(rawMarkdown);
-                const title = parsed ? parsed.title : "Avaliação";
+                const title = parsed ? parsed.title : "AvaliaÃ§Ã£o";
                 renderLockedScreen(title, key, rawMarkdown);
 
                 examLockPoll = setInterval(() => {
@@ -1777,7 +1909,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(err => {
             // Em caso de erro (ex: offline total), libera a prova localmente
-            console.warn("Sem conexão com o servidor local. Liberando prova local offline.", err);
+            console.warn("Sem conexÃ£o com o servidor local. Liberando prova local offline.", err);
             const parsed = parseEvaluation(rawMarkdown);
             if (parsed && parsed.questions.length > 0) {
                 renderEvaluationUI(parsed, 20);
@@ -1789,13 +1921,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderExamHistoryView(submission, rawMarkdown) {
         const parsed = parseEvaluation(rawMarkdown);
-        const title = parsed ? parsed.title : "Avaliação";
+        const title = parsed ? parsed.title : "AvaliaÃ§Ã£o";
         const date = new Date(submission.timestamp).toLocaleTimeString('pt-BR') + ' ' + new Date(submission.timestamp).toLocaleDateString('pt-BR');
         
         let html = `
             <div class="exam-header" style="text-align: center; margin-bottom: 30px;">
                 <h1 style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">${title}</h1>
-                <p style="font-size: 1.1rem; color: var(--text-muted);">Você já realizou esta avaliação.</p>
+                <p style="font-size: 1.1rem; color: var(--text-muted);">VocÃª jÃ¡ realizou esta avaliaÃ§Ã£o.</p>
             </div>
             
             <div class="score-card" style="margin-bottom: 40px;">
@@ -1804,7 +1936,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${submission.score}%
                 </div>
                 <div style="font-size: 1.2rem; color: var(--text-main); margin-top: 10px; font-weight: 600;">
-                    ${submission.correctCount} acertos de ${submission.totalCount} questões
+                    ${submission.correctCount} acertos de ${submission.totalCount} questÃµes
                 </div>
                 <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">
                     Prova enviada em: ${date}
@@ -1830,8 +1962,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 originalQ.alternatives.forEach(alt => {
                     let altClass = 'simulator-alt submitted';
-                    const isStudentChoice = ans.studentChoice === alt.displayLetter;
-                    const isCorrectChoice = ans.correctAnswer === alt.displayLetter;
+                    const isStudentChoice = ans.studentChoice === alt.letter;
+                    const isCorrectChoice = ans.correctAnswer === alt.letter;
 
                     if (isCorrectChoice) {
                         altClass += ' show-correct';
@@ -1841,7 +1973,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     html += `
                         <div class="${altClass}">
-                            <span class="simulator-alt-letter">${alt.displayLetter || alt.letter}</span>
+                            <span class="simulator-alt-letter">${alt.letter}</span>
                             <span class="simulator-alt-text">${alt.text}</span>
                         </div>
                     `;
@@ -1857,7 +1989,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
         html += '</div>';
         
-        contentViewer.innerHTML = html;
+        renderMarkdownContent(html);
+        contentViewer.scrollTo(0, 0);
+    }
+
+    function renderExamAlreadyTakenView(submission) {
+        stopExamConfigPoll();
+        const date = new Date(submission.timestamp).toLocaleTimeString('pt-BR') + ' ' + new Date(submission.timestamp).toLocaleDateString('pt-BR');
+        
+        let html = `
+            <div class="exam-header" style="text-align: center; margin-bottom: 30px;">
+                <h1 style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">âœ… Prova Realizada</h1>
+                <p style="font-size: 1.1rem; color: var(--text-muted);">VocÃª jÃ¡ realizou esta avaliaÃ§Ã£o e sua nota foi enviada ao instrutor.</p>
+            </div>
+            
+            <div class="score-card" style="margin-bottom: 40px; text-align: center;">
+                <div class="score-card-title">Seu Resultado</div>
+                <div class="score-value" style="color: ${submission.score >= 60 ? 'var(--success)' : 'var(--danger)'}">
+                    ${submission.score}%
+                </div>
+                <div style="font-size: 1.2rem; color: var(--text-main); margin-top: 10px; font-weight: 600;">
+                    ${submission.correctCount} acertos de ${submission.totalCount} questÃµes
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">
+                    Prova enviada em: ${date}
+                </div>
+                <div style="margin-top: 15px; font-family: monospace; color: var(--primary); font-size: 1.1rem;">
+                    CÃ³digo de Registro: <strong>${submission.protocolCode || 'NÃ£o registrado'}</strong>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button onclick="renderStudentDashboard()" style="background: var(--primary); color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); transition: transform 0.2s;">
+                        ðŸ“Š Acessar Meu Painel para ver Gabarito
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        renderMarkdownContent(html);
         contentViewer.scrollTo(0, 0);
     }
 
@@ -1903,33 +2072,33 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         })
         .catch(err => {
-            // Fallback offline: libera por padrão
-            console.warn("Sem conexão com o servidor local. Acessando apostila local offline.", err);
+            // Fallback offline: libera por padrÃ£o
+            console.warn("Sem conexÃ£o com o servidor local. Acessando apostila local offline.", err);
             onSuccess();
         });
     }
 
     function renderLockedMaterialScreen(key) {
         const titleLabel = key.replace(/_/g, ' ');
-        contentViewer.innerHTML = `
+        renderMarkdownContent(`
             <div class="exam-locked-panel" style="text-align: center; padding: 80px 20px; animation: fadeIn 0.5s ease;">
-                <div class="exam-locked-icon" style="font-size: 5rem; margin-bottom: 20px; animation: pulse 2s infinite;">🔒</div>
+                <div class="exam-locked-icon" style="font-size: 5rem; margin-bottom: 20px; animation: pulse 2s infinite;">ðŸ”’</div>
                 <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main);">Material Bloqueado</h2>
                 <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-                    O instrutor ainda não liberou o acesso ao material <strong style="color: var(--primary);">${titleLabel}</strong> na rede local.
+                    O instrutor ainda nÃ£o liberou o acesso ao material <strong style="color: var(--primary);">${titleLabel}</strong> na rede local.
                 </p>
                 <div class="exam-locked-loader" style="display: inline-block; width: 45px; height: 45px; border: 4px solid rgba(239, 68, 68, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear;"></div>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 25px;">
-                    Esta página abrirá automaticamente assim que o instrutor liberar o material.
+                    Esta pÃ¡gina abrirÃ¡ automaticamente assim que o instrutor liberar o material.
                 </p>
             </div>
-        `;
+        `);
         contentViewer.scrollTo(0, 0);
     }
 
     function fallbackToMarkdown(rawMarkdown) {
         if (rawMarkdown && typeof marked !== 'undefined') {
-            contentViewer.innerHTML = marked.parse(rawMarkdown);
+            renderMarkdownContent(marked.parse(rawMarkdown));
             contentViewer.scrollTo(0, 0);
         }
     }
@@ -1942,7 +2111,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Reset simulator states
-        isSimulatorMode = true; // Forçar modo simulador para alunos!
+        isSimulatorMode = true; // ForÃ§ar modo simulador para alunos!
         userAnswers = {};
         isSimulatorSubmitted = false;
 
@@ -1961,7 +2130,7 @@ document.addEventListener("DOMContentLoaded", () => {
         breadcrumb.innerHTML = formatBreadcrumb(breadcrumbText);
         currentBreadcrumb = breadcrumbText;
         
-        // Salva no histórico
+        // Salva no histÃ³rico
         if (currentKey !== null) {
             breadcrumbHistory.push({ key: currentKey, breadcrumb: currentBreadcrumb });
         }
@@ -1977,29 +2146,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const rawMarkdown = courseData[key];
         
-        // Verificar se é avaliação
+        // Verificar se Ã© avaliaÃ§Ã£o
         if (isEvaluation(key) && rawMarkdown) {
             checkExamAccess(key, rawMarkdown);
         } else if (rawMarkdown && typeof marked !== 'undefined') {
             currentExamState = null;
 
             const renderApostila = () => {
-                contentViewer.innerHTML = marked.parse(rawMarkdown);
+                renderMarkdownContent(marked.parse(rawMarkdown));
                 contentViewer.scrollTo(0, 0);
 
-                // Injetar Caixa de Confirmação de Leitura se for apostila
+                // Injetar Caixa de ConfirmaÃ§Ã£o de Leitura se for apostila
                 if (key.startsWith("Apostila_")) {
-                    // Atribuir IDs de parágrafo sequenciais para marcações
+                    // Atribuir IDs de parÃ¡grafo sequenciais para marcaÃ§Ãµes
                     const blocks = contentViewer.querySelectorAll("p, li, blockquote, pre, h2, h3, h4");
                     blocks.forEach((block, index) => {
                         block.setAttribute("data-para-id", `para-${index}`);
                         block.classList.add("annotatable-block");
                     });
 
-                    // Carregar anotações
+                    // Carregar anotaÃ§Ãµes
                     loadParagraphAnnotations(key);
 
-                    // Migração de estado legado para array
+                    // MigraÃ§Ã£o de estado legado para array
                     if (completedUnits[key] === true) {
                         const numTopics = Math.max(1, (rawMarkdown.match(/^## /gm) || []).length);
                         completedUnits[key] = Array.from({length: numTopics}, (_, i) => i + 1);
@@ -2018,8 +2187,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         confirmationBox.className = `topic-confirmation-box ${isCompleted ? 'completed' : ''}`;
                         confirmationBox.innerHTML = `
                             <button class="btn-toggle-topic" data-topic="${topicId}">
-                                <span class="read-icon">${isCompleted ? '✅' : '⬜'}</span>
-                                ${isCompleted ? 'Tópico Concluído! Desmarcar' : 'Marcar Tópico como Lido'}
+                                <span class="read-icon">${isCompleted ? 'âœ…' : 'â¬œ'}</span>
+                                ${isCompleted ? 'TÃ³pico ConcluÃ­do! Desmarcar' : 'Marcar TÃ³pico como Lido'}
                             </button>
                         `;
                         
@@ -2038,11 +2207,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                 if (index > -1) {
                                     completedUnits[key].splice(index, 1);
                                     confirmationBox.classList.remove('completed');
-                                    btnToggleTopic.innerHTML = `<span class="read-icon">⬜</span> Marcar Tópico como Lido`;
+                                    btnToggleTopic.innerHTML = `<span class="read-icon">â¬œ</span> Marcar TÃ³pico como Lido`;
                                 } else {
                                     completedUnits[key].push(tId);
                                     confirmationBox.classList.add('completed');
-                                    btnToggleTopic.innerHTML = `<span class="read-icon">✅</span> Tópico Concluído! Desmarcar`;
+                                    btnToggleTopic.innerHTML = `<span class="read-icon">âœ…</span> TÃ³pico ConcluÃ­do! Desmarcar`;
                                 }
                                 
                                 localStorage.setItem("completed_units", JSON.stringify(completedUnits));
@@ -2066,14 +2235,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     if (h2Tags.length > 0) {
                         // Se houver h2, insere antes de cada h2 (a partir do segundo)
-                        // O primeiro h2 geralmente é o primeiro subtítulo, então o box 1 vai antes do segundo h2.
+                        // O primeiro h2 geralmente Ã© o primeiro subtÃ­tulo, entÃ£o o box 1 vai antes do segundo h2.
                         for (let i = 1; i < h2Tags.length; i++) {
                             createTopicBox(i, h2Tags[i], 'beforebegin');
                         }
-                        // O último box vai no final do documento
+                        // O Ãºltimo box vai no final do documento
                         createTopicBox(h2Tags.length, contentViewer, 'beforeend');
                     } else {
-                        // Se não houver h2, apenas um box no final
+                        // Se nÃ£o houver h2, apenas um box no final
                         createTopicBox(1, contentViewer, 'beforeend');
                     }
 
@@ -2092,7 +2261,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (unitFiles.length > 0) {
                         const filesHtml = unitFiles.map(f => {
                             const isLink = f.type === 'link';
-                            const icon = f.type === 'pdf' ? '📄' : (f.type === 'image' ? '🖼️' : '🔗');
+                            const icon = f.type === 'pdf' ? 'ðŸ“„' : (f.type === 'image' ? 'ðŸ–¼ï¸' : 'ðŸ”—');
                             return `
                                 <a href="${f.path}" target="_blank" class="attachment-item-link" style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px 16px; border-radius: 10px; text-decoration: none; color: white; transition: all 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)'" onmouseleave="this.style.transform='none'; this.style.borderColor='var(--border)'">
                                     <span style="font-size: 1.4rem;">${icon}</span>
@@ -2108,7 +2277,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         attachmentsContainer.className = "attachments-section-container";
                         attachmentsContainer.style.cssText = "margin-top: 40px; padding-top: 25px; border-top: 1px dashed var(--border); text-align: left;";
                         attachmentsContainer.innerHTML = `
-                            <h3 style="color: white; font-weight: 800; font-size: 1.25rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">📎 Materiais Complementares</h3>
+                            <h3 style="color: white; font-weight: 800; font-size: 1.25rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">ðŸ“Ž Materiais Complementares</h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
                                 ${filesHtml}
                             </div>
@@ -2116,10 +2285,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         contentViewer.appendChild(attachmentsContainer);
                     }
 
-                    // Fórum integrado no fim
+                    // FÃ³rum integrado no fim
                     renderForumSection(key);
 
-                    // Aplicar Glossário Hover e Highlight de busca se houver termo
+                    // Aplicar GlossÃ¡rio Hover e Highlight de busca se houver termo
                     applyGlossary(contentViewer);
                     const searchEl = document.getElementById("search-input");
                     if (searchEl && searchEl.value) {
@@ -2134,11 +2303,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderApostila();
             }
         } else {
-            contentViewer.innerHTML = `
+            renderMarkdownContent(`
                 <div style="text-align:center; margin-top: 20%;">
-                    <h2>Erro: Conteúdo não encontrado.</h2>
-                    <p>O arquivo <strong>${key}</strong> não está no banco de dados.</p>
-                </div>`;
+                    <h2>Erro: ConteÃºdo nÃ£o encontrado.</h2>
+                    <p>O arquivo <strong>${key}</strong> nÃ£o estÃ¡ no banco de dados.</p>
+                </div>`);
         }
 
         // Esconde o menu no celular ao clicar
@@ -2147,7 +2316,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
     
-    // Formata o breadcrumb com links clicáveis
+    // Formata o breadcrumb com links clicÃ¡veis
     function formatBreadcrumb(text) {
         if (!text || text === "Portal LMS") {
             return `<span class="breadcrumb-home" onclick="window.location.href='index.html'">Portal LMS</span>`;
@@ -2165,12 +2334,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return html;
     }
     
-    // Função para voltar ao início
+    // FunÃ§Ã£o para voltar ao inÃ­cio
     window.goHome = function() {
         window.location.href = 'index.html';
     };
     
-    // Estilo para o breadcrumb clicável
+    // Estilo para o breadcrumb clicÃ¡vel
     const style = document.createElement('style');
     style.textContent = `
         .breadcrumb-home {
@@ -2212,7 +2381,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Realçar texto na apostila ativa
+        // RealÃ§ar texto na apostila ativa
         if (currentKey && currentKey.startsWith("Apostila_")) {
             highlightText(contentViewer, e.target.value);
         }
@@ -2222,7 +2391,7 @@ document.addEventListener("DOMContentLoaded", () => {
     exportPdfBtn.addEventListener("click", () => {
         if (!currentKey || !courseData[currentKey]) return;
         
-        // Se estiver em avaliação com estado, não usar o export padrão
+        // Se estiver em avaliaÃ§Ã£o com estado, nÃ£o usar o export padrÃ£o
         if (currentExamState) return;
 
         const rawMarkdown = courseData[currentKey];
@@ -2312,30 +2481,30 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="logo">LMS<span>4.0</span></div>
         <div class="meta">
             <span style="font-size:11pt;font-weight:800;color:#e9c46a;display:block;margin-bottom:3px">Instrutor Alan Marciano</span>
-            <span style="color:#a8d8ff;font-size:9pt">Gestor em T.I. — Escola Modelo</span><br>
+            <span style="color:#a8d8ff;font-size:9pt">Gestor em T.I. â€” Escola Modelo</span><br>
             Documento gerado em ${dateStr}<br>
-            <strong style="color:#e9c46a">USO RESTRITO — MATERIAL DIDÁTICO</strong>
+            <strong style="color:#e9c46a">USO RESTRITO â€” MATERIAL DIDÃTICO</strong>
         </div>
     </div>
     <div class="pdf-breadcrumb">${title}</div>
     <div class="pdf-body">
         ${htmlContent}
         <div class="pdf-footer" style="display:flex;justify-content:space-between;align-items:center">
-            <span>Escola Modelo — Portal Portal LMS · ${dateStr}</span>
-            <span style="color:#0f3460;font-weight:700">✍️ Instrutor Alan Marciano — Gestor em T.I.</span>
+            <span>Escola Modelo â€” Portal Portal LMS Â· ${dateStr}</span>
+            <span style="color:#0f3460;font-weight:700">âœï¸ Instrutor Alan Marciano â€” Gestor em T.I.</span>
         </div>
     </div>
 </body>
 </html>`);
         printWindow.document.close();
         printWindow.onload = () => {
-            // Abre o diálogo de impressão/salvar como PDF
+            // Abre o diÃ¡logo de impressÃ£o/salvar como PDF
             setTimeout(() => printWindow.print(), 400);
         };
     });
 
     // ==========================================
-    // SEÇÃO 6: GESTÃO DE SESSÃO DO ALUNO & CADÊADOS REATIVOS
+    // SEÃ‡ÃƒO 6: GESTÃƒO DE SESSÃƒO DO ALUNO & CADÃŠADOS REATIVOS
     // ==========================================
 
     const studentOverlay = document.getElementById('student-login-overlay');
@@ -2344,12 +2513,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const studentProfileClass = document.getElementById('student-profile-class');
     const studentAvatar = document.getElementById('student-avatar');
     
-    // Contêineres de abas do modal
+    // ContÃªineres de abas do modal
     const loginContainer = document.getElementById('student-login-container');
     const registerContainer = document.getElementById('student-register-container');
     const recoveryContainer = document.getElementById('student-recovery-container');
 
-    // Botões
+    // BotÃµes
     const btnStudentLogin = document.getElementById('btn-student-login');
     const btnStudentRegister = document.getElementById('btn-student-register');
     const btnStudentRecover = document.getElementById('btn-student-recover');
@@ -2386,7 +2555,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const opt = document.createElement('option');
                     opt.value = c.courseId + '|' + c.name;
                     opt.textContent = `${c.name} - ${c.courseName}`;
-                    // Opcionalmente podemos salvar o courseId num dataset caso necessário depois
+                    // Opcionalmente podemos salvar o courseId num dataset caso necessÃ¡rio depois
                     opt.dataset.courseId = c.courseId;
                     selectEl.appendChild(opt);
                 });
@@ -2397,7 +2566,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Transições de tela do modal
+    // TransiÃ§Ãµes de tela do modal
     if (linkGoRegister) {
         linkGoRegister.addEventListener('click', () => {
             if (loginContainer) loginContainer.style.display = 'none';
@@ -2427,55 +2596,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (linkGoLogin) linkGoLogin.addEventListener('click', showLoginPanel);
     if (linkGoLoginFromRecovery) linkGoLoginFromRecovery.addEventListener('click', showLoginPanel);
 
+    
+    
     function showStudentHub(info) {
-        document.getElementById('app-container').style.display = 'none';
-        document.getElementById('student-hub').style.display = 'flex';
+        // Bypass the old Hub and go straight to LMS 4.0 'Meus Cursos'
+        const hubEl = document.getElementById('student-hub');
+        if (hubEl) hubEl.style.display = 'none';
         
-        const hubContainer = document.getElementById('student-hub-courses');
-        hubContainer.innerHTML = '';
+        document.getElementById('app-container').style.display = 'flex';
         
-        if (!info.classes || info.classes.length === 0) {
-            hubContainer.innerHTML = `
-                <div class="col-span-full text-center text-slate-400 p-8 bg-white/5 rounded-2xl border border-white/10">
-                    <span class="text-4xl mb-4 block">😢</span>
-                    Você ainda não está matriculado em nenhum curso.
-                </div>
-            `;
-            return;
+        // This will render the global dashboard (Meus Cursos)
+        if (typeof showMyCoursesView === 'function') {
+            showMyCoursesView();
         }
-
-        info.classes.forEach(cls => {
-            const courseObj = info.courses ? info.courses.find(c => c.id === cls.courseId) : null;
-            const courseName = courseObj ? courseObj.name : (cls.courseId || 'Curso');
-            
-            const card = document.createElement('div');
-            card.className = 'bg-slate-800/50 backdrop-blur-md border border-white/10 p-6 rounded-2xl cursor-pointer hover:-translate-y-2 hover:shadow-[0_8px_30px_rgba(233,69,96,0.2)] hover:border-primary transition-all group flex flex-col items-center text-center';
-            card.innerHTML = `
-                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white text-2xl font-black shadow-lg mb-4 group-hover:scale-110 transition-transform">
-                    ${(cls.name || '').substring(0,2).toUpperCase()}
-                </div>
-                <h3 class="text-xl font-bold text-white mb-1 group-hover:text-primary transition-colors">${courseName}</h3>
-                <p class="text-slate-400 text-sm font-medium">Turma ${cls.name || ''} • ${cls.period || ''}</p>
-                <div class="mt-6 px-6 py-2 bg-white/5 group-hover:bg-primary/20 text-slate-300 group-hover:text-primary rounded-xl font-bold text-sm transition-colors border border-white/5 group-hover:border-primary/30 w-full">
-                    Acessar Portal
-                </div>
-            `;
-            card.addEventListener('click', () => {
-                currentStudentCourseId = cls.courseId;
-                currentStudentClassName = cls.name;
-                
-                document.getElementById('student-hub').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
-                
-                if (studentProfileClass) {
-                    studentProfileClass.textContent = `${cls.name || ''} • ${cls.period || ''}`;
-                }
-                
-                // Agora carrega os dados
-                fetchDataAndRender();
-            });
-            hubContainer.appendChild(card);
-        });
     }
 
     function checkStudentSession() {
@@ -2486,7 +2619,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('student-hub').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
             
-            // Para as atualizações do sidebar se não estiver logado
+            // Para as atualizaÃ§Ãµes do sidebar se nÃ£o estiver logado
             if (sidebarLocksPoll) {
                 clearInterval(sidebarLocksPoll);
                 sidebarLocksPoll = null;
@@ -2500,13 +2633,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 if (!currentStudentCourseId) {
                     showStudentHub(info);
-                    return; // Retorna e não sincroniza os dados do app ainda
+                    return; // Retorna e nÃ£o sincroniza os dados do app ainda
                 }
                 
                 if (studentProfileClass && currentStudentClassName) {
                     const activeClassObj = info.classes ? info.classes.find(c => c.name === currentStudentClassName) : null;
                     if (activeClassObj) {
-                        studentProfileClass.textContent = `${activeClassObj.name} • ${activeClassObj.period}`;
+                        studentProfileClass.textContent = `${activeClassObj.name} â€¢ ${activeClassObj.period}`;
                     }
                 }
                 
@@ -2519,11 +2652,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     const welcomeGreeting = document.getElementById('welcome-greeting');
                     if (welcomeGreeting) {
-                        welcomeGreeting.innerHTML = `Olá, ${names[0]}! 👋`;
+                        welcomeGreeting.innerHTML = `OlÃ¡, ${names[0]}! ðŸ‘‹`;
                     }
                 }
 
-                // Inicia sincronização de cadeados da barra lateral
+                // Inicia sincronizaÃ§Ã£o de cadeados da barra lateral
                 syncSidebarLocks();
                 if (!sidebarLocksPoll) {
                     sidebarLocksPoll = setInterval(syncSidebarLocks, 5000);
@@ -2545,7 +2678,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 loadStudentSubmissionsDashboard();
             } catch (e) {
-                console.error("Erro ao verificar sessão do aluno:", e);
+                console.error("Erro ao verificar sessÃ£o do aluno:", e);
                 sessionStorage.removeItem("student_info");
                 if (studentOverlay) studentOverlay.style.display = 'flex';
                 if (studentProfileCard) studentProfileCard.style.display = 'none';
@@ -2628,7 +2761,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return res.json();
             })
             .then(() => {
-                // Efetua login automático após o cadastro
+                // Efetua login automÃ¡tico apÃ³s o cadastro
                 fetch('/api/student/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2674,15 +2807,15 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .then(res => {
                 if (!res.ok) {
-                    return res.json().then(data => { throw new Error(data.error || "E-mail inválido.") });
+                    return res.json().then(data => { throw new Error(data.error || "E-mail invÃ¡lido.") });
                 }
                 return res.json();
             })
             .then(data => {
-                showRecoveryMessage('Solicitação enviada com sucesso! Peça ao instrutor para visualizar ou redefinir sua senha no painel.', false);
+                showRecoveryMessage('SolicitaÃ§Ã£o enviada com sucesso! PeÃ§a ao instrutor para visualizar ou redefinir sua senha no painel.', false);
             })
             .catch(err => {
-                showRecoveryMessage(err.message || 'Erro ao enviar solicitação.', true);
+                showRecoveryMessage(err.message || 'Erro ao enviar solicitaÃ§Ã£o.', true);
             });
         });
     }
@@ -2738,7 +2871,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Beacon na saída da aba
+    // Beacon na saÃ­da da aba
     window.addEventListener('beforeunload', () => {
         const infoStr = sessionStorage.getItem("student_info");
         if (infoStr) {
@@ -2787,14 +2920,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                 });
                             });
                         }
-                        const typeLabel = key.startsWith("Apostila_") ? "📘 Apostila" : "🎯 Avaliação";
-                        newReleases.push(`${typeLabel} — ${friendlyName}`);
+                        const typeLabel = key.startsWith("Apostila_") ? "ðŸ“˜ Apostila" : "ðŸŽ¯ AvaliaÃ§Ã£o";
+                        newReleases.push(`${typeLabel} â€” ${friendlyName}`);
                     }
                 }
 
                 if (newReleases.length > 0) {
                     newReleases.forEach(msg => {
-                        showStudentToastNotification("🚀 Novo Conteúdo Liberado!", msg);
+                        showStudentToastNotification("ðŸš€ Novo ConteÃºdo Liberado!", msg);
                     });
                 }
             }
@@ -2815,7 +2948,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             lockSpan = document.createElement("span");
                             lockSpan.className = "sidebar-lock-indicator";
                             lockSpan.style.marginLeft = "8px";
-                            lockSpan.textContent = "🔒";
+                            lockSpan.textContent = "ðŸ”’";
                             item.appendChild(lockSpan);
                         }
                         
@@ -2860,7 +2993,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (emailLoginInput) emailLoginInput.addEventListener('keypress', triggerLoginOnEnter);
     if (passLoginInput) passLoginInput.addEventListener('keypress', triggerLoginOnEnter);
 
-    // Inicializa a sessão ao carregar a página
+    // Inicializa a sessÃ£o ao carregar a pÃ¡gina
     checkStudentSession();
     loadAvailableClasses();
 
@@ -2914,7 +3047,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!studentInfoStr) return;
         
         const info = JSON.parse(studentInfoStr);
-        if (notebookModuleBadge) notebookModuleBadge.textContent = currentBreadcrumb.split('›').pop().trim();
+        if (notebookModuleBadge) notebookModuleBadge.textContent = currentBreadcrumb.split('â€º').pop().trim();
         if (notebookTextarea) notebookTextarea.value = 'Carregando...';
 
         fetch(`/api/student/notes/get?email=${encodeURIComponent(info.email)}&moduleKey=${encodeURIComponent(currentKey)}`)
@@ -2924,7 +3057,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(err => {
             if (notebookTextarea) notebookTextarea.value = '';
-            console.error('Erro ao carregar anotação:', err);
+            console.error('Erro ao carregar anotaÃ§Ã£o:', err);
         });
     }
 
@@ -2948,7 +3081,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(res => {
             if (res.ok) {
                 if (notebookSaveStatus) {
-                    notebookSaveStatus.textContent = 'Salvo ✓';
+                    notebookSaveStatus.textContent = 'Salvo âœ“';
                     notebookSaveStatus.style.opacity = '1';
                     setTimeout(() => {
                         notebookSaveStatus.style.opacity = '0';
@@ -2956,11 +3089,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         })
-        .catch(err => console.error('Erro ao salvar anotação:', err));
+        .catch(err => console.error('Erro ao salvar anotaÃ§Ã£o:', err));
     }
 
     // ==========================================================
-    // LMS PREMIUM: ANOTAÇÕES E DESTAQUES POR PARÁGRAFO
+    // LMS PREMIUM: ANOTAÃ‡Ã•ES E DESTAQUES POR PARÃGRAFO
     // ==========================================================
     function loadParagraphAnnotations(key) {
         const studentInfoStr = sessionStorage.getItem("student_info");
@@ -2981,7 +3114,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             })
-            .catch(err => console.error("Erro ao carregar anotações:", err));
+            .catch(err => console.error("Erro ao carregar anotaÃ§Ãµes:", err));
     }
 
     function applyParagraphAnnotationStyle(block, paraId, annotationData) {
@@ -2992,8 +3125,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const indicator = document.createElement("div");
         indicator.className = "para-note-indicator";
-        indicator.innerHTML = "📝";
-        indicator.title = "Ver / Editar Anotação";
+        indicator.innerHTML = "ðŸ“";
+        indicator.title = "Ver / Editar AnotaÃ§Ã£o";
         indicator.addEventListener("click", (e) => {
             e.stopPropagation();
             toggleParagraphNoteEditor(block, paraId, annotationData.highlightedText, annotationData.note);
@@ -3049,7 +3182,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!popup) {
             popup = document.createElement("div");
             popup.id = "text-highlight-popup";
-            popup.innerHTML = `<button id="btn-highlight-action">💡 Destacar e Anotar</button>`;
+            popup.innerHTML = `<button id="btn-highlight-action">ðŸ’¡ Destacar e Anotar</button>`;
             document.body.appendChild(popup);
 
             popup.querySelector("button").addEventListener("click", () => {
@@ -3088,13 +3221,13 @@ document.addEventListener("DOMContentLoaded", () => {
             editor.className = "paragraph-note-editor";
             editor.innerHTML = `
                 <div style="font-size: 0.8rem; color: #fef08a; font-weight: 700; margin-bottom: 2px; text-align: left;">
-                    Destaque: <span style="font-style: italic; color: white;">"${highlightedText || 'Todo o parágrafo'}"</span>
+                    Destaque: <span style="font-style: italic; color: white;">"${highlightedText || 'Todo o parÃ¡grafo'}"</span>
                 </div>
-                <textarea placeholder="Digite sua anotação ou dúvida...">${noteText || ""}</textarea>
+                <textarea placeholder="Digite sua anotaÃ§Ã£o ou dÃºvida...">${noteText || ""}</textarea>
                 <div class="editor-buttons">
                     <button class="btn-cancel">Cancelar</button>
                     ${noteText ? '<button class="btn-delete">Remover Destaque</button>' : ''}
-                    <button class="btn-save">Salvar Anotação</button>
+                    <button class="btn-save">Salvar AnotaÃ§Ã£o</button>
                 </div>
             `;
 
@@ -3116,7 +3249,7 @@ document.addEventListener("DOMContentLoaded", () => {
             editor.querySelector(".btn-save").addEventListener("click", () => {
                 const note = editor.querySelector("textarea").value.trim();
                 if (note === "") {
-                    alert("A anotação não pode estar vazia! Para remover o destaque, clique em Remover Destaque.");
+                    alert("A anotaÃ§Ã£o nÃ£o pode estar vazia! Para remover o destaque, clique em Remover Destaque.");
                     return;
                 }
                 saveParagraphAnnotation(currentKey, paraId, highlightedText || block.innerText, note, () => {
@@ -3157,11 +3290,11 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(data => {
             if (data.success && callback) callback();
         })
-        .catch(err => alert("Erro ao salvar anotação: " + err));
+        .catch(err => alert("Erro ao salvar anotaÃ§Ã£o: " + err));
     }
 
     // ==========================================================
-    // LMS PREMIUM: FÓRUM / DÚVIDAS INTEGRADO
+    // LMS PREMIUM: FÃ“RUM / DÃšVIDAS INTEGRADO
     // ==========================================================
     function renderForumSection(key) {
         const existingForum = contentViewer.querySelector(".forum-section");
@@ -3171,15 +3304,15 @@ document.addEventListener("DOMContentLoaded", () => {
         forumDiv.className = "forum-section";
         forumDiv.innerHTML = `
             <div class="forum-header">
-                <h3 class="forum-title">💬 Fórum e Dúvidas da Unidade</h3>
+                <h3 class="forum-title">ðŸ’¬ FÃ³rum e DÃºvidas da Unidade</h3>
             </div>
             <div class="forum-comments-list" id="forum-comments-container">
-                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando dúvidas...</div>
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando dÃºvidas...</div>
             </div>
             <div class="new-comment-form">
-                <h4 style="color: white; font-weight: 700; font-size: 0.95rem;">💡 Deixe sua dúvida ou comentário sobre este conteúdo:</h4>
-                <textarea class="new-comment-textarea" id="forum-comment-text" placeholder="Escreva aqui sua pergunta ou comentário..."></textarea>
-                <button class="btn-forum-submit" id="btn-forum-submit-comment">Postar Dúvida</button>
+                <h4 style="color: white; font-weight: 700; font-size: 0.95rem;">ðŸ’¡ Deixe sua dÃºvida ou comentÃ¡rio sobre este conteÃºdo:</h4>
+                <textarea class="new-comment-textarea" id="forum-comment-text" placeholder="Escreva aqui sua pergunta ou comentÃ¡rio..."></textarea>
+                <button class="btn-forum-submit" id="btn-forum-submit-comment">Postar DÃºvida</button>
             </div>
         `;
 
@@ -3196,11 +3329,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (data.success) {
                         renderCommentsList(commentsContainer, data.comments, key);
                     } else {
-                        commentsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Erro ao carregar dúvidas.</div>`;
+                        commentsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Erro ao carregar dÃºvidas.</div>`;
                     }
                 })
                 .catch(() => {
-                    commentsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Erro ao carregar dúvidas.</div>`;
+                    commentsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Erro ao carregar dÃºvidas.</div>`;
                 });
         };
 
@@ -3209,7 +3342,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSubmit.addEventListener("click", () => {
             const text = commentTextarea.value.trim();
             if (text === "") {
-                alert("Por favor, digite o seu comentário.");
+                alert("Por favor, digite o seu comentÃ¡rio.");
                 return;
             }
 
@@ -3233,7 +3366,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     commentTextarea.value = "";
                     loadComments();
                 } else {
-                    alert("Erro ao postar comentário: " + data.error);
+                    alert("Erro ao postar comentÃ¡rio: " + data.error);
                 }
             })
             .catch(err => alert("Erro ao conectar: " + err));
@@ -3242,7 +3375,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderCommentsList(container, comments, key) {
         if (comments.length === 0) {
-            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma dúvida postada sobre esta unidade. Seja o primeiro!</div>`;
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma dÃºvida postada sobre esta unidade. Seja o primeiro!</div>`;
             return;
         }
 
@@ -3264,8 +3397,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isOwnComment) {
                 commentActionsHTML = `
                     <div class="comment-actions" style="margin-left: auto; display: flex; gap: 8px;">
-                        <button class="btn-comment-action edit" onclick="editComment('${comment.id}', '${key}')" style="background: none; border: none; color: #a7f3d0; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: bold; padding: 2px 6px; border-radius: 4px; transition: background-color 0.2s;">✏️ Editar</button>
-                        <button class="btn-comment-action delete" onclick="deleteComment('${comment.id}', '${key}')" style="background: none; border: none; color: #fecaca; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: bold; padding: 2px 6px; border-radius: 4px; transition: background-color 0.2s;">🗑️ Excluir</button>
+                        <button class="btn-comment-action edit" onclick="editComment('${comment.id}', '${key}')" style="background: none; border: none; color: #a7f3d0; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: bold; padding: 2px 6px; border-radius: 4px; transition: background-color 0.2s;">âœï¸ Editar</button>
+                        <button class="btn-comment-action delete" onclick="deleteComment('${comment.id}', '${key}')" style="background: none; border: none; color: #fecaca; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: bold; padding: 2px 6px; border-radius: 4px; transition: background-color 0.2s;">ðŸ—‘ï¸ Excluir</button>
                     </div>
                 `;
             }
@@ -3282,8 +3415,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (isOwnReply) {
                         replyActionsHTML = `
                             <div class="reply-actions" style="margin-left: auto; display: flex; gap: 8px;">
-                                <button class="btn-reply-action edit" onclick="editReply('${comment.id}', '${reply.id}', '${key}')" style="background: none; border: none; color: #a7f3d0; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 2px; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: background-color 0.2s;">✏️</button>
-                                <button class="btn-reply-action delete" onclick="deleteReply('${comment.id}', '${reply.id}', '${key}')" style="background: none; border: none; color: #fecaca; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 2px; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: background-color 0.2s;">🗑️</button>
+                                <button class="btn-reply-action edit" onclick="editReply('${comment.id}', '${reply.id}', '${key}')" style="background: none; border: none; color: #a7f3d0; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 2px; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: background-color 0.2s;">âœï¸</button>
+                                <button class="btn-reply-action delete" onclick="deleteReply('${comment.id}', '${reply.id}', '${key}')" style="background: none; border: none; color: #fecaca; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 2px; font-weight: bold; padding: 2px 4px; border-radius: 4px; transition: background-color 0.2s;">ðŸ—‘ï¸</button>
                             </div>
                         `;
                     }
@@ -3323,7 +3456,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${repliesHTML}
                 </div>
                 <div class="reply-form">
-                    <input type="text" class="reply-input" placeholder="Responder a esta dúvida..." id="reply-input-${comment.id}">
+                    <input type="text" class="reply-input" placeholder="Responder a esta dÃºvida..." id="reply-input-${comment.id}">
                     <button class="btn-reply-send" onclick="sendCommentReply('${comment.id}', '${key}')">Responder</button>
                 </div>
             `;
@@ -3399,7 +3532,7 @@ document.addEventListener("DOMContentLoaded", () => {
         editor.querySelector(".btn-inline-save").addEventListener("click", () => {
             const newText = editor.querySelector(".inline-editor-textarea").value.trim();
             if (newText === "") {
-                alert("O comentário não pode ser vazio.");
+                alert("O comentÃ¡rio nÃ£o pode ser vazio.");
                 return;
             }
             
@@ -3424,12 +3557,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert("Erro ao editar: " + data.error);
                 }
             })
-            .catch(err => alert("Erro de conexão: " + err));
+            .catch(err => alert("Erro de conexÃ£o: " + err));
         });
     };
 
     window.deleteComment = function(commentId, key) {
-        if (!confirm("Deseja realmente excluir esta dúvida? Todas as respostas a ela também serão removidas.")) {
+        if (!confirm("Deseja realmente excluir esta dÃºvida? Todas as respostas a ela tambÃ©m serÃ£o removidas.")) {
             return;
         }
         
@@ -3453,7 +3586,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Erro ao excluir: " + data.error);
             }
         })
-        .catch(err => alert("Erro de conexão: " + err));
+        .catch(err => alert("Erro de conexÃ£o: " + err));
     };
 
     window.editReply = function(commentId, replyId, key) {
@@ -3488,7 +3621,7 @@ document.addEventListener("DOMContentLoaded", () => {
         editor.querySelector(".btn-inline-save").addEventListener("click", () => {
             const newText = editor.querySelector(".inline-editor-textarea").value.trim();
             if (newText === "") {
-                alert("A resposta não pode ser vazia.");
+                alert("A resposta nÃ£o pode ser vazia.");
                 return;
             }
             
@@ -3514,7 +3647,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert("Erro ao editar: " + data.error);
                 }
             })
-            .catch(err => alert("Erro de conexão: " + err));
+            .catch(err => alert("Erro de conexÃ£o: " + err));
         });
     };
 
@@ -3544,7 +3677,392 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Erro ao excluir: " + data.error);
             }
         })
-        .catch(err => alert("Erro de conexão: " + err));
+        .catch(err => alert("Erro de conexÃ£o: " + err));
     };
 
 });
+
+
+    // LMS 4.0 - Global Dashboard (Meus Cursos)
+    window.loadGlobalDashboard = function() {
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        const student = JSON.parse(studentInfoStr);
+        
+        // Populate Grid
+        const grid = document.getElementById('student-courses-grid');
+        if (grid) {
+            grid.innerHTML = '';
+            
+            let rawCourses = student.courses || [];
+            let normalizedCourses = [];
+            
+            rawCourses.forEach(c => {
+                normalizedCourses.push({
+                    id: typeof c === 'string' ? c : (c.id || c.name),
+                    name: typeof c === 'string' ? c : (c.name || c.id)
+                });
+            });
+
+            if (normalizedCourses.length === 0 && student.classes && student.classes.length > 0) {
+                student.classes.forEach(cls => {
+                    let className = typeof cls === 'string' ? cls : (cls.name || '');
+                    let courseId = typeof cls === 'string' ? null : (cls.courseId || null);
+                    
+                    if (courseId) {
+                        normalizedCourses.push({id: courseId, name: courseId});
+                    } else if (className.includes('|')) {
+                        const extracted = className.split('|')[0];
+                        normalizedCourses.push({id: extracted, name: extracted});
+                    } else if (currentStudentCourseId) {
+                        normalizedCourses.push({id: currentStudentCourseId, name: currentStudentCourseId});
+                    }
+                });
+            }
+            
+            let coursesMap = new Map();
+            normalizedCourses.forEach(c => {
+                if (c.id) coursesMap.set(c.id, c);
+            });
+            let courses = Array.from(coursesMap.values());
+            
+            // Get filter values
+            const searchInput = document.getElementById('course-search-input');
+            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            // Filter by search
+            if (searchVal) {
+                courses = courses.filter(c => c.name.toLowerCase().includes(searchVal));
+            }
+            
+            if (courses.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align:center; padding:48px 16px; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:22px;">
+                        <span style="font-size:60px; display:block; margin-bottom:16px; opacity:0.5;">🎓</span>
+                        <h3 style="font-size:20px; font-weight:800; color:var(--text-main); margin-bottom:8px;">Nenhum curso disponível no momento.</h3>
+                        <p style="color:var(--text-muted); font-size:14px; max-width:400px; margin:0 auto;">${searchVal ? 'Nenhum curso corresponde aos filtros.' : 'Você ainda não está matriculado em nenhum curso ou sua matrícula está em processamento.'}</p>
+                    </div>
+                `;
+            } else {
+                const statCourses = document.getElementById('global-stat-active-courses');
+                if(statCourses) statCourses.textContent = courses.length;
+                
+                const switcherLabel = document.getElementById('course-switcher-label');
+                if(switcherLabel) switcherLabel.textContent = courses.length === 1 ? courses[0].name : courses.length + ' cursos ativos';
+
+                courses.forEach(course => {
+                    let coverLetter = course.name ? course.name.substring(0,2).toUpperCase() : 'CU';
+                    grid.innerHTML += `
+                    <div class="course-card" onclick="selectCourseAndEnter('${course.id}')">
+                        <div class="course-tag">Em andamento</div>
+                        <div class="course-icon">${coverLetter}</div>
+                        <h3 class="course-title">${course.name}</h3>
+                        <p class="course-next">Clique para acessar o painel do curso.</p>
+                        <div class="progress-info">
+                            <span>Progresso Geral</span>
+                            <span>0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <button class="primary-btn">Continuar curso →</button>
+                    </div>
+                `;
+                });
+            }
+        }
+        
+        // Ensure event listeners for search are attached once
+        const searchInputEl = document.getElementById('course-search-input');
+        if (searchInputEl && !searchInputEl.dataset.listenerAttached) {
+            searchInputEl.addEventListener('input', () => {
+                window.loadGlobalDashboard();
+            });
+            searchInputEl.dataset.listenerAttached = 'true';
+        }
+        const filterStatusEl = document.getElementById('filter-status');
+        if (filterStatusEl && !filterStatusEl.dataset.listenerAttached) {
+            filterStatusEl.addEventListener('change', () => {
+                window.loadGlobalDashboard();
+            });
+            filterStatusEl.dataset.listenerAttached = 'true';
+        }
+        const filterTurnoEl = document.getElementById('filter-turno');
+        if (filterTurnoEl && !filterTurnoEl.dataset.listenerAttached) {
+            filterTurnoEl.addEventListener('change', () => {
+                window.loadGlobalDashboard();
+            });
+            filterTurnoEl.dataset.listenerAttached = 'true';
+        }
+        const filterOrderEl = document.getElementById('filter-order');
+        if (filterOrderEl && !filterOrderEl.dataset.listenerAttached) {
+            filterOrderEl.addEventListener('change', () => {
+                window.loadGlobalDashboard();
+            });
+            filterOrderEl.dataset.listenerAttached = 'true';
+        }
+
+        // Fetch Real Dashboard Stats
+        fetch(`/api/student/dashboard?email=${encodeURIComponent(student.email)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Mocks updated visually
+                }
+            })
+            .catch(err => console.error(err));
+    };
+
+    window.selectCourseAndEnter = function(courseId) {
+        currentStudentCourseId = courseId;
+        fetchDataAndRender(); // Loads data.js and updates modules
+        showCoursePanelView();
+    };
+
+    // LMS 4.0 - Course Dashboard (Painel do Curso)
+    window.loadCourseDashboard = function() {
+        const studentInfoStr = sessionStorage.getItem("student_info");
+        if (!studentInfoStr) return;
+        const student = JSON.parse(studentInfoStr);
+
+        // Update title
+        const titleEl = document.getElementById('course-panel-title');
+        if(titleEl) titleEl.textContent = currentStudentCourseId || 'Painel do Curso';
+
+        // Update course-switcher
+        const switcherLabel = document.getElementById('course-switcher-label');
+        if(switcherLabel && currentStudentCourseId) switcherLabel.textContent = currentStudentCourseId;
+
+        // Update sidebar course name
+        const sidebarName = document.getElementById('sidebar-active-course-name');
+        if(sidebarName && currentStudentCourseId) sidebarName.textContent = currentStudentCourseId;
+
+        fetch(`/api/student/dashboard?email=${encodeURIComponent(student.email)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update Exams List
+                    const examsList = document.getElementById('course-exams-list');
+                    if (examsList) {
+                        examsList.innerHTML = '';
+                        let courseExams = data.exams || [];
+                        
+                        // Sort by date desc
+                        courseExams.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        
+                        if (courseExams.length === 0) {
+                            examsList.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:14px; font-style:italic; padding:16px;">Nenhuma avaliação encontrada.</div>';
+                        } else {
+                            courseExams.forEach(exam => {
+                                const dateStr = new Date(exam.timestamp).toLocaleString();
+                                examsList.innerHTML += `
+                                    <div class="assessment-item">
+                                        <div>
+                                            <strong>${exam.examKey}</strong>
+                                            <span style="color:var(--text-muted); font-size:12px;">${dateStr}</span>
+                                        </div>
+                                        <div class="status">${exam.score}</div>
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+
+                    // Update Attendance
+                    const att = data.attendance || [];
+                    let presentCount = 0;
+                    let absentCount = 0;
+                    let totalCount = att.length;
+                    
+                    att.forEach(a => {
+                        if (a.status === 'presente' || a.status === 'atraso' || a.status === 'justificado') {
+                            presentCount++;
+                        } else if (a.status === 'falta') {
+                            absentCount++;
+                        }
+                    });
+
+                    let attPerc = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 100;
+                    
+                    const elAbsences = document.getElementById('course-stat-absences');
+                    const elPresent = document.getElementById('stat-att-present');
+                    const elAbsent = document.getElementById('stat-att-absent');
+                    const elTotal = document.getElementById('stat-att-total');
+                    const elDonutText = document.getElementById('attendance-donut-text');
+                    const elDonutCircle = document.getElementById('attendance-donut-circle');
+
+                    if(elAbsences) elAbsences.textContent = absentCount;
+                    if(elPresent) elPresent.textContent = presentCount;
+                    if(elAbsent) elAbsent.textContent = absentCount;
+                    if(elTotal) elTotal.textContent = totalCount;
+                    if(elDonutText) elDonutText.textContent = attPerc + '%';
+                    
+                    if(elDonutCircle) {
+                        // Update CSS conic-gradient for donut
+                        let colorVar = 'var(--green)';
+                        if(attPerc < 50) colorVar = 'var(--red)';
+                        else if(attPerc < 75) colorVar = '#f59e0b';
+                        
+                        elDonutCircle.style.background = `conic-gradient(${colorVar} ${attPerc}%, rgba(148, 163, 184, 0.15) ${attPerc}% 100%)`;
+                    }
+
+                    // Update KPI values
+                    const kpiProgress = document.getElementById('kpi-progress');
+                    const kpiAttendance = document.getElementById('kpi-attendance');
+                    if(kpiAttendance) kpiAttendance.textContent = attPerc + '%';
+                    
+                    // Update Path (MÃ³dulos reais do Data.js atual)
+                    const pathList = document.getElementById('course-modules-path');
+                    if(pathList && typeof getActiveStructure !== 'undefined') {
+                        pathList.innerHTML = '';
+                        const struct = getActiveStructure();
+                        let totalUnits = 0;
+                        let completedUnitsCount = 0;
+                        
+                        struct.forEach((mod, idx) => {
+                            let modTotal = mod.units.length;
+                            let modCompleted = 0;
+                            
+                            mod.units.forEach(u => {
+                                totalUnits++;
+                                if(completedUnits[u.file]) {
+                                    completedUnitsCount++;
+                                    modCompleted++;
+                                }
+                            });
+                            
+                            let modPerc = modTotal > 0 ? Math.round((modCompleted / modTotal) * 100) : 0;
+                            
+                            pathList.innerHTML += `
+                                <div class="module-item">
+                                    <div class="module-number">${idx + 1}</div>
+                                    <div>
+                                        <div class="module-title">${mod.module}</div>
+                                        <div class="module-desc">${mod.units.length} aulas • ${modPerc}% concluído</div>
+                                    </div>
+                                    <div class="mini-progress">
+                                        <div class="progress-fill" style="width: ${modPerc}%;"></div>
+                                    </div>
+                                    <span style="color:var(--text-muted); font-size:18px;">➔</span>
+                                </div>
+                            `;
+                        });
+                        
+                        // Progresso Geral
+                        let globPerc = totalUnits > 0 ? Math.round((completedUnitsCount / totalUnits) * 100) : 0;
+                        const progText = document.getElementById('course-panel-progress-text');
+                        const progBar = document.getElementById('course-panel-progress-bar');
+                        if(progText) progText.textContent = globPerc + '%';
+                        if(progBar) progBar.style.width = globPerc + '%';
+                        
+                        // Update KPI progress
+                        if(kpiProgress) kpiProgress.textContent = globPerc + '%';
+                        
+                        // Populate Continue de onde parou
+                        const continueModuleEl = document.getElementById('continue-lesson-module');
+                        const continueTitleEl = document.getElementById('continue-lesson-title');
+                        const continueBtn = document.querySelector('.continue-card .primary-btn');
+                        
+                        if (totalUnits > 0 && globPerc < 100) {
+                            // Encontrar primeira aula não concluída
+                            let nextUnit = null;
+                            let nextModName = '';
+                            struct.forEach(mod => {
+                                if(nextUnit) return;
+                                mod.units.forEach(u => {
+                                    if(!nextUnit && !completedUnits[u.file]) {
+                                        nextUnit = u;
+                                        nextModName = mod.module;
+                                    }
+                                });
+                            });
+                            if (nextUnit) {
+                                if(continueModuleEl) continueModuleEl.textContent = 'Próxima Aula • ' + nextModName;
+                                if(continueTitleEl) continueTitleEl.textContent = nextUnit.name || 'Aula ' + nextUnit.file;
+                                if(continueBtn) {
+                                    continueBtn.textContent = 'Continuar aula →';
+                                    continueBtn.onclick = () => { loadContent(nextUnit.file); };
+                                }
+                            }
+                        } else if (globPerc === 100) {
+                            if(continueModuleEl) continueModuleEl.textContent = 'Curso Concluído';
+                            if(continueTitleEl) continueTitleEl.textContent = 'Você finalizou todas as aulas deste curso!';
+                            if(continueBtn) {
+                                continueBtn.textContent = 'Ver Certificado';
+                                continueBtn.onclick = () => { showToast('Gerando certificado...'); };
+                            }
+                        }
+
+                        // Populate Próximas Aulas (Mock)
+                        const scheduleList = document.getElementById('course-schedule-list');
+                        if (scheduleList) {
+                            scheduleList.innerHTML = `
+                                <div class="schedule-item">
+                                    <div class="schedule-date"><strong>Hoje</strong><span>19:00</span></div>
+                                    <div class="schedule-info">
+                                        <h4>Mentoria ao Vivo</h4>
+                                        <p>Plantão de dúvidas com o professor</p>
+                                    </div>
+                                    <button class="icon-btn" title="Acessar sala">🎥</button>
+                                </div>
+                                <div class="schedule-item">
+                                    <div class="schedule-date" style="background:var(--bg-main); color:var(--text-soft);"><strong>Amanhã</strong><span>20:00</span></div>
+                                    <div class="schedule-info">
+                                        <h4 style="color:var(--text-soft);">Liberação de Módulo</h4>
+                                        <p>O próximo módulo será disponibilizado</p>
+                                    </div>
+                                    <button class="icon-btn" title="Ver detalhes">ℹ️</button>
+                                </div>
+                            `;
+                        }
+
+                        // Populate Avisos do professor (Mock)
+                        const noticesList = document.getElementById('course-notices-list');
+                        if (noticesList) {
+                            noticesList.innerHTML = `
+                                <div class="notice-item" style="padding:16px; background:rgba(239,68,68,0.1); border-left:3px solid var(--primary); border-radius:12px; margin-bottom:12px;">
+                                    <h4 style="font-size:14px; color:var(--text-main); margin-bottom:4px;">Aviso sobre a Prova Final</h4>
+                                    <p style="font-size:13px; color:var(--text-soft); line-height:1.4;">A prova final do módulo 1 foi reagendada para a próxima sexta-feira. Não esqueçam de revisar o material!</p>
+                                    <span style="display:block; font-size:11px; color:var(--text-muted); margin-top:8px;">Prof. Marcos • Há 2 horas</span>
+                                </div>
+                            `;
+                        }
+
+                        // Populate Atividade Recente (Mock)
+                        const activityList = document.getElementById('course-activity-list');
+                        if (activityList) {
+                            activityList.innerHTML = `
+                                <div class="activity-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
+                                    <div style="display:flex; flex-direction:column; gap:4px;">
+                                        <strong style="font-size:13px; color:var(--text-main);">Você assistiu uma aula</strong>
+                                        <span style="font-size:12px; color:var(--text-muted);">Módulo 1 • Ontem</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
+                                    <div style="display:flex; flex-direction:column; gap:4px;">
+                                        <strong style="font-size:13px; color:var(--text-main);">Material complementar baixado</strong>
+                                        <span style="font-size:12px; color:var(--text-muted);">PDF de introdução • Há 2 dias</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error(err));
+    };
+
+    // ================================================
+    // UTILITY: Toast Notification
+    // ================================================
+    window.showToast = function(message) {
+        const existing = document.querySelector('.lms-toast');
+        if (existing) existing.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = 'lms-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.remove(), 3000);
+    };

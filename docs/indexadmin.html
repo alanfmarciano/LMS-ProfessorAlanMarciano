@@ -1,0 +1,1321 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LMS4.0 - Painel Admin</title>
+
+  <style>
+    :root {
+      --bg-main: #07111f;
+      --bg-sidebar: #0b1627;
+      --bg-card: #111c2e;
+      --bg-card-soft: #162238;
+      --border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-soft: #cbd5e1;
+      --red: #ff4757;
+      --pink: #ec4899;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --green: #22c55e;
+      --purple: #8b5cf6;
+      --orange: #f59e0b;
+      --yellow: #facc15;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --sidebar-width: 300px;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.18), transparent 32%),
+        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.12), transparent 28%),
+        var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    button,
+    input,
+    select {
+      font-family: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: rgba(11, 22, 39, 0.94);
+      border-right: 1px solid var(--border);
+      padding: 28px 20px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .logo {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .logo span {
+      color: var(--red);
+    }
+
+    .logo-subtitle {
+      color: var(--text-muted);
+      font-size: 12px;
+      letter-spacing: 4px;
+      margin-top: 6px;
+    }
+
+    .admin-badge {
+      background: linear-gradient(135deg, rgba(255, 71, 87, 0.18), rgba(139, 92, 246, 0.14));
+      border: 1px solid rgba(255, 71, 87, 0.25);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .admin-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--red), var(--pink));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .admin-badge strong {
+      display: block;
+      font-size: 15px;
+    }
+
+    .admin-badge span {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .sidebar-section-title {
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 12px 10px;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      padding: 13px 14px;
+      border-radius: 12px;
+      font-size: 15px;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(255, 71, 87, 0.2), rgba(255, 255, 255, 0.03));
+      color: var(--text-main);
+      border-left: 3px solid var(--red);
+    }
+
+    .nav-icon {
+      width: 24px;
+      text-align: center;
+    }
+
+    .nav-count {
+      margin-left: auto;
+      min-width: 24px;
+      height: 22px;
+      border-radius: 99px;
+      background: rgba(255, 71, 87, 0.18);
+      color: #ff8b95;
+      font-size: 12px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 7px;
+    }
+
+    .system-card {
+      margin-top: auto;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+
+    .system-card h4 {
+      margin-bottom: 8px;
+    }
+
+    .system-card p {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    .system-health {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    /* MAIN */
+
+    .main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      height: 76px;
+      background: rgba(7, 17, 31, 0.78);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--text-soft);
+      font-size: 15px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .search-box {
+      width: 280px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .top-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-soft);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+    }
+
+    .top-btn.primary {
+      background: linear-gradient(135deg, var(--red), var(--pink));
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .notification {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .notification::after {
+      content: "5";
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--red);
+      color: white;
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .user-role {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .content {
+      padding: 36px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+
+    .page-title-group {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .page-icon {
+      width: 66px;
+      height: 66px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255, 71, 87, 0.25), rgba(139, 92, 246, 0.14));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+    }
+
+    .page-title {
+      font-size: 36px;
+      letter-spacing: -1px;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border);
+      color: var(--text-soft);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--red), var(--pink));
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 900;
+      box-shadow: 0 10px 30px rgba(255, 71, 87, 0.25);
+    }
+
+    /* CARDS */
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: rgba(17, 28, 46, 0.88);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      font-size: 22px;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-help {
+      margin-top: 7px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .stat-help.warning {
+      color: var(--orange);
+    }
+
+    .stat-help.danger {
+      color: var(--red);
+    }
+
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.85fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: rgba(17, 28, 46, 0.9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-size: 19px;
+      font-weight: 900;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .view-all {
+      margin-left: auto;
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 150px 150px 170px;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .input,
+    .select {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 14px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: left;
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .table td {
+      padding: 16px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-soft);
+      font-size: 14px;
+    }
+
+    .table strong {
+      color: var(--text-main);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .status.green {
+      background: rgba(34, 197, 94, 0.14);
+      color: #4ade80;
+    }
+
+    .status.red {
+      background: rgba(255, 71, 87, 0.14);
+      color: #ff8b95;
+    }
+
+    .status.blue {
+      background: rgba(59, 130, 246, 0.14);
+      color: #60a5fa;
+    }
+
+    .status.orange {
+      background: rgba(245, 158, 11, 0.14);
+      color: #fbbf24;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid var(--border);
+      color: var(--text-soft);
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .quick-card {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      min-height: 120px;
+    }
+
+    .quick-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(255, 71, 87, 0.25), rgba(139, 92, 246, 0.18));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      font-size: 22px;
+    }
+
+    .quick-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .quick-card span {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .middle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .list-item {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .list-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .list-content strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .list-content span {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .chart-card {
+      min-height: 320px;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      height: 210px;
+      margin-top: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .bar {
+      flex: 1;
+      border-radius: 12px 12px 0 0;
+      background: linear-gradient(180deg, var(--red), var(--purple));
+      min-height: 28px;
+      position: relative;
+    }
+
+    .bar::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .progress-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .progress-row {
+      display: grid;
+      grid-template-columns: 1fr 70px;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-soft);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      height: 9px;
+      border-radius: 99px;
+      background: rgba(148, 163, 184, 0.15);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--red), var(--pink));
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1300px) {
+      .stats-grid,
+      .middle-grid,
+      .admin-layout,
+      .bottom-grid,
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        width: 100%;
+      }
+
+      .main {
+        margin-left: 0;
+      }
+
+      .app {
+        flex-direction: column;
+      }
+
+      .topbar {
+        height: auto;
+        padding: 20px;
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .top-actions {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- SIDEBAR ADMIN -->
+    <aside class="sidebar">
+      <div>
+        <div class="logo">LMS<span>4.0</span></div>
+        <div class="logo-subtitle">ADMIN CENTER</div>
+      </div>
+
+      <div class="admin-badge">
+        <div class="admin-avatar">AD</div>
+        <div>
+          <strong>Administrador</strong>
+          <span>Gestão geral do LMS</span>
+        </div>
+      </div>
+
+      <nav>
+        <div class="sidebar-section-title">Gestão principal</div>
+
+        <div class="nav-list">
+          <a class="nav-item active" href="#dashboard">
+            <span class="nav-icon">📊</span>
+            Dashboard
+          </a>
+
+          <a class="nav-item" href="#alunos">
+            <span class="nav-icon">👨‍🎓</span>
+            Alunos
+            <span class="nav-count">248</span>
+          </a>
+
+          <a class="nav-item" href="#professores">
+            <span class="nav-icon">👨‍🏫</span>
+            Professores
+            <span class="nav-count">18</span>
+          </a>
+
+          <a class="nav-item" href="#turmas">
+            <span class="nav-icon">🏫</span>
+            Turmas
+            <span class="nav-count">12</span>
+          </a>
+
+          <a class="nav-item" href="#cursos">
+            <span class="nav-icon">🎓</span>
+            Cursos
+            <span class="nav-count">6</span>
+          </a>
+
+          <a class="nav-item" href="#disciplinas">
+            <span class="nav-icon">📚</span>
+            Disciplinas
+          </a>
+
+          <a class="nav-item" href="#aulas">
+            <span class="nav-icon">▶️</span>
+            Aulas e Conteúdos
+          </a>
+
+          <a class="nav-item" href="#presencas">
+            <span class="nav-icon">✅</span>
+            Presenças
+          </a>
+
+          <a class="nav-item" href="#avaliacoes">
+            <span class="nav-icon">📝</span>
+            Avaliações
+          </a>
+
+          <a class="nav-item" href="#relatorios">
+            <span class="nav-icon">📈</span>
+            Relatórios
+          </a>
+        </div>
+
+        <div class="sidebar-section-title">Sistema</div>
+
+        <div class="nav-list">
+          <a class="nav-item" href="#avisos">
+            <span class="nav-icon">📣</span>
+            Avisos
+          </a>
+
+          <a class="nav-item" href="#biblioteca">
+            <span class="nav-icon">📁</span>
+            Biblioteca
+          </a>
+
+          <a class="nav-item" href="#permissoes">
+            <span class="nav-icon">🔐</span>
+            Permissões
+          </a>
+
+          <a class="nav-item" href="#configuracoes">
+            <span class="nav-icon">⚙️</span>
+            Configurações
+          </a>
+        </div>
+      </nav>
+
+      <div class="system-card">
+        <h4>🟢 Sistema operacional</h4>
+        <p>Todos os serviços principais estão ativos e sincronizados.</p>
+        <div class="system-health">
+          <span>Status</span>
+          <strong>Online</strong>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN ADMIN -->
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb">
+          <span>🏠</span>
+          <strong>Admin</strong>
+          <span>/</span>
+          <span>Dashboard Geral</span>
+        </div>
+
+        <div class="top-actions">
+          <div class="search-box">🔎 Buscar aluno, turma, curso...</div>
+          <button class="top-btn">📤 Exportar</button>
+          <button class="top-btn">📥 Importar</button>
+          <button class="top-btn primary">+ Novo cadastro</button>
+
+          <div class="notification">🔔</div>
+
+          <div class="user-profile">
+            <div class="avatar">AD</div>
+            <div>
+              <div class="user-name">Admin</div>
+              <div class="user-role">Administrador</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- HEADER -->
+        <section class="page-header">
+          <div class="page-title-group">
+            <div class="page-icon">🛡️</div>
+            <div>
+              <h1 class="page-title">Painel Administrativo</h1>
+              <p class="page-subtitle">
+                Gerencie alunos, professores, cursos, turmas, presenças, avaliações e relatórios do LMS.
+              </p>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <button class="btn-outline">📅 Calendário acadêmico</button>
+            <button class="btn-outline">📊 Relatório geral</button>
+            <button class="btn-primary">+ Criar turma</button>
+          </div>
+        </section>
+
+        <!-- KPIS -->
+        <section class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-icon">👨‍🎓</div>
+            <div class="stat-label">Alunos ativos</div>
+            <div class="stat-value">248</div>
+            <div class="stat-help">+18 este mês</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon">👨‍🏫</div>
+            <div class="stat-label">Professores</div>
+            <div class="stat-value">18</div>
+            <div class="stat-help">Equipe ativa</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon">🏫</div>
+            <div class="stat-label">Turmas</div>
+            <div class="stat-value">12</div>
+            <div class="stat-help">8 em andamento</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon">🎓</div>
+            <div class="stat-label">Cursos</div>
+            <div class="stat-value">6</div>
+            <div class="stat-help">3 técnicos</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-label">Presença média</div>
+            <div class="stat-value">89%</div>
+            <div class="stat-help warning">-3% na semana</div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-label">Alertas</div>
+            <div class="stat-value">14</div>
+            <div class="stat-help danger">Exigem atenção</div>
+          </article>
+        </section>
+
+        <!-- MAIN ADMIN LAYOUT -->
+        <section class="admin-layout">
+          <!-- STUDENTS TABLE -->
+          <article class="card">
+            <h2 class="section-title">
+              👨‍🎓 Gestão de alunos
+              <a href="#" class="view-all">Ver todos</a>
+            </h2>
+
+            <div class="toolbar">
+              <div class="input">🔎 Buscar alunos</div>
+              <div class="select">Turma: Todas</div>
+              <div class="select">Status: Todos</div>
+              <div class="select">Ordenar: Nome</div>
+            </div>
+
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Aluno</th>
+                  <th>Turma</th>
+                  <th>Presença</th>
+                  <th>Média</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>Alan Marciano</strong><br />
+                    <span style="color: var(--text-muted);">alan@email.com</span>
+                  </td>
+                  <td>1DES • Tarde</td>
+                  <td>92%</td>
+                  <td>8,6</td>
+                  <td><span class="status green">Ativo</span></td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="icon-btn">👁️</button>
+                      <button class="icon-btn">✏️</button>
+                      <button class="icon-btn">📊</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <strong>Juliana Jacob</strong><br />
+                    <span style="color: var(--text-muted);">juliana@email.com</span>
+                  </td>
+                  <td>1MDS • Manhã</td>
+                  <td>86%</td>
+                  <td>9,1</td>
+                  <td><span class="status green">Ativo</span></td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="icon-btn">👁️</button>
+                      <button class="icon-btn">✏️</button>
+                      <button class="icon-btn">📊</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <strong>João Pereira</strong><br />
+                    <span style="color: var(--text-muted);">joao@email.com</span>
+                  </td>
+                  <td>1NDB • Noite</td>
+                  <td>68%</td>
+                  <td>6,4</td>
+                  <td><span class="status orange">Atenção</span></td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="icon-btn">👁️</button>
+                      <button class="icon-btn">✏️</button>
+                      <button class="icon-btn">📊</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <strong>Mariana Costa</strong><br />
+                    <span style="color: var(--text-muted);">mariana@email.com</span>
+                  </td>
+                  <td>1DES • Tarde</td>
+                  <td>54%</td>
+                  <td>5,8</td>
+                  <td><span class="status red">Risco</span></td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="icon-btn">👁️</button>
+                      <button class="icon-btn">✏️</button>
+                      <button class="icon-btn">📊</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <!-- QUICK ACTIONS -->
+          <article class="card">
+            <h2 class="section-title">⚡ Ações administrativas</h2>
+
+            <div class="quick-grid">
+              <button class="quick-card">
+                <div class="quick-card-icon">👨‍🎓</div>
+                <strong>Novo aluno</strong>
+                <span>Cadastrar aluno e vincular a uma turma.</span>
+              </button>
+
+              <button class="quick-card">
+                <div class="quick-card-icon">👨‍🏫</div>
+                <strong>Novo professor</strong>
+                <span>Cadastrar professor e definir permissões.</span>
+              </button>
+
+              <button class="quick-card">
+                <div class="quick-card-icon">🏫</div>
+                <strong>Criar turma</strong>
+                <span>Configurar turma, turno, curso e calendário.</span>
+              </button>
+
+              <button class="quick-card">
+                <div class="quick-card-icon">🎓</div>
+                <strong>Novo curso</strong>
+                <span>Criar curso, módulos e estrutura curricular.</span>
+              </button>
+
+              <button class="quick-card">
+                <div class="quick-card-icon">✅</div>
+                <strong>Presenças</strong>
+                <span>Auditar frequência e faltas dos alunos.</span>
+              </button>
+
+              <button class="quick-card">
+                <div class="quick-card-icon">📣</div>
+                <strong>Enviar aviso</strong>
+                <span>Publicar comunicado para turmas ou alunos.</span>
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <!-- MIDDLE -->
+        <section class="middle-grid">
+          <!-- CHART -->
+          <article class="card chart-card">
+            <h2 class="section-title">📊 Evolução de acessos</h2>
+
+            <p style="color: var(--text-muted); font-size: 14px;">
+              Acessos dos alunos ao portal nos últimos 7 dias.
+            </p>
+
+            <div class="bar-chart">
+              <div class="bar" data-label="Seg" style="height: 45%;"></div>
+              <div class="bar" data-label="Ter" style="height: 62%;"></div>
+              <div class="bar" data-label="Qua" style="height: 78%;"></div>
+              <div class="bar" data-label="Qui" style="height: 58%;"></div>
+              <div class="bar" data-label="Sex" style="height: 88%;"></div>
+              <div class="bar" data-label="Sáb" style="height: 38%;"></div>
+              <div class="bar" data-label="Dom" style="height: 28%;"></div>
+            </div>
+          </article>
+
+          <!-- ATTENDANCE -->
+          <article class="card">
+            <h2 class="section-title">✅ Frequência por turma</h2>
+
+            <div class="progress-list">
+              <div>
+                <div class="progress-label">
+                  <span>1DES • Tarde</span>
+                  <strong>92%</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 92%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="progress-label">
+                  <span>1MDS • Manhã</span>
+                  <strong>87%</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 87%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="progress-label">
+                  <span>1NDB • Noite</span>
+                  <strong>76%</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 76%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="progress-label">
+                  <span>2DES • Tarde</span>
+                  <strong>69%</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 69%;"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ALERTS -->
+          <article class="card">
+            <h2 class="section-title">⚠️ Alertas críticos</h2>
+
+            <div class="list">
+              <div class="list-item">
+                <div class="list-icon">🚨</div>
+                <div class="list-content">
+                  <strong>4 alunos com baixa frequência</strong>
+                  <span>Presença abaixo de 60% na turma 1DES.</span>
+                </div>
+              </div>
+
+              <div class="list-item">
+                <div class="list-icon">📝</div>
+                <div class="list-content">
+                  <strong>12 avaliações pendentes</strong>
+                  <span>Atividades aguardando correção.</span>
+                </div>
+              </div>
+
+              <div class="list-item">
+                <div class="list-icon">📚</div>
+                <div class="list-content">
+                  <strong>3 cursos sem conteúdo recente</strong>
+                  <span>Atualização recomendada pelo admin.</span>
+                </div>
+              </div>
+
+              <div class="list-item">
+                <div class="list-icon">🔐</div>
+                <div class="list-content">
+                  <strong>2 solicitações de acesso</strong>
+                  <span>Novos usuários aguardando aprovação.</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- BOTTOM -->
+        <section class="bottom-grid">
+          <article class="card">
+            <h2 class="section-title">
+              🏫 Turmas em andamento
+              <a href="#" class="view-all">Gerenciar turmas</a>
+            </h2>
+
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Turma</th>
+                  <th>Curso</th>
+                  <th>Professor</th>
+                  <th>Alunos</th>
+                  <th>Progresso</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td><strong>1DES • Tarde</strong></td>
+                  <td>Curso Técnico em TI</td>
+                  <td>Professor Carlos</td>
+                  <td>32</td>
+                  <td>62%</td>
+                  <td><span class="status green">Em andamento</span></td>
+                </tr>
+
+                <tr>
+                  <td><strong>1MDS • Manhã</strong></td>
+                  <td>Desenvolvimento Web</td>
+                  <td>Professora Ana</td>
+                  <td>28</td>
+                  <td>48%</td>
+                  <td><span class="status green">Em andamento</span></td>
+                </tr>
+
+                <tr>
+                  <td><strong>1NDB • Noite</strong></td>
+                  <td>Banco de Dados</td>
+                  <td>Professor Marcos</td>
+                  <td>24</td>
+                  <td>31%</td>
+                  <td><span class="status blue">Recente</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="card">
+            <h2 class="section-title">🕘 Atividades recentes</h2>
+
+            <div class="list">
+              <div class="list-item">
+                <div class="list-icon">👨‍🎓</div>
+                <div class="list-content">
+                  <strong>Novo aluno cadastrado</strong>
+                  <span>Mariana Costa • há 12 minutos</span>
+                </div>
+              </div>
+
+              <div class="list-item">
+                <div class="list-icon">✅</div>
+                <div class="list-content">
+                  <strong>Presenças registradas</strong>
+                  <span>Turma 1DES • Professor Carlos</span>
+                </div>
+              </div>
+
+              <div class="list-item">
+                <div class="list-icon">📝</div>
+                <div class="list-content">
+                  <strong>Avaliação criada</strong>
+                  <span>Prova Unidade 1 • Fundamentos de Redes</span>
+                </div>
+              </div>
+
+              <div class="list-item">
+                <div class="list-icon">📣</div>
+                <div class="list-content">
+                  <strong>Aviso publicado</strong>
+                  <span>Comunicado para turma 1MDS</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+```
